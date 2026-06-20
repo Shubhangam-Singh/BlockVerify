@@ -4,33 +4,108 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BlockVerify — AI Model Integrity Verification</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2306080c'/><path d='M16 5c2.5 2 5 2.6 7.5 2.6 0 8-2.4 12.4-7.5 14.9C10.9 20.4 8.5 16 8.5 8 11 8 13.5 7 16 5Z' fill='%2300e5a0'/><path d='M12.4 15.6 15 18.2 19.6 12.4' fill='none' stroke='%2306080c' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* ════════════════════════════════════════════════════════════
+       BlockVerify — "Verification Signal" design system
+       Brand: electric signal-green (verified) + electric blue (data),
+       on a deep cool-black, fine-grid, precision-instrument surface.
+       ════════════════════════════════════════════════════════════ */
     :root {
-      --bg: #080b12; --surface: rgba(15, 20, 32, 0.45); --surface2: rgba(23, 29, 46, 0.55);
-      --border: rgba(255, 255, 255, 0.08); --text: #e8eaf0; --text-muted: #8e9bb0;
-      --primary: #6c5ce7; --primary-h: #8b7cff; --success: #00cec9; --danger: #ff6b6b;
-      --warn: #feca57; --radius: 16px; --font: 'Outfit', sans-serif; --mono: 'JetBrains Mono', monospace;
+      /* ── Surfaces (cool near-black, layered) ── */
+      --bg: #06080c;
+      --bg-1: #0a0e15;
+      --bg-grid: rgba(132, 156, 196, 0.045);
+      --surface: rgba(16, 21, 31, 0.72);
+      --surface2: rgba(22, 28, 41, 0.70);
+      --surface-solid: #0e131c;
+      --border: rgba(255, 255, 255, 0.07);
+      --border-strong: rgba(255, 255, 255, 0.14);
+
+      /* ── Text ── */
+      --text: #eef2f8;
+      --text-muted: #828d9e;
+
+      /* ── Brand: verification signal (RGB triplets drive every alpha tint) ── */
+      --primary-rgb: 0, 229, 160;
+      --primary-light-rgb: 61, 240, 184;
+      --accent-rgb: 91, 140, 255;
+      --success-rgb: 45, 226, 197;
+      --danger-rgb: 255, 107, 107;
+      --warn-rgb: 254, 202, 87;
+      --primary: rgb(var(--primary-rgb));
+      --primary-h: rgb(var(--primary-light-rgb));
+      --accent: rgb(var(--accent-rgb));
+      --success: rgb(var(--success-rgb));
+      --danger: rgb(var(--danger-rgb));
+      --warn: rgb(var(--warn-rgb));
+      --primary-ink: #03130d;
+
+      /* ── Type ── */
+      --font: 'Inter', system-ui, -apple-system, sans-serif;
+      --display: 'Space Grotesk', var(--font);
+      --mono: 'JetBrains Mono', ui-monospace, monospace;
+
+      /* ── Geometry ── */
+      --radius: 14px;
+      --radius-sm: 9px;
+      --radius-lg: 22px;
+
+      /* ── Elevation / glow ── */
+      --shadow-1: 0 1px 2px rgba(0,0,0,0.45);
+      --shadow-2: 0 12px 34px rgba(0,0,0,0.40);
+      --shadow-3: 0 28px 70px rgba(0,0,0,0.55);
+      --glow: 0 0 0 1px rgba(var(--primary-rgb),0.30), 0 10px 36px rgba(var(--primary-rgb),0.22);
     }
     body.light-theme {
-      --bg: #f8fafc; --surface: rgba(255,255,255,0.65); --surface2: rgba(255,255,255,0.85);
-      --border: rgba(0,0,0,0.08); --text: #1e293b; --text-muted: #64748b;
-      --primary: #4f46e5; --primary-h: #6366f1;
+      --bg: #eef1f6;
+      --bg-1: #f6f8fb;
+      --bg-grid: rgba(40, 60, 110, 0.05);
+      --surface: rgba(255,255,255,0.78);
+      --surface2: rgba(255,255,255,0.92);
+      --surface-solid: #ffffff;
+      --border: rgba(15,23,42,0.10);
+      --border-strong: rgba(15,23,42,0.18);
+      --text: #0f1729; --text-muted: #5a677d;
+      --primary-rgb: 0, 168, 122;
+      --primary-light-rgb: 0, 196, 142;
+      --accent-rgb: 59, 102, 241;
+      --success-rgb: 6, 160, 130;
+      --primary-ink: #ffffff;
     }
 
     body {
-      font-family: var(--font); background: var(--bg); color: var(--text);
+      font-family: var(--font); color: var(--text);
       line-height: 1.6; min-height: 100vh; overflow-x: hidden; position: relative;
-      cursor: url('data:image/svg+xml;utf8,<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 2 L19 9 L12 11 L10 18 Z" fill="%2300cec9" stroke="%23ffffff" stroke-width="1.5" stroke-linejoin="round"/></svg>') 5 2, auto;
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(1000px 560px at 82% -8%, rgba(var(--primary-rgb),0.11), transparent 60%),
+        radial-gradient(860px 520px at -5% -2%, rgba(var(--accent-rgb),0.09), transparent 55%),
+        linear-gradient(var(--bg-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 46px 46px, 46px 46px;
+      background-position: 0 0, 0 0, center, center;
+      background-attachment: fixed;
+      cursor: url('data:image/svg+xml;utf8,<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 2 L19 9 L12 11 L10 18 Z" fill="%2300e5a0" stroke="%23ffffff" stroke-width="1.5" stroke-linejoin="round"/></svg>') 5 2, auto;
     }
+    ::selection { background: rgba(var(--primary-rgb),0.28); color: #fff; }
+
+    /* ── SVG icon system (replaces emoji) ── */
+    .ico { width: 1.15em; height: 1.15em; display: inline-block; vertical-align: -0.2em; flex-shrink: 0; }
+    .ico-lg { width: 1.5em; height: 1.5em; }
+    .icon-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
     
     a, button, .btn, .file-drop, .block-card, .qs-card, .chatbot-btn, .close-btn, .bc-copy, [onclick] {
-      cursor: url('data:image/svg+xml;utf8,<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 10.5V4.5a1.5 1.5 0 013 0v6M11 10V3.5a1.5 1.5 0 013 0v6.5M14 10.5V5.5a1.5 1.5 0 013 0v6M17 11v-1a1.5 1.5 0 013 0v5.5a6.5 6.5 0 01-13 0v-3.5a2.5 2.5 0 015 0z" fill="%238b7cff" stroke="%23ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>') 7 2, pointer !important;
+      cursor: url('data:image/svg+xml;utf8,<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 10.5V4.5a1.5 1.5 0 013 0v6M11 10V3.5a1.5 1.5 0 013 0v6.5M14 10.5V5.5a1.5 1.5 0 013 0v6M17 11v-1a1.5 1.5 0 013 0v5.5a6.5 6.5 0 01-13 0v-3.5a2.5 2.5 0 015 0z" fill="%233df0b8" stroke="%23ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>') 7 2, pointer !important;
     }
     
     /* ── Hide Scrollbars Globally ── */
@@ -54,13 +129,13 @@
     .logo-img {
       width: 40px; height: 40px; border-radius: 8px;
       object-fit: cover;
-      box-shadow: 0 0 15px rgba(0,206,201,0.3);
+      box-shadow: 0 0 15px rgba(var(--success-rgb),0.3);
     }
     /* ── Auth user pill in header ── */
     .user-box { display: flex; align-items: center; gap: .6rem; }
     .user-pill {
       display: flex; align-items: center; gap: .55rem;
-      background: rgba(108,92,231,0.15); border: 1px solid rgba(108,92,231,0.35);
+      background: rgba(var(--primary-rgb),0.15); border: 1px solid rgba(var(--primary-rgb),0.35);
       border-radius: 20px; padding: .3rem .7rem .3rem .45rem;
       font-size: .88rem; font-weight: 600; color: var(--text);
     }
@@ -80,9 +155,9 @@
       background: linear-gradient(135deg, var(--primary), var(--primary-h));
       border: none; border-radius: 8px; padding: .4rem 1rem;
       color: #fff; font-size: .88rem; font-weight: 700; cursor: pointer;
-      transition: all .2s; box-shadow: 0 2px 10px rgba(108,92,231,0.3);
+      transition: all .2s; box-shadow: 0 2px 10px rgba(var(--primary-rgb),0.3);
     }
-    .btn-login-header:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(108,92,231,0.5); }
+    .btn-login-header:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(var(--primary-rgb),0.5); }
 
     /* ── Auth Modal ── */
     .auth-overlay {
@@ -93,9 +168,9 @@
     .auth-overlay.open { display: flex; animation: fadeIn .2s ease; }
     .auth-box {
       background: linear-gradient(160deg, rgba(18,24,42,0.99) 0%, rgba(10,14,24,1) 100%);
-      border: 1px solid rgba(108,92,231,0.3); border-radius: 24px;
+      border: 1px solid rgba(var(--primary-rgb),0.3); border-radius: 24px;
       width: 100%; max-width: 440px; padding: 2rem 2rem 1.8rem;
-      box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 60px rgba(108,92,231,0.15);
+      box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 60px rgba(var(--primary-rgb),0.15);
       animation: slideUpFade .25s ease;
     }
     .auth-logo { font-size: 2rem; text-align: center; margin-bottom: .3rem; }
@@ -118,14 +193,14 @@
       color: var(--text); outline: none; transition: border-color .2s;
       font-family: var(--font);
     }
-    .auth-field input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(108,92,231,0.2); }
+    .auth-field input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(var(--primary-rgb),0.2); }
     .auth-submit {
       margin-top: .2rem; padding: .8rem; border-radius: 10px; border: none;
       background: linear-gradient(135deg, var(--primary), var(--primary-h));
       color: #fff; font-size: 1rem; font-weight: 700; cursor: pointer;
-      transition: all .2s; box-shadow: 0 4px 15px rgba(108,92,231,0.35);
+      transition: all .2s; box-shadow: 0 4px 15px rgba(var(--primary-rgb),0.35);
     }
-    .auth-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(108,92,231,0.55); }
+    .auth-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(var(--primary-rgb),0.55); }
     .auth-submit:disabled { opacity: .55; cursor: not-allowed; transform: none; }
     .auth-err { background: rgba(255,107,107,0.12); border: 1px solid rgba(255,107,107,0.3); border-radius: 8px; padding: .6rem .85rem; font-size: .82rem; color: var(--danger); display: none; }
     .auth-err.show { display: block; }
@@ -183,10 +258,10 @@
       width: 3px; height: 0; border-radius: 0 3px 3px 0;
       background: var(--primary); transition: height 0.25s cubic-bezier(0.4,0,0.2,1);
     }
-    .tab:hover { color: var(--text); background: rgba(108,92,231,.06); }
+    .tab:hover { color: var(--text); background: rgba(var(--primary-rgb),.06); }
     .tab.active {
       color: var(--primary-h);
-      background: rgba(108,92,231,.1);
+      background: rgba(var(--primary-rgb),.1);
     }
     .tab.active::before { height: 20px; }
     .tab .tab-icon { font-size: 1rem; width: 1.2rem; text-align: center; flex-shrink: 0; }
@@ -200,7 +275,7 @@
       display: flex; align-items: flex-start; gap: .55rem; padding: .45rem .5rem;
       border-radius: 8px; font-size: .78rem; transition: background .2s; animation: slideUpFade .3s ease;
     }
-    .feed-item:hover { background: rgba(108,92,231,.06); }
+    .feed-item:hover { background: rgba(var(--primary-rgb),.06); }
     .feed-item .feed-icon { font-size: .9rem; flex-shrink: 0; margin-top: .05rem; }
     .feed-item .feed-body { flex: 1; min-width: 0; }
     .feed-item .feed-user { font-weight: 700; color: var(--primary-h); }
@@ -223,7 +298,7 @@
       border-radius: 10px; color: var(--text); font-family: var(--font); font-size: .95rem;
       box-shadow: inset 0 2px 5px rgba(0,0,0,0.05); transition: 0.2s;
     }
-    input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(108,92,231,0.2); }
+    input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(var(--primary-rgb),0.2); }
     textarea { resize: vertical; min-height: 80px; }
 
     /* ── Buttons ── */
@@ -232,14 +307,14 @@
       padding: .75rem 1.6rem; border-radius: 10px; cursor: pointer; font-family: var(--font);
       font-size: .95rem; font-weight: 600; transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
       display: inline-flex; align-items: center; gap: .5rem;
-      box-shadow: 0 4px 15px rgba(108,92,231,0.4); position: relative; overflow: hidden;
+      box-shadow: 0 4px 15px rgba(var(--primary-rgb),0.4); position: relative; overflow: hidden;
     }
     .btn::after {
       content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
       background: linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent);
       transform: skewX(-20deg); transition: 0.5s;
     }
-    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(108,92,231,0.6); }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(var(--primary-rgb),0.6); }
     .btn:hover::after { left: 150%; }
     .btn:active { transform: translateY(1px) scale(0.97); }
     .btn:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; transform: none; }
@@ -257,10 +332,10 @@
     }
     .file-drop::before {
       content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: radial-gradient(circle at center, rgba(108,92,231,0.1) 0%, transparent 70%);
+      background: radial-gradient(circle at center, rgba(var(--primary-rgb),0.1) 0%, transparent 70%);
       opacity: 0; transition: opacity 0.3s;
     }
-    .file-drop:hover, .file-drop.dragover { border-color: var(--primary); transform: scale(1.01); box-shadow: 0 10px 30px rgba(108,92,231,0.15); }
+    .file-drop:hover, .file-drop.dragover { border-color: var(--primary); transform: scale(1.01); box-shadow: 0 10px 30px rgba(var(--primary-rgb),0.15); }
     .file-drop:hover::before, .file-drop.dragover::before { opacity: 1; }
     .file-drop p { color: var(--text-muted); font-size: 1rem; position: relative; z-index: 1; font-weight: 500; }
     .file-drop span.icon { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; transition: transform 0.3s; }
@@ -279,7 +354,7 @@
       color: var(--text-muted); cursor: pointer; font-size: .75rem; flex-shrink: 0;
       transition: all 0.2s; font-family: var(--font);
     }
-    .copy-btn:hover { border-color: var(--primary); color: var(--primary-h); background: rgba(108,92,231,0.1); }
+    .copy-btn:hover { border-color: var(--primary); color: var(--primary-h); background: rgba(var(--primary-rgb),0.1); }
     .copy-btn.copied { border-color: var(--success); color: var(--success); }
 
     /* ── Tables ── */
@@ -294,7 +369,7 @@
 
     /* ── Badges ── */
     .badge { display: inline-block; padding: .2rem .6rem; border-radius: 20px; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-    .badge-ok  { background: rgba(0,206,201,.15);  color: var(--success); border: 1px solid rgba(0,206,201,.3); }
+    .badge-ok  { background: rgba(var(--success-rgb),.15);  color: var(--success); border: 1px solid rgba(var(--success-rgb),.3); }
     .badge-err { background: rgba(255,107,107,.15); color: var(--danger);  border: 1px solid rgba(255,107,107,.3); }
     .badge-warn{ background: rgba(254,202,87,.15);  color: var(--warn);    border: 1px solid rgba(254,202,87,.3); }
 
@@ -319,19 +394,19 @@
     /* ── Verify result panel ── */
     .verify-result { margin-top: 1.2rem; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); animation: slideUpFade .3s ease; }
     .verify-result-header { padding: 1.2rem 1.5rem; display: flex; align-items: center; gap: .8rem; font-size: 1.1rem; font-weight: 700; }
-    .verify-result.valid .verify-result-header { background: rgba(0,206,201,0.12); color: var(--success); border-bottom: 1px solid rgba(0,206,201,0.2); }
+    .verify-result.valid .verify-result-header { background: rgba(var(--success-rgb),0.12); color: var(--success); border-bottom: 1px solid rgba(var(--success-rgb),0.2); }
     .verify-result.invalid .verify-result-header { background: rgba(255,107,107,0.12); color: var(--danger); border-bottom: 1px solid rgba(255,107,107,0.2); }
     .verify-result-body { padding: 1.2rem 1.5rem; background: var(--surface2); display: flex; flex-direction: column; gap: .8rem; }
     .hash-compare-row { display: flex; flex-direction: column; gap: .3rem; }
     .hash-compare-row label { font-size: .75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
     .hash-compare-row code { font-family: var(--mono); font-size: .78rem; word-break: break-all; padding: .5rem .7rem; border-radius: 6px; display: block; }
-    .hash-match   { background: rgba(0,206,201,0.08);  color: var(--success); border: 1px solid rgba(0,206,201,0.2); }
+    .hash-match   { background: rgba(var(--success-rgb),0.08);  color: var(--success); border: 1px solid rgba(var(--success-rgb),0.2); }
     .hash-nomatch { background: rgba(255,107,107,0.08); color: var(--danger);  border: 1px solid rgba(255,107,107,0.2); }
     .hash-neutral { background: rgba(0,0,0,0.15); color: var(--warn); border: 1px solid var(--border); }
 
     /* ── Model ID result box ── */
     .model-id-box {
-      background: rgba(108,92,231,0.1); border: 1px solid rgba(108,92,231,0.3);
+      background: rgba(var(--primary-rgb),0.1); border: 1px solid rgba(var(--primary-rgb),0.3);
       border-radius: 10px; padding: 1rem 1.2rem; margin-top: 1rem; animation: slideUpFade .3s ease;
     }
     .model-id-box label { font-size: .75rem; font-weight: 700; color: var(--primary-h); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: .4rem; }
@@ -382,7 +457,7 @@
       background: linear-gradient(90deg, var(--primary), var(--primary-h), var(--success));
     }
     .block-card.genesis::before { background: linear-gradient(90deg, #f0b429, #f6d860, #f0b429); }
-    .block-card:hover { transform: translateY(-6px); box-shadow: 0 20px 50px rgba(0,0,0,0.45), 0 4px 12px rgba(108,92,231,0.2); }
+    .block-card:hover { transform: translateY(-6px); box-shadow: 0 20px 50px rgba(0,0,0,0.45), 0 4px 12px rgba(var(--primary-rgb),0.2); }
 
     .bc-hdr {
       padding: 1rem 1.2rem .7rem; display: flex; justify-content: space-between; align-items: flex-start;
@@ -391,7 +466,7 @@
     .bc-index { font-size: 1.15rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: .4rem; }
     .bc-index-badge {
       font-size: .7rem; font-weight: 700; padding: .15rem .45rem; border-radius: 20px;
-      background: rgba(108,92,231,0.2); color: var(--primary-h); border: 1px solid rgba(108,92,231,0.3);
+      background: rgba(var(--primary-rgb),0.2); color: var(--primary-h); border: 1px solid rgba(var(--primary-rgb),0.3);
       text-transform: uppercase; letter-spacing: 0.04em;
     }
     .block-card.genesis .bc-index-badge { background: rgba(240,180,41,0.15); color: #f6d860; border-color: rgba(240,180,41,0.3); }
@@ -428,7 +503,7 @@
       cursor: pointer; color: var(--primary-h); font-family: var(--font); font-size: .82rem; font-weight: 600;
       transition: background 0.2s;
     }
-    .bc-txns-toggle:hover { background: rgba(108,92,231,0.08); }
+    .bc-txns-toggle:hover { background: rgba(var(--primary-rgb),0.08); }
     .bc-txns-arrow { font-size: .6rem; transition: transform 0.2s; }
     .bc-txns-body { display: none; padding: .5rem 1.2rem .8rem; max-height: 200px; overflow-y: auto; }
     .bc-txns-body.open { display: block; animation: slideUpFade .2s ease; }
@@ -444,7 +519,7 @@
       transition: transform 0.2s, border-color 0.2s; position: relative; overflow: hidden;
     }
     .model-item::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--primary), var(--success)); }
-    .model-item:hover { transform: translateY(-3px); border-color: rgba(108,92,231,0.3); }
+    .model-item:hover { transform: translateY(-3px); border-color: rgba(var(--primary-rgb),0.3); }
     .model-item-name { font-weight: 700; font-size: 1rem; margin-bottom: .3rem; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
     .model-item-id { font-family: var(--mono); font-size: .72rem; color: var(--text-muted); margin-bottom: .7rem; display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
     .model-item-id code { word-break: break-all; }
@@ -500,8 +575,8 @@
       font-size: .7rem; font-weight: 700; text-transform: uppercase;
       padding: .2rem .55rem; border-radius: 20px; margin-bottom: .45rem;
     }
-    .modal-tx-type.register { background: rgba(108,92,231,0.15); color: var(--primary); border: 1px solid rgba(108,92,231,0.3); }
-    .modal-tx-type.verify   { background: rgba(0,206,201,0.1);   color: var(--success);  border: 1px solid rgba(0,206,201,0.25); }
+    .modal-tx-type.register { background: rgba(var(--primary-rgb),0.15); color: var(--primary); border: 1px solid rgba(var(--primary-rgb),0.3); }
+    .modal-tx-type.verify   { background: rgba(var(--success-rgb),0.1);   color: var(--success);  border: 1px solid rgba(var(--success-rgb),0.25); }
     .modal-tx-type.genesis  { background: rgba(240,180,41,0.12); color: #f6d860;         border: 1px solid rgba(240,180,41,0.3); }
     .modal-tx-type.add_version { background: rgba(253,203,110,0.12); color: var(--warn); border: 1px solid rgba(253,203,110,0.3); }
     .block-card { cursor: pointer; }
@@ -520,9 +595,9 @@
     .welcome-overlay.open { display: flex; animation: fadeIn .25s ease; }
     .welcome-box {
       background: linear-gradient(160deg, rgba(22,28,48,0.99) 0%, rgba(12,16,28,1) 100%);
-      border: 1px solid rgba(108,92,231,0.3); border-radius: 24px;
+      border: 1px solid rgba(var(--primary-rgb),0.3); border-radius: 24px;
       width: 100%; max-width: 560px; padding: 2.2rem 2rem 1.8rem;
-      box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 60px rgba(108,92,231,0.15);
+      box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 60px rgba(var(--primary-rgb),0.15);
       animation: slideUpFade .3s ease;
     }
     .welcome-logo { font-size: 2.5rem; text-align: center; margin-bottom: .4rem; }
@@ -613,31 +688,31 @@
       background: rgba(15, 15, 20, 0.9);
       border: 1px solid var(--primary); border-radius: 6px;
       display: flex; justify-content: center; align-items: center;
-      box-shadow: 0 0 12px rgba(187, 134, 252, 0.5), inset 0 0 10px rgba(187, 134, 252, 0.2);
+      box-shadow: 0 0 12px rgba(var(--primary-light-rgb), 0.5), inset 0 0 10px rgba(var(--primary-light-rgb), 0.2);
       cursor: pointer; z-index: 1000;
       transition: all 0.2s;
     }
     .chatbot-btn:before {
       content: ''; position: absolute; top: -1px; left: -1px; right: -1px; bottom: -1px;
-      border: 1px solid rgba(187, 134, 252, 0.7); pointer-events: none; border-radius: 6px;
+      border: 1px solid rgba(var(--primary-light-rgb), 0.7); pointer-events: none; border-radius: 6px;
       filter: blur(2px); z-index: -1;
     }
-    .chatbot-btn:hover { background: rgba(187, 134, 252, 0.15); box-shadow: 0 0 20px rgba(187, 134, 252, 0.8), inset 0 0 15px rgba(187, 134, 252, 0.4); transform: translateY(-2px); }
+    .chatbot-btn:hover { background: rgba(var(--primary-light-rgb), 0.15); box-shadow: 0 0 20px rgba(var(--primary-light-rgb), 0.8), inset 0 0 15px rgba(var(--primary-light-rgb), 0.4); transform: translateY(-2px); }
     .chatbot-btn svg { width: 22px; height: 22px; fill: var(--text); filter: drop-shadow(0 0 5px var(--primary)); }
     
     .chatbot-window {
       position: fixed; bottom: 105px; right: 24px; width: 350px; height: 480px;
       background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(12px);
-      border: 1px solid rgba(187, 134, 252, 0.5); border-radius: 4px;
+      border: 1px solid rgba(var(--primary-light-rgb), 0.5); border-radius: 4px;
       display: flex; flex-direction: column; overflow: hidden;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(187,134,252,0.1); z-index: 1000;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(var(--primary-light-rgb),0.1); z-index: 1000;
       transform: translateY(20px); opacity: 0; pointer-events: none;
       transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
     }
     .chatbot-window.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
     
     .chatbot-header {
-      padding: 0.9rem 1rem; background: rgba(187, 134, 252, 0.08); border-bottom: 1px solid rgba(187, 134, 252, 0.3);
+      padding: 0.9rem 1rem; background: rgba(var(--primary-light-rgb), 0.08); border-bottom: 1px solid rgba(var(--primary-light-rgb), 0.3);
       display: flex; justify-content: space-between; align-items: center; position: relative;
     }
     .chatbot-header::before {
@@ -652,16 +727,16 @@
     .chatbot-messages {
       flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.8rem;
       background-image: 
-        linear-gradient(rgba(187, 134, 252, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(187, 134, 252, 0.03) 1px, transparent 1px);
+        linear-gradient(rgba(var(--primary-light-rgb), 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(var(--primary-light-rgb), 0.03) 1px, transparent 1px);
       background-size: 20px 20px;
     }
     .chat-msg { max-width: 85%; padding: 0.75rem 0.9rem; border-radius: 4px; font-size: 0.82rem; line-height: 1.5; word-wrap: break-word; }
-    .chat-msg.user { align-self: flex-end; background: rgba(187, 134, 252, 0.15); border: 1px solid rgba(187, 134, 252, 0.4); color: var(--text); border-bottom-right-radius: 0; box-shadow: 0 0 10px rgba(187,134,252,0.1); }
+    .chat-msg.user { align-self: flex-end; background: rgba(var(--primary-light-rgb), 0.15); border: 1px solid rgba(var(--primary-light-rgb), 0.4); color: var(--text); border-bottom-right-radius: 0; box-shadow: 0 0 10px rgba(var(--primary-light-rgb),0.1); }
     .chat-msg.user::before { content: '>'; color: var(--primary); margin-right: 5px; font-family: var(--mono); }
     
     .chat-msg.bot { align-self: flex-start; background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 0; border-left: 2px solid var(--primary); }
-    .chat-msg.bot strong { color: var(--primary); font-weight: 600; text-shadow: 0 0 5px rgba(187,134,252,0.3); }
+    .chat-msg.bot strong { color: var(--primary); font-weight: 600; text-shadow: 0 0 5px rgba(var(--primary-light-rgb),0.3); }
     
     .chatbot-input {
       padding: 0.8rem; border-top: 1px solid var(--border); background: rgba(0,0,0,0.4);
@@ -671,9 +746,9 @@
       flex: 1; background: rgba(0,0,0,0.5); border: 1px solid var(--border);
       color: var(--text); padding: 0.6rem 0.8rem; border-radius: 4px; outline: none; font-size: 0.8rem; font-family: var(--mono);
     }
-    .chatbot-input input:focus { border-color: var(--primary); box-shadow: inset 0 0 5px rgba(187,134,252,0.2); }
+    .chatbot-input input:focus { border-color: var(--primary); box-shadow: inset 0 0 5px rgba(var(--primary-light-rgb),0.2); }
     .chatbot-input button {
-      background: rgba(187, 134, 252, 0.15); border: 1px solid var(--primary); width: 36px; height: 36px; border-radius: 4px;
+      background: rgba(var(--primary-light-rgb), 0.15); border: 1px solid var(--primary); width: 36px; height: 36px; border-radius: 4px;
       display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s;
     }
     .chatbot-input button:hover { background: var(--primary); box-shadow: 0 0 10px var(--primary); }
@@ -741,7 +816,7 @@
       background: rgba(18, 12, 42, 0.82);
       backdrop-filter: blur(14px) saturate(1.4);
       -webkit-backdrop-filter: blur(14px) saturate(1.4);
-      border: 1px solid rgba(108, 92, 231, 0.35);
+      border: 1px solid rgba(var(--primary-rgb), 0.35);
       box-shadow: 0 6px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
       opacity: 0;
       transform: translateY(4px);
@@ -796,20 +871,449 @@
     .tour-arrow-right::after { content:''; position:absolute; left:-10px; top:-9px; border-style:solid; border-width: 9px 0 9px 9px; border-color:transparent transparent transparent var(--surface); }
     .tour-arrow-left { border-width: 10px 10px 10px 0; border-color: transparent var(--border) transparent transparent; left: -11px; top: 20px; }
     .tour-arrow-left::after { content:''; position:absolute; left:1px; top:-9px; border-style:solid; border-width: 9px 9px 9px 0; border-color:transparent var(--surface) transparent transparent; }
+
+    /* ══════════════════════════════════════════════════════════════
+       DESIGN SYSTEM v2 — "Verification Signal" component restyle
+       (cascades last so it elevates the base components above)
+       ══════════════════════════════════════════════════════════════ */
+
+    /* ── Display type ── */
+    h1, h2, h3, .auth-title, .welcome-title, .stat-val, .logo-word, .tour-tooltip-title { font-family: var(--display); letter-spacing: -0.02em; }
+    body { letter-spacing: -0.005em; }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(180deg, rgba(10,14,21,0.85), rgba(8,11,17,0.62));
+      backdrop-filter: blur(22px) saturate(1.3); -webkit-backdrop-filter: blur(22px) saturate(1.3);
+      border-bottom: 1px solid var(--border); padding: .85rem 1.6rem;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.03), 0 10px 30px -18px rgba(0,0,0,0.8);
+    }
+    .header::after {
+      content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(var(--primary-rgb),0.55), transparent);
+    }
+    .logo-img { width: 38px; height: 38px; border-radius: 10px; box-shadow: 0 0 0 1px rgba(var(--primary-rgb),0.35), 0 0 22px rgba(var(--primary-rgb),0.30); }
+    .logo-word { font-size: 1.3rem; font-weight: 700; color: var(--text); }
+    .logo-word span { color: var(--primary); }
+
+    /* ── Header buttons ── */
+    .hbtn {
+      display: inline-flex; align-items: center; gap: .4rem;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      color: var(--text-muted); border-radius: 10px; padding: .42rem .7rem;
+      font-family: var(--font); font-size: .8rem; font-weight: 600; cursor: pointer;
+      transition: all .18s ease;
+    }
+    .hbtn .ico { width: 1.05em; height: 1.05em; }
+    .hbtn:hover { color: var(--text); border-color: var(--border-strong); background: rgba(255,255,255,0.07); transform: translateY(-1px); }
+    .hbtn-icon { padding: .42rem; }
+    .hbtn-icon .hbtn-tx { display: none; }
+    .btn-logout:hover { color: var(--danger); border-color: rgba(var(--danger-rgb),0.5); background: rgba(var(--danger-rgb),0.08); }
+    .btn-login-header {
+      display: inline-flex; align-items: center; gap: .45rem;
+      background: var(--primary); color: var(--primary-ink); font-weight: 700;
+      border-radius: 10px; padding: .5rem 1rem; border: none; cursor: pointer;
+      box-shadow: 0 6px 20px -6px rgba(var(--primary-rgb),0.7);
+    }
+    .btn-login-header:hover { transform: translateY(-1px); box-shadow: 0 10px 26px -6px rgba(var(--primary-rgb),0.9); }
+
+    /* ── User pill ── */
+    .user-pill { background: rgba(var(--primary-rgb),0.10); border: 1px solid rgba(var(--primary-rgb),0.28); border-radius: 12px; }
+    .user-pill .avatar { background: linear-gradient(135deg, var(--primary), var(--accent)); color: var(--primary-ink); }
+
+    /* ── Stat cards ── */
+    .stats { gap: 1rem; }
+    .card, .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      box-shadow: var(--shadow-2); backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    }
+    .stat-card {
+      text-align: left; padding: 1.25rem 1.3rem; border-radius: var(--radius); position: relative; overflow: hidden;
+      display: flex; flex-direction: column; gap: .35rem;
+    }
+    .stat-card::before {
+      content: ''; position: absolute; inset: 0 auto 0 0; width: 3px;
+      background: linear-gradient(180deg, var(--primary), var(--accent)); opacity: .9;
+    }
+    .stat-card::after {
+      content: ''; position: absolute; top: -40px; right: -40px; width: 120px; height: 120px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(var(--primary-rgb),0.16), transparent 70%); pointer-events: none;
+    }
+    .stat-card:hover { transform: translateY(-5px); border-color: rgba(var(--primary-rgb),0.35); box-shadow: var(--shadow-3), 0 0 40px -16px rgba(var(--primary-rgb),0.6); }
+    .stat-ico { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; background: rgba(var(--primary-rgb),0.12); border: 1px solid rgba(var(--primary-rgb),0.25); color: var(--primary); margin-bottom: .2rem; }
+    .stat-ico .ico { width: 18px; height: 18px; }
+    .stat-val { font-family: var(--display); font-size: 2.15rem; font-weight: 700; line-height: 1.05; -webkit-text-fill-color: var(--text); background: none; }
+    .stat-lbl { font-size: .72rem; letter-spacing: .09em; }
+
+    /* ── Sidebar / tabs ── */
+    .sidebar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-2); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+    .sidebar-label { font-size: .62rem; letter-spacing: .16em; }
+    .tab { font-size: .84rem; border-radius: 10px; gap: .65rem; padding: .58rem .8rem; }
+    .tab .tab-icon { width: 1.25rem; height: 1.25rem; display: inline-flex; align-items: center; justify-content: center; color: var(--text-muted); transition: color .2s; }
+    .tab .tab-icon .ico { width: 1.15rem; height: 1.15rem; }
+    .tab:hover { background: rgba(255,255,255,0.04); }
+    .tab:hover .tab-icon { color: var(--text); }
+    .tab.active { color: var(--primary); background: rgba(var(--primary-rgb),0.10); font-weight: 700; }
+    .tab.active .tab-icon { color: var(--primary); }
+    .tab::before { background: var(--primary); box-shadow: 0 0 10px var(--primary); }
+    .tab.active::before { height: 18px; }
+
+    /* ── Cards ── */
+    .card { border-radius: var(--radius); padding: 1.7rem 1.8rem; }
+    .card h2 { font-size: 1.35rem; font-weight: 700; gap: .6rem; align-items: center; }
+    .card h2 .ico { width: 1.25em; height: 1.25em; color: var(--primary); }
+    .card .subtitle { font-size: .87rem; }
+    .card-title-ico { width: 38px; height: 38px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: rgba(var(--primary-rgb),0.12); border: 1px solid rgba(var(--primary-rgb),0.25); color: var(--primary); }
+    .card-title-ico .ico { width: 20px; height: 20px; }
+
+    /* ── Buttons ── */
+    .btn {
+      background: var(--primary); color: var(--primary-ink); font-weight: 700; border-radius: 11px;
+      box-shadow: 0 8px 22px -8px rgba(var(--primary-rgb),0.75); padding: .72rem 1.5rem;
+    }
+    .btn .ico { width: 1.1em; height: 1.1em; }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -8px rgba(var(--primary-rgb),0.95); }
+    .btn-sec { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text); box-shadow: none; }
+    .btn-sec:hover { background: rgba(255,255,255,0.08); border-color: var(--border-strong); box-shadow: none; }
+    .btn-danger { background: var(--danger); color: #fff; box-shadow: 0 8px 22px -8px rgba(var(--danger-rgb),0.7); }
+    .auth-submit, .tour-btn-next { background: var(--primary); color: var(--primary-ink); }
+
+    /* ── Forms ── */
+    input[type="text"], input[type="password"], textarea, .auth-field input, .welcome-user-row input {
+      background: rgba(255,255,255,0.035); border: 1px solid var(--border); border-radius: 11px; box-shadow: none; transition: border-color .18s, box-shadow .18s;
+    }
+    input[type="text"]:focus, input[type="password"]:focus, textarea:focus, .auth-field input:focus {
+      border-color: rgba(var(--primary-rgb),0.6); box-shadow: 0 0 0 3px rgba(var(--primary-rgb),0.16);
+    }
+    .fg label { font-size: .82rem; letter-spacing: .01em; }
+
+    /* ── File drop ── */
+    .file-drop { border: 1.5px dashed var(--border-strong); border-radius: var(--radius); background: rgba(255,255,255,0.02); }
+    .file-drop:hover, .file-drop.dragover { border-color: var(--primary); box-shadow: 0 12px 36px -14px rgba(var(--primary-rgb),0.5); }
+    .file-drop .icon-wrap { width: 52px; height: 52px; margin: 0 auto .7rem; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: rgba(var(--primary-rgb),0.10); border: 1px solid rgba(var(--primary-rgb),0.25); color: var(--primary); }
+    .file-drop .icon-wrap .ico { width: 24px; height: 24px; }
+
+    /* ── Badges ── */
+    .badge { border-radius: 8px; padding: .22rem .6rem; font-weight: 700; letter-spacing: .04em; }
+    .badge-ok  { background: rgba(var(--primary-rgb),.14); color: var(--primary); border: 1px solid rgba(var(--primary-rgb),.32); }
+
+    /* ── Hash box ── */
+    .hash-box { background: rgba(0,0,0,0.28); border: 1px solid var(--border); border-radius: 10px; color: var(--primary-h); }
+
+    /* ── Tables ── */
+    .tbl th { font-size: .72rem; letter-spacing: .07em; }
+    .tbl td { background: rgba(255,255,255,0.018); }
+    .tbl tr:hover td { background: rgba(var(--primary-rgb),0.05); }
+
+    /* ── Toasts ── */
+    .toast { border-radius: 14px; }
+    .toast.ok { border-left: 3px solid var(--primary); }
+    .toast.info { border-left: 3px solid var(--accent); }
+
+    /* ── App width breathing room ── */
+    .app { padding: 2.2rem 1.5rem; }
+
+    /* ── Logo badge (welcome / auth modals) ── */
+    .welcome-logo, .auth-logo { display: flex; justify-content: center; }
+    .logo-badge {
+      width: 60px; height: 60px; border-radius: 18px; display: inline-flex; align-items: center; justify-content: center;
+      background: linear-gradient(140deg, rgba(var(--primary-rgb),0.20), rgba(var(--accent-rgb),0.12));
+      border: 1px solid rgba(var(--primary-rgb),0.35); color: var(--primary);
+      box-shadow: 0 0 0 1px rgba(var(--primary-rgb),0.10), 0 14px 36px -12px rgba(var(--primary-rgb),0.6);
+    }
+    .logo-badge .ico { width: 30px; height: 30px; }
+
+    /* ── Quick-start cards ── */
+    .qs-card { border-radius: var(--radius); background: rgba(255,255,255,0.025); }
+    .qs-card:hover { border-color: rgba(var(--primary-rgb),0.4); box-shadow: 0 12px 30px -16px rgba(var(--primary-rgb),0.6); }
+    .qs-card .qs-icon { color: var(--primary); display: flex; }
+    .qs-card .qs-icon .ico { width: 1.7rem; height: 1.7rem; }
+    .qs-card h4 { font-family: var(--display); }
+
+    /* ── Modal heads ── */
+    .modal-head h3 { display: flex; align-items: center; gap: .5rem; }
+    .modal-head h3 .ico { width: 1.15em; height: 1.15em; }
+    .modal-close .ico { width: 16px; height: 16px; }
+    .modal-box { border-radius: var(--radius-lg); }
+    .auth-box, .welcome-box { border-radius: var(--radius-lg); border-color: rgba(var(--primary-rgb),0.28); }
+    .auth-tab.active { background: var(--primary); color: var(--primary-ink); }
+
+    /* ── FAQ ── */
+    .faq-item { border-radius: 12px; }
+    .faq-q .faq-arrow { transition: transform .2s; }
+
+    /* ── Section subtitle uses display font for nicer card heads ── */
+    .step-content h4 { font-family: var(--display); }
+
+    /* ── Live Alerts (real-time WebSocket feed) ── */
+    .tab-badge {
+      margin-left: auto; min-width: 17px; height: 17px; padding: 0 5px; border-radius: 9px;
+      background: var(--danger); color: #fff; font-size: .6rem; font-weight: 800; line-height: 1;
+      display: none; align-items: center; justify-content: center;
+      box-shadow: 0 0 8px rgba(var(--danger-rgb),.6);
+    }
+    .tab-badge.show { display: inline-flex; animation: badgePop .3s ease; }
+    @keyframes badgePop { 0% { transform: scale(0); } 70% { transform: scale(1.25); } 100% { transform: scale(1); } }
+    .socket-status { display: flex; align-items: center; gap: .5rem; font-size: .8rem; color: var(--text-muted); font-weight: 600; }
+    .socket-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--text-muted); display: inline-block; transition: background .3s, box-shadow .3s; }
+    .socket-dot.live { background: var(--success); box-shadow: 0 0 8px var(--success); animation: dotPulse 1.6s ease-in-out infinite; }
+    .socket-dot.down { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+    @keyframes dotPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+    .alerts-feed { display: flex; flex-direction: column; gap: .6rem; max-height: 580px; overflow-y: auto; padding-right: .2rem; }
+    .alert-item {
+      display: flex; gap: .75rem; align-items: flex-start; padding: .75rem .9rem;
+      border: 1px solid var(--border); border-radius: 12px; background: var(--surface2);
+    }
+    .alert-item.alert-new { animation: alertIn .4s cubic-bezier(0.16,1,0.3,1); }
+    @keyframes alertIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .alert-item.pass { border-left: 3px solid var(--success); }
+    .alert-item.tampered { border-left: 3px solid var(--danger); background: rgba(var(--danger-rgb),.07); animation: alertPulse 1.6s ease-in-out infinite; }
+    .alert-item.tampered.alert-new { animation: alertIn .4s cubic-bezier(0.16,1,0.3,1), alertPulse 1.6s ease-in-out .4s infinite; }
+    @keyframes alertPulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(var(--danger-rgb),0);   border-color: rgba(var(--danger-rgb),.35); }
+      50%     { box-shadow: 0 0 0 4px rgba(var(--danger-rgb),.16); border-color: rgba(var(--danger-rgb),.7); }
+    }
+    .alert-ind { width: 11px; height: 11px; border-radius: 50%; margin-top: .25rem; flex-shrink: 0; }
+    .alert-item.pass .alert-ind { background: var(--success); box-shadow: 0 0 8px var(--success); }
+    .alert-item.tampered .alert-ind { background: var(--danger); box-shadow: 0 0 10px var(--danger); animation: dotPulse 1s infinite; }
+    .alert-body { flex: 1; min-width: 0; }
+    .alert-row { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
+    .alert-model { font-weight: 700; font-size: .92rem; word-break: break-word; }
+    .alert-badge { font-size: .6rem; font-weight: 800; padding: .18rem .5rem; border-radius: 20px; letter-spacing: .06em; flex-shrink: 0; }
+    .alert-badge.pass { background: rgba(var(--success-rgb),.16); color: var(--success); border: 1px solid rgba(var(--success-rgb),.35); }
+    .alert-badge.tampered { background: rgba(var(--danger-rgb),.16); color: var(--danger); border: 1px solid rgba(var(--danger-rgb),.4); }
+    .alert-meta { font-size: .75rem; color: var(--text-muted); margin-top: .25rem; }
+    .alert-meta strong { color: var(--primary-h); }
+
+    /* ── Model Comparison ── */
+    .cmp-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: start; margin-top: .5rem; }
+    .cmp-slot-head { font-size: .85rem; font-weight: 700; display: flex; align-items: center; gap: .5rem; margin-bottom: .6rem; }
+    .cmp-tag { width: 22px; height: 22px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 800; }
+    .cmp-tag-a { background: rgba(var(--accent-rgb),.18); color: var(--accent); border: 1px solid rgba(var(--accent-rgb),.4); }
+    .cmp-tag-b { background: rgba(var(--primary-rgb),.16); color: var(--primary); border: 1px solid rgba(var(--primary-rgb),.4); }
+    .cmp-hash { margin-top: .7rem; font-family: var(--mono); font-size: .7rem; word-break: break-all; background: rgba(0,0,0,.25); border: 1px solid var(--border); border-radius: 9px; padding: .55rem .7rem; }
+    .cmp-hash .lbl { font-family: var(--font); font-size: .6rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: .3rem; }
+    .cmp-hash.match { border-color: rgba(var(--success-rgb),.4); color: var(--success); }
+    .cmp-hash.diff  { border-color: rgba(var(--danger-rgb),.4);  color: var(--danger); }
+    .cmp-mid { align-self: center; display: flex; justify-content: center; padding-top: 2.2rem; }
+    .cmp-verdict { text-align: center; min-width: 100px; padding: .85rem .6rem; border-radius: 14px; border: 1px solid var(--border); background: var(--surface2); transition: all .25s; }
+    .cmp-verdict-ico { font-size: 1.6rem; line-height: 1; }
+    .cmp-verdict-txt { font-size: .72rem; font-weight: 700; margin-top: .35rem; line-height: 1.3; }
+    .cmp-verdict.match { border-color: rgba(var(--success-rgb),.5); background: rgba(var(--success-rgb),.08); color: var(--success); box-shadow: 0 0 26px -6px rgba(var(--success-rgb),.5); }
+    .cmp-verdict.diff  { border-color: rgba(var(--danger-rgb),.5);  background: rgba(var(--danger-rgb),.08);  color: var(--danger);  box-shadow: 0 0 26px -6px rgba(var(--danger-rgb),.5); animation: alertPulse 1.8s ease-in-out infinite; }
+
+    /* 3D scene */
+    .cmp-3d-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .6rem; padding: 1rem 1.3rem; border-bottom: 1px solid var(--border); }
+    .cmp-legend { display: flex; gap: 1rem; font-size: .72rem; color: var(--text-muted); flex-wrap: wrap; }
+    .cmp-legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: .3rem; vertical-align: middle; }
+    .cmp-dot.match { background: var(--success); box-shadow: 0 0 8px var(--success); }
+    .cmp-dot.changed { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+    .cmp-dot.added { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
+    .cmp-scene { position: relative; height: 520px; overflow: hidden; perspective: 1250px; cursor: grab;
+      background: radial-gradient(120% 80% at 50% 0%, rgba(var(--primary-rgb),.07), transparent 60%), #05070b; }
+    .cmp-scene.dragging { cursor: grabbing; }
+    .cmp-floor { position: absolute; left: 50%; top: 66%; width: 1500px; height: 1500px; transform: translate(-50%,-50%) rotateX(81deg);
+      background-image: linear-gradient(rgba(var(--primary-rgb),.10) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--primary-rgb),.10) 1px, transparent 1px);
+      background-size: 50px 50px; -webkit-mask-image: radial-gradient(circle at center, #000 0%, transparent 60%); mask-image: radial-gradient(circle at center, #000 0%, transparent 60%); pointer-events: none; }
+    .cmp-world { position: absolute; left: 50%; top: 50%; transform-style: preserve-3d; will-change: transform; }
+    .cmp-col-label { position: absolute; transform-style: preserve-3d; font-weight: 800; font-size: .82rem; letter-spacing: .14em; white-space: nowrap; margin: -10px 0 0 -45px; text-align: center; width: 90px; text-shadow: 0 0 12px currentColor; }
+    /* volumetric layer slabs (6 faces) */
+    .cmp-slab { position: absolute; transform-style: preserve-3d; }
+    .cmp-face { position: absolute; box-sizing: border-box; background: linear-gradient(180deg, rgba(32,39,56,.98), rgba(13,17,26,.98)); border: 1px solid var(--border); }
+    .cmp-face.f, .cmp-face.bk { width: var(--w); height: var(--h); left: calc(var(--w) / -2); top: calc(var(--h) / -2); }
+    .cmp-face.lf, .cmp-face.rt { width: var(--d); height: var(--h); left: calc(var(--d) / -2); top: calc(var(--h) / -2); }
+    .cmp-face.tp, .cmp-face.bt { width: var(--w); height: var(--d); left: calc(var(--w) / -2); top: calc(var(--d) / -2); }
+    .cmp-face.f  { transform: translateZ(calc(var(--d) / 2)); border-radius: 7px; display: flex; align-items: center; gap: .5rem; padding: 0 .65rem; font-size: .67rem; font-weight: 600; }
+    .cmp-face.bk { transform: rotateY(180deg) translateZ(calc(var(--d) / 2)); filter: brightness(.55); }
+    .cmp-face.rt { transform: rotateY(90deg)  translateZ(calc(var(--w) / 2)); filter: brightness(.7); }
+    .cmp-face.lf { transform: rotateY(-90deg) translateZ(calc(var(--w) / 2)); filter: brightness(.7); }
+    .cmp-face.tp { transform: rotateX(90deg)  translateZ(calc(var(--h) / 2)); filter: brightness(1.4); }
+    .cmp-face.bt { transform: rotateX(-90deg) translateZ(calc(var(--h) / 2)); filter: brightness(.5); }
+    .cmp-face .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+    .cmp-face .st { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .cmp-slab.match   .cmp-face { border-color: rgba(var(--success-rgb),.5); }
+    .cmp-slab.match   .cmp-face.f { box-shadow: 0 0 18px -2px rgba(var(--success-rgb),.6), inset 0 0 12px rgba(var(--success-rgb),.18); }
+    .cmp-slab.match   .st { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    .cmp-slab.changed .cmp-face { border-color: rgba(var(--danger-rgb),.6); }
+    .cmp-slab.changed .cmp-face.f { animation: cmpFacePulse 1.5s ease-in-out infinite; }
+    .cmp-slab.changed .st { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+    .cmp-slab.added .cmp-face, .cmp-slab.removed .cmp-face { border-color: rgba(var(--warn-rgb),.6); }
+    .cmp-slab.added .cmp-face.f, .cmp-slab.removed .cmp-face.f { box-shadow: 0 0 16px -2px rgba(var(--warn-rgb),.55), inset 0 0 12px rgba(var(--warn-rgb),.16); }
+    .cmp-slab.added .st, .cmp-slab.removed .st { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
+    .cmp-slab.ghost { opacity: .14; }
+    .cmp-slab.ghost .cmp-face { border-style: dashed; background: rgba(20,24,34,.4); }
+    @keyframes cmpFacePulse { 0%,100% { box-shadow: 0 0 14px -2px rgba(var(--danger-rgb),.5), inset 0 0 12px rgba(var(--danger-rgb),.2); } 50% { box-shadow: 0 0 34px 2px rgba(var(--danger-rgb),.95), inset 0 0 16px rgba(var(--danger-rgb),.4); } }
+    /* starfield + glow pads */
+    .cmp-stars { position: absolute; transform-style: preserve-3d; }
+    .cmp-star { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #d7fff2; box-shadow: 0 0 6px #7dffe0; animation: cmpTwinkle 3s ease-in-out infinite; }
+    @keyframes cmpTwinkle { 0%,100% { opacity: .2; } 50% { opacity: 1; } }
+    .cmp-pad { position: absolute; width: 240px; height: 240px; left: -120px; top: -120px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(var(--pc),.5), rgba(var(--pc),0) 66%); pointer-events: none; }
+    /* energy beams */
+    .cmp-beam { position: absolute; transform-style: preserve-3d; height: 3px; margin-top: -1.5px; border-radius: 2px; pointer-events: none; background-size: 200% 100%; }
+    .cmp-beam.match { background-image: linear-gradient(90deg, rgba(var(--success-rgb),0), rgba(var(--success-rgb),.85), rgba(var(--success-rgb),0)); animation: cmpBeamFlow 2.6s linear infinite; }
+    .cmp-beam.changed { background-image: linear-gradient(90deg, rgba(var(--danger-rgb),0), rgba(var(--danger-rgb),.95), rgba(var(--danger-rgb),0)); box-shadow: 0 0 10px rgba(var(--danger-rgb),.6); animation: cmpBeamFlow 1.3s linear infinite; }
+    @keyframes cmpBeamFlow { from { background-position: 180% 0; } to { background-position: -180% 0; } }
+    .cmp-packet { position: absolute; left: 0; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 12px 2px var(--danger); animation: cmpFlow 1.2s linear infinite; }
+    @keyframes cmpFlow { 0% { left: 0; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
+    .cmp-tip { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 30; background: rgba(8,11,17,.96); border: 1px solid var(--border); border-radius: 8px; padding: .5rem .7rem; font-size: .72rem; max-width: 240px; opacity: 0; transform: translateY(4px); transition: opacity .15s; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+    .cmp-tip.show { opacity: 1; transform: translateY(0); }
+    .cmp-tip .tt { font-weight: 700; margin-bottom: .2rem; }
+
+    /* Diff list (split-pane rows) */
+    .cmp-diff-list { display: flex; flex-direction: column; gap: .5rem; margin-top: .8rem; }
+    .cmp-row { border: 1px solid var(--border); border-radius: 11px; overflow: hidden; background: var(--surface2); }
+    .cmp-row-head { display: grid; grid-template-columns: 1fr auto; gap: .7rem; align-items: center; padding: .65rem .9rem; }
+    .cmp-row.changed .cmp-row-head { cursor: pointer; }
+    .cmp-row-name { font-weight: 700; font-size: .85rem; font-family: var(--mono); display: flex; align-items: center; gap: .5rem; }
+    .cmp-row.match   { border-left: 3px solid var(--success); }
+    .cmp-row.changed { border-left: 3px solid var(--danger); }
+    .cmp-row.added, .cmp-row.removed { border-left: 3px solid var(--warn); }
+    .cmp-row-status { font-size: .62rem; font-weight: 800; letter-spacing: .05em; padding: .2rem .55rem; border-radius: 20px; white-space: nowrap; }
+    .cmp-row.match .cmp-row-status { background: rgba(var(--success-rgb),.15); color: var(--success); }
+    .cmp-row.changed .cmp-row-status { background: rgba(var(--danger-rgb),.15); color: var(--danger); }
+    .cmp-row.added .cmp-row-status, .cmp-row.removed .cmp-row-status { background: rgba(var(--warn-rgb),.15); color: var(--warn); }
+    .cmp-row-sub { font-size: .68rem; color: var(--text-muted); font-family: var(--font); font-weight: 500; }
+    .cmp-row-body { display: none; padding: .2rem .9rem .8rem; border-top: 1px solid var(--border); }
+    .cmp-row-body.open { display: block; animation: slideUpFade .2s ease; }
+    .cmp-wdiff { display: grid; grid-template-columns: 64px 1fr 1fr; gap: .35rem .8rem; font-family: var(--mono); font-size: .72rem; margin-top: .5rem; align-items: center; }
+    .cmp-wdiff .h { font-family: var(--font); font-size: .58rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
+    .cmp-wdiff .idx { color: var(--text-muted); }
+    .cmp-wdiff .va { color: var(--accent); word-break: break-all; }
+    .cmp-wdiff .vb { color: var(--danger); word-break: break-all; }
+    @media (max-width: 720px) { .cmp-grid { grid-template-columns: 1fr; } .cmp-mid { padding-top: .4rem; } .cmp-verdict { min-width: 0; } }
+
+    /* ── Analytics ── */
+    .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 860px) { .analytics-grid { grid-template-columns: 1fr; } }
+    .an-card { display: flex; flex-direction: column; }
+    .an-title { font-weight: 700; font-size: .96rem; display: flex; align-items: center; gap: .5rem; }
+    .an-sub { font-size: .72rem; color: var(--text-muted); margin: .2rem 0 .9rem; }
+    .an-canvas-wrap { position: relative; flex: 1; min-height: 248px; height: 248px; }
+    .an-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: .85rem; text-align: center; }
+    .an-health { display: grid; grid-template-columns: 160px 1fr; gap: 1.1rem; align-items: center; min-height: 248px; }
+    @media (max-width: 380px) { .an-health { grid-template-columns: 1fr; justify-items: center; } }
+    .an-gauge-wrap { position: relative; width: 160px; height: 160px; }
+    .an-gauge-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+    .an-metrics { display: flex; flex-direction: column; gap: .8rem; }
+    .an-metric { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 11px; padding: .7rem .95rem; }
+    .an-metric-val { font-family: var(--display); font-size: 1.7rem; font-weight: 700; line-height: 1; }
+    .an-metric-lbl { font-size: .66rem; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); margin-top: .25rem; }
+    body.light-theme .an-metric { background: rgba(15,23,42,0.03); }
+
+    /* ══════════════════════════════════════════════════════════════
+       LIGHT THEME — adapt v2 components & hardcoded-dark surfaces
+       (body.light-theme .x out-specifies the base .x rules)
+       ══════════════════════════════════════════════════════════════ */
+    body.light-theme .header {
+      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.66));
+      box-shadow: 0 1px 0 rgba(0,0,0,0.02), 0 8px 24px -18px rgba(15,23,42,0.4);
+    }
+    /* generic white-alpha tints → dark-alpha tints */
+    body.light-theme .hbtn,
+    body.light-theme .btn-sec,
+    body.light-theme .file-drop { background: rgba(15,23,42,0.035); }
+    body.light-theme .hbtn:hover,
+    body.light-theme .btn-sec:hover,
+    body.light-theme .tab:hover { background: rgba(15,23,42,0.06); }
+    body.light-theme input[type="text"],
+    body.light-theme input[type="password"],
+    body.light-theme textarea,
+    body.light-theme .auth-field input,
+    body.light-theme .welcome-user-row input,
+    body.light-theme #faqSearchInput { background: #ffffff; }
+    body.light-theme .tbl td { background: rgba(15,23,42,0.012); }
+    body.light-theme .tbl tr:hover td { background: rgba(var(--primary-rgb),0.07); }
+    body.light-theme .hash-box { background: rgba(var(--primary-rgb),0.08); color: #07795b; }
+    body.light-theme .toast { background: var(--surface2); }
+    body.light-theme .tour-dot { background: rgba(15,23,42,0.18); }
+    body.light-theme .qs-card { background: rgba(15,23,42,0.02); }
+    body.light-theme .stat-ico,
+    body.light-theme .card-title-ico { background: rgba(var(--primary-rgb),0.10); }
+
+    /* hardcoded-dark gradient surfaces → light */
+    body.light-theme .block-card {
+      background: linear-gradient(160deg, #ffffff 0%, #f4f7fb 100%);
+      border-color: rgba(15,23,42,0.10);
+      box-shadow: 0 10px 30px -14px rgba(15,23,42,0.30);
+    }
+    body.light-theme .modal-box,
+    body.light-theme .auth-box,
+    body.light-theme .welcome-box {
+      background: linear-gradient(160deg, #ffffff 0%, #f5f7fb 100%);
+      border-color: rgba(var(--primary-rgb),0.25);
+      box-shadow: 0 30px 80px rgba(15,23,42,0.25);
+    }
+    body.light-theme .modal-head { background: rgba(255,255,255,0.96); }
+    body.light-theme .bc-hash-val,
+    body.light-theme .bc-stat,
+    body.light-theme .bc-txns-body pre,
+    body.light-theme #block3dTooltip { background: rgba(15,23,42,0.04); }
+    body.light-theme .bc-time { background: rgba(15,23,42,0.05); }
+    body.light-theme .modal-tx-item,
+    body.light-theme .modal-hash-row code,
+    body.light-theme .faq-q { background: rgba(15,23,42,0.03); }
+    body.light-theme .step-item { background: rgba(15,23,42,0.02); }
   </style>
 </head>
 <body>
 <canvas id="bg-canvas"></canvas>
 
+<!-- ── SVG icon sprite (Lucide-style, stroke=currentColor) ── -->
+<svg class="icon-sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <g id="_s" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></g>
+  </defs>
+  <symbol id="i-register" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/><path d="M12 11v6M9 14h6"/></symbol>
+  <symbol id="i-verify" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1Z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-versions" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="9" r="2.5"/><path d="M6 8.5v7M8.5 6H14a2 2 0 0 1 2 2v.5M16.5 11c0 3-2 4.5-5 4.5"/></symbol>
+  <symbol id="i-audit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M8 11h6M8 8.5h6M8 13.5h4"/></symbol>
+  <symbol id="i-models" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="m3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></symbol>
+  <symbol id="i-registry" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.7 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.7-3.8-9S9.5 5.5 12 3Z"/></symbol>
+  <symbol id="i-explorer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2.2 5-5 2.2 2.2-5 5-2.2Z"/></symbol>
+  <symbol id="i-proof" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7a5 5 0 0 1 0-10h2M15 7h2a5 5 0 0 1 0 10h-2M8 12h8"/></symbol>
+  <symbol id="i-ledger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14a0 0 0 0 1 0 0H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M9 8h4M9 12h6M9 16h6"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .8-1 1.7"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1Z"/></symbol>
+  <symbol id="i-cube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8M12 13v8"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 14l3.5-3.5 2.5 2.5L18 8"/></symbol>
+  <symbol id="i-feed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5.5-5.5 2 2-5.5 5.5-2Z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10" width="15" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v2"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8"/><path d="m17 16 4-4-4-4M21 12H9"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.5 6.5 0 0 0 9.8 9.8Z"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 9 5-5 5 5M12 4v12"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 11 5 5 5-5M12 16V4"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 4v5h-5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v2"/><path d="M3 7v10a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-3"/><path d="M21 11v4h-4a2 2 0 0 1 0-4h4Z"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.7 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.7-3.8-9S9.5 5.5 12 3Z"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></symbol>
+  <symbol id="i-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 15c-1.5 1-2 5-2 5s4-.5 5-2a2.83 2.83 0 0 0-3-3Z"/><path d="M9 13a14 14 0 0 1 8-9c2 0 3 1 3 3a14 14 0 0 1-9 8"/><path d="M9 13l-2-2M11 15l2 2"/><circle cx="14.5" cy="9.5" r="1.4"/></symbol>
+  <symbol id="i-flask" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L4.5 18a2 2 0 0 0 1.8 3h11.4a2 2 0 0 0 1.8-3L14 9.5V3"/><path d="M7.5 14h9"/></symbol>
+  <symbol id="i-merkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9.5" y="3" width="5" height="4" rx="1"/><rect x="3" y="17" width="5" height="4" rx="1"/><rect x="9.5" y="17" width="5" height="4" rx="1"/><rect x="16" y="17" width="5" height="4" rx="1"/><path d="M12 7v4M5.5 17v-3a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v3M11.5 17v-6"/></symbol>
+  <symbol id="i-btc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 8h4a2 2 0 0 1 0 4h-4M9.5 12h4.5a2 2 0 0 1 0 4H9.5M9.5 8v8M11 6v2M11 16v2M13 6v2M13 16v2"/></symbol>
+  <symbol id="i-bot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="11" rx="2.5"/><path d="M12 4v4M8 13h.01M16 13h.01M9 16.5h6"/><path d="M2 12v3M22 12v3"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
+  <symbol id="i-award" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="6"/><path d="M9 14.5 7.5 22 12 19l4.5 3L15 14.5"/></symbol>
+  <symbol id="i-compare" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16M6.5 9 9 12l-2.5 3M17.5 9 15 12l2.5 3"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-11"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M21 3l-9 9M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6"/></symbol>
+</svg>
+
 <header class="header">
   <div class="logo">
     <img src="assets/logo.png" alt="Logo" class="logo-img" />
-    <span>BlockVerify</span>
+    <span class="logo-word">Block<span>Verify</span></span>
   </div>
   <div class="user-box">
     <!-- Shown when logged OUT -->
     <div id="headerLoggedOut">
-      <button class="btn-login-header" onclick="openAuthModal('login')">🔐 Login / Register</button>
+      <button class="btn-login-header" onclick="openAuthModal('login')"><svg class="ico"><use href="#i-lock"/></svg> Login / Register</button>
     </div>
     <!-- Shown when logged IN -->
     <div id="headerLoggedIn" style="display:none;align-items:center;gap:.5rem;">
@@ -817,10 +1321,10 @@
         <div class="avatar" id="userAvatar">?</div>
         <span id="userLabel">—</span>
       </div>
-      <button class="btn-logout" onclick="logout()">Logout</button>
-      <button onclick="toggleTheme()" style="background:none;border:none;cursor:pointer;font-size:1.3rem;outline:none;transition:transform 0.2s;" id="themeToggle" title="Toggle theme" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">☀️</button>
-      <button onclick="startGuidedTour()" title="Interactive Tour" style="background:rgba(0,206,201,0.15);border:1px solid rgba(0,206,201,0.3);color:var(--success);border-radius:8px;padding:.3rem .7rem;cursor:pointer;font-size:.8rem;font-weight:700;">🧭 Take a Tour</button>
-      <button onclick="showWelcome()" title="Quick start guide" style="background:rgba(108,92,231,0.15);border:1px solid rgba(108,92,231,0.3);color:var(--primary);border-radius:8px;padding:.3rem .7rem;cursor:pointer;font-size:.8rem;font-weight:700;">❓ Help</button>
+      <button class="hbtn" onclick="startGuidedTour()" title="Interactive Tour"><svg class="ico"><use href="#i-compass"/></svg><span class="hbtn-tx">Tour</span></button>
+      <button class="hbtn" onclick="showWelcome()" title="Quick start guide"><svg class="ico"><use href="#i-help"/></svg><span class="hbtn-tx">Help</span></button>
+      <button class="hbtn hbtn-icon" onclick="toggleTheme()" id="themeToggle" title="Toggle theme"><svg class="ico"><use href="#i-sun"/></svg></button>
+      <button class="hbtn hbtn-icon btn-logout" onclick="logout()" title="Logout"><svg class="ico"><use href="#i-logout"/></svg></button>
     </div>
   </div>
 </header>
@@ -831,23 +1335,26 @@
 
   <!-- Stats -->
   <div class="stats">
-    <div class="stat-card"><div class="stat-val" id="sModels">—</div><div class="stat-lbl">Models Registered</div></div>
-    <div class="stat-card"><div class="stat-val" id="sVerify">—</div><div class="stat-lbl">Verifications</div></div>
-    <div class="stat-card"><div class="stat-val" id="sBlocks">—</div><div class="stat-lbl">Algorand Round</div></div>
+    <div class="stat-card"><div class="stat-ico"><svg class="ico"><use href="#i-models"/></svg></div><div class="stat-val" id="sModels">—</div><div class="stat-lbl">Models Registered</div></div>
+    <div class="stat-card"><div class="stat-ico"><svg class="ico"><use href="#i-verify"/></svg></div><div class="stat-val" id="sVerify">—</div><div class="stat-lbl">Verifications</div></div>
+    <div class="stat-card"><div class="stat-ico"><svg class="ico"><use href="#i-cube"/></svg></div><div class="stat-val" id="sBlocks">—</div><div class="stat-lbl">Algorand Round</div></div>
   </div>
 
   <!-- Algorand Wallet Link -->
-  <div id="walletAddrBar" style="text-align:center;margin:-0.8rem 0 1.2rem;font-size:.78rem;color:var(--text-muted);">
-    ⛓ Server Wallet: <span id="walletAddrShort" style="font-family:monospace;color:var(--text-muted);">connecting…</span>
+  <div id="walletAddrBar" style="text-align:center;margin:-0.8rem 0 1.2rem;font-size:.78rem;color:var(--text-muted);display:flex;align-items:center;justify-content:center;gap:.35rem;flex-wrap:wrap;">
+    <svg class="ico" style="width:.95em;height:.95em;color:var(--primary);"><use href="#i-proof"/></svg> Server Wallet: <span id="walletAddrShort" style="font-family:var(--mono);color:var(--text-muted);">connecting…</span>
     <a id="walletAddrLink" href="https://lora.algokit.io/testnet" target="_blank" style="color:var(--primary);margin-left:.4rem;font-size:.75rem;display:none;">[View on Algorand ↗]</a>
   </div>
 
   <!-- Activity Chart -->
   <div class="card" style="margin-bottom:1.5rem;padding:1.4rem 1.8rem;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem;">
-      <div>
-        <div style="font-size:1rem;font-weight:700;">📊 Platform Activity</div>
-        <div style="font-size:.8rem;color:var(--text-muted);">Daily registrations &amp; verifications</div>
+      <div style="display:flex;align-items:center;gap:.7rem;">
+        <span class="card-title-ico"><svg class="ico"><use href="#i-chart"/></svg></span>
+        <div>
+          <div style="font-size:1.05rem;font-weight:700;font-family:var(--display);letter-spacing:-.02em;">Platform Activity</div>
+          <div style="font-size:.8rem;color:var(--text-muted);">Daily registrations &amp; verifications</div>
+        </div>
       </div>
       <div style="display:flex;gap:.4rem;">
         <button onclick="loadActivityChart(7)"  class="btn btn-sec" id="actBtn7"  style="padding:.3rem .75rem;font-size:.8rem;" data-tip="Show last 7 days of platform activity.">7d</button>
@@ -862,9 +1369,9 @@
 
   <!-- Live Activity Feed -->
   <div class="card" id="activityFeedCard" style="margin-bottom:1.2rem;padding:0;overflow:hidden;">
-    <div onclick="toggleFeedPanel()" style="display:flex;align-items:center;justify-content:space-between;padding:.7rem 1.2rem;cursor:pointer;user-select:none;background:rgba(108,92,231,0.04);border-bottom:1px solid var(--border);">
+    <div onclick="toggleFeedPanel()" style="display:flex;align-items:center;justify-content:space-between;padding:.7rem 1.2rem;cursor:pointer;user-select:none;background:rgba(var(--primary-rgb),0.04);border-bottom:1px solid var(--border);">
       <div style="display:flex;align-items:center;gap:.5rem;">
-        <span style="font-size:.85rem;">📡</span>
+        <svg class="ico" style="width:1em;height:1em;color:var(--primary);"><use href="#i-feed"/></svg>
         <span style="font-size:.85rem;font-weight:700;">Live Activity Feed</span>
         <span id="feedPulse" style="width:8px;height:8px;border-radius:50%;background:#00b894;display:inline-block;animation:feedPulse 2s ease-in-out infinite;"></span>
         <span id="feedCount" style="font-size:.7rem;color:var(--text-muted);font-weight:600;"></span>
@@ -882,30 +1389,33 @@
   <div class="sidebar-layout">
     <nav class="sidebar">
       <div class="sidebar-label">Core</div>
-      <button class="tab active" onclick="switchTab('register',this)"><span class="tab-icon">📝</span><span class="tab-label">Register</span></button>
-      <button class="tab" onclick="switchTab('verify',this)"><span class="tab-icon">✅</span><span class="tab-label">Verify</span></button>
-      <button class="tab" onclick="switchTab('versions',this)"><span class="tab-icon">📋</span><span class="tab-label">Versions</span></button>
-      <button class="tab" onclick="switchTab('audit',this)"><span class="tab-icon">🔍</span><span class="tab-label">Audit Trail</span></button>
-      <button class="tab" onclick="switchTab('models',this)"><span class="tab-icon">📦</span><span class="tab-label">My Models</span></button>
+      <button class="tab active" onclick="switchTab('register',this)"><span class="tab-icon"><svg class="ico"><use href="#i-register"/></svg></span><span class="tab-label">Register</span></button>
+      <button class="tab" onclick="switchTab('verify',this)"><span class="tab-icon"><svg class="ico"><use href="#i-verify"/></svg></span><span class="tab-label">Verify</span></button>
+      <button class="tab" onclick="switchTab('compare',this)"><span class="tab-icon"><svg class="ico"><use href="#i-compare"/></svg></span><span class="tab-label">Compare</span></button>
+      <button class="tab" onclick="switchTab('versions',this)"><span class="tab-icon"><svg class="ico"><use href="#i-versions"/></svg></span><span class="tab-label">Versions</span></button>
+      <button class="tab" onclick="switchTab('audit',this)"><span class="tab-icon"><svg class="ico"><use href="#i-audit"/></svg></span><span class="tab-label">Audit Trail</span></button>
+      <button class="tab" onclick="switchTab('alerts',this)"><span class="tab-icon"><svg class="ico"><use href="#i-bell"/></svg></span><span class="tab-label">Live Alerts</span><span class="tab-badge" id="alertsBadge"></span></button>
+      <button class="tab" onclick="switchTab('models',this)"><span class="tab-icon"><svg class="ico"><use href="#i-models"/></svg></span><span class="tab-label">My Models</span></button>
       <div class="sidebar-label">Blockchain</div>
-      <button class="tab" onclick="switchTab('registry',this)"><span class="tab-icon">🌐</span><span class="tab-label">Registry</span></button>
-      <button class="tab" onclick="switchTab('explorer',this)"><span class="tab-icon">🔗</span><span class="tab-label">Explorer</span></button>
-      <button class="tab" onclick="switchTab('proof',this)"><span class="tab-icon">⛓</span><span class="tab-label">Chain Proof</span></button>
-      <button class="tab" onclick="switchTab('ledger',this)"><span class="tab-icon">📒</span><span class="tab-label">Ledger</span></button>
+      <button class="tab" onclick="switchTab('analytics',this)"><span class="tab-icon"><svg class="ico"><use href="#i-chart"/></svg></span><span class="tab-label">Analytics</span></button>
+      <button class="tab" onclick="switchTab('registry',this)"><span class="tab-icon"><svg class="ico"><use href="#i-registry"/></svg></span><span class="tab-label">Registry</span></button>
+      <button class="tab" onclick="switchTab('explorer',this)"><span class="tab-icon"><svg class="ico"><use href="#i-explorer"/></svg></span><span class="tab-label">Explorer</span></button>
+      <button class="tab" onclick="switchTab('proof',this)"><span class="tab-icon"><svg class="ico"><use href="#i-proof"/></svg></span><span class="tab-label">Chain Proof</span></button>
+      <button class="tab" onclick="switchTab('ledger',this)"><span class="tab-icon"><svg class="ico"><use href="#i-ledger"/></svg></span><span class="tab-label">Ledger</span></button>
       <div class="sidebar-label">System</div>
-      <button class="tab" onclick="switchTab('help',this)"><span class="tab-icon">❓</span><span class="tab-label">Help & FAQ</span></button>
+      <button class="tab" onclick="switchTab('help',this)"><span class="tab-icon"><svg class="ico"><use href="#i-help"/></svg></span><span class="tab-label">Help & FAQ</span></button>
     </nav>
     <div class="sidebar-content">
 
   <!-- Register -->
   <div class="tab-content active" id="tab-register">
     <div class="card">
-      <h2>📝 Register AI Model</h2>
+      <h2><span class="card-title-ico"><svg class="ico"><use href="#i-register"/></svg></span> Register AI Model</h2>
       <p class="subtitle">Upload a model file to compute its SHA-256 hash and register it on the blockchain.</p>
       <div class="fg">
         <label>Model File</label>
         <div class="file-drop" id="regDrop" onclick="document.getElementById('regFile').click()">
-          <span class="icon">📂</span>
+          <div class="icon-wrap"><svg class="ico"><use href="#i-upload"/></svg></div>
           <p>Click or drag &amp; drop a model file</p>
           <div class="file-name" id="regFN"></div>
         </div>
@@ -926,12 +1436,12 @@
   <!-- Verify -->
   <div class="tab-content" id="tab-verify">
     <div class="card">
-      <h2>✅ Verify Model Integrity</h2>
+      <h2><span class="card-title-ico"><svg class="ico"><use href="#i-verify"/></svg></span> Verify Model Integrity</h2>
       <p class="subtitle">Upload a model file and provide its Model ID to check against the blockchain record.</p>
       <div class="fg">
         <label>Model File</label>
         <div class="file-drop" id="verDrop" onclick="document.getElementById('verFile').click()">
-          <span class="icon">📂</span>
+          <div class="icon-wrap"><svg class="ico"><use href="#i-upload"/></svg></div>
           <p>Click or drag &amp; drop the model file</p>
           <div class="file-name" id="verFN"></div>
         </div>
@@ -947,21 +1457,87 @@
     </div>
   </div>
 
+  <!-- Model Comparison -->
+  <div class="tab-content" id="tab-compare">
+    <div class="card">
+      <h2><span class="card-title-ico"><svg class="ico"><use href="#i-compare"/></svg></span> Model Comparison</h2>
+      <p class="subtitle">Upload two model files to compare them byte-for-byte and layer-by-layer. The 3D view shows <strong>exactly where</strong> they diverge — pinpointing tampering, not just detecting it.</p>
+
+      <div class="cmp-grid">
+        <div class="cmp-slot" data-slot="A">
+          <div class="cmp-slot-head"><span class="cmp-tag cmp-tag-a">A</span> Model A</div>
+          <div class="file-drop" id="cmpDropA" onclick="document.getElementById('cmpFileA').click()">
+            <div class="icon-wrap"><svg class="ico"><use href="#i-upload"/></svg></div>
+            <p>Drop or select model A</p>
+            <div class="file-name" id="cmpFNA"></div>
+          </div>
+          <input type="file" id="cmpFileA" style="display:none" onchange="onCompareFile('A')">
+          <div class="cmp-hash" id="cmpHashA" style="display:none;"></div>
+        </div>
+
+        <div class="cmp-mid">
+          <div class="cmp-verdict" id="cmpVerdict"><div class="cmp-verdict-ico">⇄</div><div class="cmp-verdict-txt">Awaiting<br>both files</div></div>
+        </div>
+
+        <div class="cmp-slot" data-slot="B">
+          <div class="cmp-slot-head"><span class="cmp-tag cmp-tag-b">B</span> Model B</div>
+          <div class="file-drop" id="cmpDropB" onclick="document.getElementById('cmpFileB').click()">
+            <div class="icon-wrap"><svg class="ico"><use href="#i-upload"/></svg></div>
+            <p>Drop or select model B</p>
+            <div class="file-name" id="cmpFNB"></div>
+          </div>
+          <input type="file" id="cmpFileB" style="display:none" onchange="onCompareFile('B')">
+          <div class="cmp-hash" id="cmpHashB" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stunning 3D structural comparison -->
+    <div class="card" id="cmp3dCard" style="display:none;padding:0;overflow:hidden;">
+      <div class="cmp-3d-head">
+        <div>
+          <div style="font-weight:700;font-size:1rem;display:flex;align-items:center;gap:.5rem;"><svg class="ico" style="color:var(--primary);"><use href="#i-models"/></svg> 3D Structural Comparison</div>
+          <div style="font-size:.74rem;color:var(--text-muted);margin-top:.2rem;">Drag to orbit · scroll to zoom · hover a layer for details</div>
+        </div>
+        <div class="cmp-legend">
+          <span><i class="cmp-dot match"></i> identical</span>
+          <span><i class="cmp-dot changed"></i> weights changed</span>
+          <span><i class="cmp-dot added"></i> added / removed</span>
+        </div>
+      </div>
+      <div class="cmp-scene" id="cmpScene">
+        <div class="cmp-floor"></div>
+        <div class="cmp-world" id="cmpWorld"></div>
+        <div class="cmp-tip" id="cmpTip"></div>
+      </div>
+    </div>
+
+    <!-- Structural diff (split-pane) -->
+    <div class="card" id="cmpDiffCard" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.4rem;">
+        <h2 style="margin:0;"><span class="card-title-ico"><svg class="ico"><use href="#i-audit"/></svg></span> Structural Diff</h2>
+        <div id="cmpDiffSummary" style="font-size:.78rem;color:var(--text-muted);"></div>
+      </div>
+      <p class="subtitle">Layer-by-layer breakdown. Click a changed layer to reveal the exact weight indices that differ — with Model A vs Model B values side by side.</p>
+      <div id="cmpDiffList" class="cmp-diff-list"></div>
+    </div>
+  </div>
+
   <!-- Versions -->
   <div class="tab-content" id="tab-versions">
     <div class="card">
-      <h2>📋 Version History</h2>
+      <h2><span class="card-title-ico"><svg class="ico"><use href="#i-versions"/></svg></span> Version History</h2>
       <div class="fg"><label>Model ID</label><input type="text" id="vhModelId" placeholder="Model ID"></div>
       <button class="btn btn-sec" onclick="loadVersions()">Load History</button>
       <div id="vhResult"></div>
     </div>
     <div class="card">
-      <h2>➕ Add New Version</h2>
+      <h2><span class="card-title-ico"><svg class="ico"><use href="#i-plus"/></svg></span> Add New Version</h2>
       <div class="fg"><label>Model ID</label><input type="text" id="avModelId" placeholder="Model ID"></div>
       <div class="fg">
         <label>New Model File</label>
         <div class="file-drop" id="avDrop" onclick="document.getElementById('avFile').click()">
-          <span class="icon">📂</span>
+          <div class="icon-wrap"><svg class="ico"><use href="#i-upload"/></svg></div>
           <p>Select the updated model file</p>
           <div class="file-name" id="avFN"></div>
         </div>
@@ -979,20 +1555,41 @@
   <!-- Audit -->
   <div class="tab-content" id="tab-audit">
     <div class="card">
-      <h2>🔍 Verification Audit Trail</h2>
+      <h2><span class="card-title-ico"><svg class="ico"><use href="#i-audit"/></svg></span> Verification Audit Trail</h2>
       <div class="fg"><label>Model ID</label><input type="text" id="auditId" placeholder="Model ID"></div>
       <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
         <button class="btn btn-sec" onclick="loadAudit()">Load Audit Trail</button>
-        <button class="btn" id="exportCsvBtn" onclick="exportAuditCSV()" style="display:none;">⬇ Download CSV</button>
+        <button class="btn" id="exportCsvBtn" onclick="exportAuditCSV()" style="display:none;"><svg class="ico"><use href="#i-download"/></svg> Download CSV</button>
       </div>
       <div id="auditResult"></div>
+    </div>
+  </div>
+
+  <!-- Live Alerts (real-time WebSocket feed) -->
+  <div class="tab-content" id="tab-alerts">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem;">
+        <h2 style="margin:0;"><span class="card-title-ico"><svg class="ico"><use href="#i-bell"/></svg></span> Live Alerts</h2>
+        <div class="socket-status"><span id="socketDot" class="socket-dot"></span><span id="socketStatus">Connecting…</span></div>
+      </div>
+      <p class="subtitle" style="margin-top:.5rem;">Real-time verification events from <strong>every</strong> user, pushed live over WebSocket — no refresh needed. A hash mismatch (tampering) fires a pulsing red alert instantly.</p>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.8rem;">
+        <button class="btn btn-sec" style="font-size:.78rem;padding:.35rem .8rem;" onclick="clearAlerts()"><svg class="ico"><use href="#i-x"/></svg> Clear</button>
+        <span style="font-size:.74rem;color:var(--text-muted);align-self:center;">Showing the latest 50 events</span>
+      </div>
+      <div id="alertsFeed" class="alerts-feed">
+        <div class="empty-state" id="alertsEmpty">
+          <span class="empty-icon"><svg class="ico" style="width:3rem;height:3rem;"><use href="#i-bell"/></svg></span>
+          <p>No verification events yet.<br>Alerts appear here the instant anyone verifies a model.</p>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- My Models -->
   <div class="tab-content" id="tab-models">
     <div class="card">
-      <h2>📦 My Registered Models</h2>
+      <h2><span class="card-title-ico"><svg class="ico"><use href="#i-models"/></svg></span> My Registered Models</h2>
       <p class="subtitle">Models registered under your username.</p>
       <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-bottom:.5rem;">
         <button class="btn btn-sec" onclick="loadMyModels()" data-tip="Reload your registered models list from the blockchain.">Refresh</button>
@@ -1002,10 +1599,56 @@
     </div>
   </div>
 
+  <!-- Analytics -->
+  <div class="tab-content" id="tab-analytics">
+    <div class="card" style="margin-bottom:1rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem;">
+        <h2 style="margin:0;"><span class="card-title-ico"><svg class="ico"><use href="#i-chart"/></svg></span> Analytics</h2>
+        <button class="btn btn-sec" style="font-size:.78rem;padding:.4rem .9rem;display:inline-flex;align-items:center;gap:.4rem;" onclick="loadAnalytics()"><svg class="ico"><use href="#i-refresh"/></svg> Refresh</button>
+      </div>
+      <p class="subtitle" style="margin-top:.4rem;">Live insights derived from the on-chain ledger (<code>/api/stats</code> + <code>/api/chain</code>).</p>
+    </div>
+
+    <div class="analytics-grid">
+      <div class="card an-card">
+        <div class="an-title"><svg class="ico" style="color:#22d3ee;width:1em;height:1em;"><use href="#i-chart"/></svg> Models Registered Over Time</div>
+        <div class="an-sub">New registrations per day</div>
+        <div class="an-canvas-wrap"><canvas id="anLine"></canvas></div>
+      </div>
+
+      <div class="card an-card">
+        <div class="an-title"><svg class="ico" style="color:var(--success);width:1em;height:1em;"><use href="#i-verify"/></svg> Verification Results</div>
+        <div class="an-sub">Passed vs tamper detected</div>
+        <div class="an-canvas-wrap"><canvas id="anPie"></canvas><div class="an-empty" id="anPieEmpty" style="display:none;">No verifications recorded yet.</div></div>
+      </div>
+
+      <div class="card an-card">
+        <div class="an-title"><svg class="ico" style="color:#8b7cff;width:1em;height:1em;"><use href="#i-models"/></svg> Top Registrars</div>
+        <div class="an-sub">Users ranked by models registered</div>
+        <div class="an-canvas-wrap"><canvas id="anBar"></canvas><div class="an-empty" id="anBarEmpty" style="display:none;">No models registered yet.</div></div>
+      </div>
+
+      <div class="card an-card">
+        <div class="an-title"><svg class="ico" style="color:var(--primary);width:1em;height:1em;"><use href="#i-proof"/></svg> Chain Health</div>
+        <div class="an-sub">Custom PoW ledger metrics</div>
+        <div class="an-health">
+          <div class="an-gauge-wrap">
+            <canvas id="anGauge"></canvas>
+            <div class="an-gauge-center"><div class="an-metric-val" id="anGaugeVal" style="font-size:1.35rem;color:#22d3ee;">0</div><div class="an-metric-lbl">avg mine (s)</div></div>
+          </div>
+          <div class="an-metrics">
+            <div class="an-metric"><div class="an-metric-val" id="anHealthBlocks" style="color:var(--accent);">—</div><div class="an-metric-lbl">Total Blocks</div></div>
+            <div class="an-metric"><div class="an-metric-val" id="anHealthTx" style="color:var(--primary);">—</div><div class="an-metric-lbl">Total Transactions</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Public Registry -->
   <div class="tab-content" id="tab-registry">
     <div class="card">
-      <h2>🌐 Public Model Registry</h2>
+      <h2><span class="card-title-ico"><svg class="ico"><use href="#i-registry"/></svg></span> Public Model Registry</h2>
       <p class="subtitle">All AI models registered on the blockchain — the public immutable ledger.</p>
       <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-bottom:.8rem;">
         <input type="text" id="registrySearch" placeholder="Search by name, ID, or owner…" oninput="searchRegistry()" style="flex:1;min-width:200px;max-width:380px;" />
@@ -1023,12 +1666,12 @@
   <!-- Explorer -->
   <div class="tab-content" id="tab-explorer">
     <div class="card">
-      <h2>🔗 Chain Explorer — 3D Block Visualizer</h2>
+      <h2><span class="card-title-ico"><svg class="ico"><use href="#i-explorer"/></svg></span> Chain Explorer — 3D Block Visualizer</h2>
       <p class="subtitle">Live view of the BlockVerify custom PoW chain. Every block is cryptographically linked to the one before it. Hover to inspect — click to open.</p>
 
       <!-- Algorand badge -->
-      <div style="display:flex;align-items:center;gap:1rem;background:linear-gradient(135deg,rgba(0,200,120,0.1),rgba(108,92,231,0.1));border:1px solid rgba(0,200,120,0.25);border-radius:14px;padding:1.2rem 1.5rem;margin-bottom:1.2rem;flex-wrap:wrap;">
-        <div style="font-size:2rem;">⛓</div>
+      <div style="display:flex;align-items:center;gap:1rem;background:linear-gradient(135deg,rgba(0,200,120,0.1),rgba(var(--primary-rgb),0.1));border:1px solid rgba(0,200,120,0.25);border-radius:14px;padding:1.2rem 1.5rem;margin-bottom:1.2rem;flex-wrap:wrap;">
+        <span class="card-title-ico" style="width:46px;height:46px;"><svg class="ico" style="width:24px;height:24px;"><use href="#i-proof"/></svg></span>
         <div style="flex:1;min-width:200px;">
           <div style="font-weight:700;font-size:1.05rem;margin-bottom:.25rem;">Connected to Algorand Testnet</div>
           <div style="font-size:.82rem;color:var(--text-muted);">Consensus: Pure Proof-of-Stake (PPoS) &nbsp;·&nbsp; Finality: ~3.4 s &nbsp;·&nbsp; Node: AlgoNode Public API</div>
@@ -1054,8 +1697,8 @@
 
       <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;">
         <button class="btn btn-sec" id="validateBtn" onclick="validateChain()" data-tip="Confirm Algorand Testnet is maintaining full chain integrity.">Validate Chain Integrity</button>
-        <a href="https://bank.testnet.algorand.network/" target="_blank" class="btn btn-sec" style="text-decoration:none;">Get Test ALGO 💰</a>
-        <button class="btn btn-sec" onclick="loadChain()" style="margin-left:auto;">↻ Refresh Chain</button>
+        <a href="https://bank.testnet.algorand.network/" target="_blank" class="btn btn-sec" style="text-decoration:none;display:inline-flex;align-items:center;gap:.4rem;"><svg class="ico"><use href="#i-wallet"/></svg> Get Test ALGO</a>
+        <button class="btn btn-sec" onclick="loadChain()" style="margin-left:auto;display:inline-flex;align-items:center;gap:.4rem;"><svg class="ico"><use href="#i-refresh"/></svg> Refresh Chain</button>
       </div>
       <div id="chainValid" style="margin-top:.4rem;"></div>
       <div id="tamperResult" style="margin-top:.4rem;display:none;"></div>
@@ -1065,7 +1708,7 @@
     <div class="card" style="padding:0;overflow:hidden;position:relative;">
       <div style="padding:1rem 1.4rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
         <div>
-          <div style="font-weight:700;font-size:.95rem;">⬛ 3D Block Chain</div>
+          <div style="font-weight:700;font-size:.95rem;display:flex;align-items:center;gap:.45rem;"><svg class="ico" style="width:1em;height:1em;color:var(--primary);"><use href="#i-cube"/></svg> 3D Block Chain</div>
           <div style="font-size:.75rem;color:var(--text-muted);margin-top:.2rem;">Drag to rotate • Scroll to zoom • Click a block to inspect</div>
         </div>
         <span id="chainBlockCount" style="font-size:.78rem;color:var(--text-muted);"></span>
@@ -1090,24 +1733,24 @@
   <!-- Blockchain Proof Tab -->
   <div class="tab-content" id="tab-proof">
     <div class="card">
-      <h2>🔍 Blockchain Proof Lookup</h2>
+      <h2><span class="card-title-ico"><svg class="ico"><use href="#i-search"/></svg></span> Blockchain Proof Lookup</h2>
       <p class="subtitle">Paste any Algorand TxID to fetch the live on-chain transaction directly from the Algorand Indexer — raw, verified blockchain data.</p>
 
       <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.2rem;">
-        <input type="text" id="proofTxId" placeholder="Paste Algorand TxID here…" style="flex:1;min-width:260px;font-family:monospace;font-size:.85rem;" />
-        <button class="btn" id="proofBtn" onclick="lookupProof()">🔎 Fetch Proof</button>
+        <input type="text" id="proofTxId" placeholder="Paste Algorand TxID here…" style="flex:1;min-width:260px;font-family:var(--mono);font-size:.85rem;" />
+        <button class="btn" id="proofBtn" onclick="lookupProof()"><svg class="ico"><use href="#i-search"/></svg> Fetch Proof</button>
       </div>
       <div id="proofResult"></div>
 
       <div style="margin-top:1.4rem;border-top:1px solid var(--border);padding-top:1.2rem;">
-        <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:.8rem;">⛓ Smart Contract Registry</div>
+        <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:.8rem;display:flex;align-items:center;gap:.4rem;"><svg class="ico" style="width:1em;height:1em;color:var(--primary);"><use href="#i-proof"/></svg> Smart Contract Registry</div>
         <div id="contractInfo" style="font-size:.88rem;color:var(--text-muted);">Loading contract info…</div>
       </div>
     </div>
 
     <!-- Wallet Info Card -->
     <div class="card" style="margin-top:1rem;">
-      <h2>👛 Server Wallet — Algorand Testnet</h2>
+      <h2><span class="card-title-ico"><svg class="ico"><use href="#i-wallet"/></svg></span> Server Wallet — Algorand Testnet</h2>
       <p class="subtitle">Live account stats for the BlockVerify server wallet that signs every transaction.</p>
       <div id="walletInfo" style="min-height:60px;">Loading…</div>
     </div>
@@ -1115,7 +1758,7 @@
     <!-- Live Algorand Network Stats -->
     <div class="card" style="margin-top:1rem;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;">
-        <h2 style="margin:0;">🌐 Algorand Testnet — Live Network</h2>
+        <h2 style="margin:0;"><span class="card-title-ico"><svg class="ico"><use href="#i-globe"/></svg></span> Algorand Testnet — Live Network</h2>
         <div style="display:flex;align-items:center;gap:.5rem;">
           <span id="netStatusDot" style="width:10px;height:10px;border-radius:50%;background:var(--text-muted);display:inline-block;"></span>
           <span id="netStatusText" style="font-size:.8rem;color:var(--text-muted);">Connecting…</span>
@@ -1166,12 +1809,12 @@
     merkleCard.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem;">
         <div>
-          <h2 style="margin:0;">🌲 Model Registry Merkle Tree</h2>
+          <h2 style="margin:0;"><span class="card-title-ico"><svg class="ico"><use href="#i-merkle"/></svg></span> Model Registry Merkle Tree</h2>
           <p class="subtitle" style="margin-top:.3rem;">A cryptographic Merkle tree built from all registered model hashes. Changing any single model hash changes the entire root — tamper-proof integrity visualization.</p>
         </div>
-        <button onclick="loadAlgoMerkle()" class="btn" style="font-size:.78rem;padding:.4rem .8rem;">🔄 Rebuild Tree</button>
+        <button onclick="loadAlgoMerkle()" class="btn" style="font-size:.78rem;padding:.4rem .8rem;display:inline-flex;align-items:center;gap:.4rem;"><svg class="ico"><use href="#i-refresh"/></svg> Rebuild Tree</button>
       </div>
-      <div id="algoMerkleRoot" style="font-size:.82rem;font-family:var(--mono);background:rgba(108,92,231,.12);border:1px solid rgba(108,92,231,.3);border-radius:8px;padding:.6rem 1rem;margin-bottom:.8rem;word-break:break-all;display:none;"></div>
+      <div id="algoMerkleRoot" style="font-size:.82rem;font-family:var(--mono);background:rgba(var(--primary-rgb),.12);border:1px solid rgba(var(--primary-rgb),.3);border-radius:8px;padding:.6rem 1rem;margin-bottom:.8rem;word-break:break-all;display:none;"></div>
       <div id="algoMerkleInfo" style="font-size:.78rem;color:var(--text-muted);margin-bottom:.5rem;"></div>
       <div id="algoMerkleSvg" style="width:100%;overflow-x:auto;min-height:120px;">
         <div style="text-align:center;padding:2rem;color:var(--text-muted);">Click "Rebuild Tree" or switch to Chain Proof tab to generate the Merkle tree.</div>
@@ -1187,7 +1830,7 @@
     btcCard.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.8rem;">
         <div>
-          <h2 style="margin:0;color:#f7931a;">₿ Bitcoin L1 Settlement</h2>
+          <h2 style="margin:0;color:#f7931a;display:flex;align-items:center;gap:.55rem;"><span class="card-title-ico" style="background:rgba(247,147,26,.12);border-color:rgba(247,147,26,.3);color:#f7931a;"><svg class="ico"><use href="#i-btc"/></svg></span> Bitcoin L1 Settlement</h2>
           <p class="subtitle" style="margin-top:.3rem;">
             Anchor the Algorand Merkle Root to <strong>Bitcoin Testnet</strong> via an
             <code style="font-size:.75rem;color:#f7931a;">OP_RETURN</code> transaction — the same mechanism
@@ -1201,14 +1844,14 @@
 
       <!-- Architecture explanation -->
       <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:.5rem;align-items:center;margin-bottom:1rem;font-size:.78rem;text-align:center;">
-        <div style="background:rgba(108,92,231,.12);border:1px solid rgba(108,92,231,.3);border-radius:8px;padding:.6rem;">
-          <div style="font-size:1rem;">⚡</div>
+        <div style="background:rgba(var(--primary-rgb),.12);border:1px solid rgba(var(--primary-rgb),.3);border-radius:8px;padding:.6rem;">
+          <div style="color:var(--primary);"><svg class="ico" style="width:1.3em;height:1.3em;"><use href="#i-spark"/></svg></div>
           <div style="font-weight:700;color:var(--primary);">Algorand Testnet</div>
           <div style="color:var(--text-muted);">Fast sidechain<br>Individual model hashes</div>
         </div>
         <div style="font-size:1.4rem;color:var(--text-muted);">→</div>
         <div style="background:rgba(247,147,26,.08);border:1px solid rgba(247,147,26,.35);border-radius:8px;padding:.6rem;">
-          <div style="font-size:1rem;">₿</div>
+          <div style="color:#f7931a;"><svg class="ico" style="width:1.3em;height:1.3em;"><use href="#i-btc"/></svg></div>
           <div style="font-weight:700;color:#f7931a;">Bitcoin Testnet3</div>
           <div style="color:var(--text-muted);">L1 settlement layer<br>Merkle Root batch anchor</div>
         </div>
@@ -1216,9 +1859,9 @@
 
       <!-- Action button -->
       <button id="btcAnchorBtn" onclick="anchorToBitcoin()"
-        style="background:linear-gradient(135deg,#f7931a,#e8820c);color:#000;border:none;border-radius:8px;padding:.65rem 1.4rem;font-weight:700;font-size:.88rem;cursor:pointer;transition:opacity .2s;margin-bottom:1rem;"
+        style="background:linear-gradient(135deg,#f7931a,#e8820c);color:#000;border:none;border-radius:10px;padding:.65rem 1.4rem;font-weight:700;font-size:.88rem;cursor:pointer;transition:opacity .2s;margin-bottom:1rem;display:inline-flex;align-items:center;gap:.5rem;"
         onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-        ₿ Anchor Merkle Root → Bitcoin Testnet
+        <svg class="ico"><use href="#i-btc"/></svg> Anchor Merkle Root → Bitcoin Testnet
       </button>
 
       <!-- OP_RETURN hex breakdown (hidden until anchored) -->
@@ -1258,17 +1901,17 @@
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;">
         <div>
-          <h2 style="margin:0;">📒 Algorand Transaction Ledger</h2>
+          <h2 style="margin:0;"><span class="card-title-ico"><svg class="ico"><use href="#i-ledger"/></svg></span> Algorand Transaction Ledger</h2>
           <p class="subtitle" style="margin-top:.3rem;">Every blockchain transaction made by the BlockVerify server wallet — fetched live from the Algorand Indexer.</p>
         </div>
         <div style="display:flex;gap:.5rem;align-items:center;">
-          <select id="ledgerLimit" onchange="loadLedger()" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:.3rem .5rem;font-size:.78rem;">
+          <select id="ledgerLimit" onchange="loadLedger()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:.4rem .6rem;font-size:.78rem;">
             <option value="10">Last 10</option>
             <option value="25" selected>Last 25</option>
             <option value="50">Last 50</option>
             <option value="100">Last 100</option>
           </select>
-          <button onclick="loadLedger()" class="btn" style="font-size:.78rem;padding:.4rem .8rem;">↻ Refresh</button>
+          <button onclick="loadLedger()" class="btn" style="font-size:.78rem;padding:.4rem .8rem;display:inline-flex;align-items:center;gap:.4rem;"><svg class="ico"><use href="#i-refresh"/></svg> Refresh</button>
         </div>
       </div>
       <div id="ledgerContent" style="min-height:120px;">
@@ -1280,36 +1923,36 @@
   <!-- Help / FAQ -->
   <div class="tab-content" id="tab-help">
     <div class="card">
-      <h2>❓ Help &amp; Quick Start</h2>
+      <h2><span class="card-title-ico"><svg class="ico"><use href="#i-help"/></svg></span> Help &amp; Quick Start</h2>
       <p class="subtitle">New here? Start with the quick-start cards, then browse the FAQ below.</p>
 
       <!-- Quick Start -->
       <div style="margin-bottom:1.4rem;">
-        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:.8rem;">🚀 Quick Start</div>
+        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:.8rem;display:flex;align-items:center;gap:.4rem;"><svg class="ico" style="width:1em;height:1em;color:var(--primary);"><use href="#i-rocket"/></svg> Quick Start</div>
         <div class="qs-grid">
           <div class="qs-card" onclick="switchTab('register')">
-            <div class="qs-icon">📝</div>
+            <div class="qs-icon"><svg class="ico"><use href="#i-register"/></svg></div>
             <h4>1. Register a Model</h4>
             <p>Upload any file → get its SHA-256 hash → save it on the blockchain forever.</p>
           </div>
           <div class="qs-card" onclick="switchTab('verify')">
-            <div class="qs-icon">✅</div>
+            <div class="qs-icon"><svg class="ico"><use href="#i-verify"/></svg></div>
             <h4>2. Verify Integrity</h4>
             <p>Re-upload the same file later → compare hashes → instantly know if it was tampered.</p>
           </div>
           <div class="qs-card" onclick="switchTab('models')">
-            <div class="qs-icon">📦</div>
+            <div class="qs-icon"><svg class="ico"><use href="#i-models"/></svg></div>
             <h4>3. Manage Models</h4>
             <p>View all your registered models, add new versions, or deactivate old ones.</p>
           </div>
           <div class="qs-card" onclick="switchTab('explorer')">
-            <div class="qs-icon">⛓</div>
+            <div class="qs-icon"><svg class="ico"><use href="#i-explorer"/></svg></div>
             <h4>4. Algorand Explorer</h4>
             <p>Every registration is a live Algorand Testnet transaction. Click to explore your proofs on the global ledger.</p>
           </div>
           <!-- Watch Demo Card -->
           <div class="qs-card" id="startTourBtn" onclick="startGuidedTour()" style="border-color: var(--primary);">
-            <div class="qs-icon" style="color: var(--primary);">▶</div>
+            <div class="qs-icon" style="color: var(--primary);"><svg class="ico"><use href="#i-compass"/></svg></div>
             <h4>Watch Demo</h4>
             <p>Interactive Tour — click to explore the platform step by step.</p>
           </div>
@@ -1327,15 +1970,15 @@
 
       <!-- FAQ -->
       <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:.8rem;display:flex;justify-content:space-between;align-items:center;">
-        <span>💬 Frequently Asked Questions</span>
+        <span style="display:flex;align-items:center;gap:.4rem;"><svg class="ico" style="width:1em;height:1em;color:var(--primary);"><use href="#i-help"/></svg> Frequently Asked Questions</span>
       </div>
-      
-      <input type="text" id="faqSearchInput" placeholder="🔍 Search FAQ..." style="margin-bottom: 1.5rem; border-radius: 12px; padding: .75rem 1rem; background: rgba(255,255,255,0.03);" onkeyup="filterFaq()">
+
+      <input type="text" id="faqSearchInput" placeholder="Search FAQ..." style="margin-bottom: 1.5rem; border-radius: 12px; padding: .75rem 1rem; background: rgba(255,255,255,0.03);" onkeyup="filterFaq()">
 
       <div id="faqList">
         <!-- Getting Started -->
         <div class="faq-category">
-          <h3 style="font-size: .85rem; font-weight: 700; color: var(--primary); margin: 0 0 .6rem; text-transform: uppercase;">🔷 Getting Started</h3>
+          <h3 style="font-size: .85rem; font-weight: 700; color: var(--primary); margin: 0 0 .6rem; text-transform: uppercase;display:flex;align-items:center;gap:.45rem;"><svg class="ico" style="width:1em;height:1em;"><use href="#i-rocket"/></svg> Getting Started</h3>
           <div class="faq-item">
             <button class="faq-q" onclick="toggleFaq(this)">What is BlockVerify? <span class="faq-arrow">▼</span></button>
             <div class="faq-a">BlockVerify is an AI model integrity platform powered by the <strong>Algorand Testnet</strong> — a public, globally distributed blockchain. Every registration and verification is broadcast as an immutable transaction on the live Algorand network. If someone tampers with the model file, the hash won't match and you'll know immediately.</div>
@@ -1352,7 +1995,7 @@
 
         <!-- Security & Privacy -->
         <div class="faq-category">
-          <h3 style="font-size: .85rem; font-weight: 700; color: var(--success); margin: 1.5rem 0 .6rem; text-transform: uppercase;">🔐 Security & Privacy</h3>
+          <h3 style="font-size: .85rem; font-weight: 700; color: var(--success); margin: 1.5rem 0 .6rem; text-transform: uppercase;display:flex;align-items:center;gap:.45rem;"><svg class="ico" style="width:1em;height:1em;"><use href="#i-lock"/></svg> Security & Privacy</h3>
           <div class="faq-item">
             <button class="faq-q" onclick="toggleFaq(this)">Is my data safe? What happens when the server restarts? <span class="faq-arrow">▼</span></button>
             <div class="faq-a">All data is persisted to JSON files in <code>backend/data/</code> on every write. If the server restarts, data is reloaded automatically. On Render's free tier, the disk is ephemeral — data resets on each deploy. For production use, attach a persistent disk.</div>
@@ -1361,7 +2004,7 @@
 
         <!-- Blockchain Concepts -->
         <div class="faq-category">
-          <h3 style="font-size: .85rem; font-weight: 700; color: var(--warn); margin: 1.5rem 0 .6rem; text-transform: uppercase;">⛓ Algorand Concepts</h3>
+          <h3 style="font-size: .85rem; font-weight: 700; color: var(--warn); margin: 1.5rem 0 .6rem; text-transform: uppercase;display:flex;align-items:center;gap:.45rem;"><svg class="ico" style="width:1em;height:1em;"><use href="#i-proof"/></svg> Algorand Concepts</h3>
           <div class="faq-item">
             <button class="faq-q" onclick="toggleFaq(this)">What is a Model ID and where do I find it? <span class="faq-arrow">▼</span></button>
             <div class="faq-a">When you register a model, a unique 16-character Model ID is generated (e.g. <code>a3f9b2c1d4e8f7a0</code>). It is automatically copied to your clipboard. You can also find all your Model IDs in the <strong>My Models</strong> tab. Keep this ID — you need it for verification and version history.</div>
@@ -1382,7 +2025,7 @@
 
         <!-- Troubleshooting -->
         <div class="faq-category">
-          <h3 style="font-size: .85rem; font-weight: 700; color: var(--danger); margin: 1.5rem 0 .6rem; text-transform: uppercase;">⚙️ Troubleshooting</h3>
+          <h3 style="font-size: .85rem; font-weight: 700; color: var(--danger); margin: 1.5rem 0 .6rem; text-transform: uppercase;display:flex;align-items:center;gap:.45rem;"><svg class="ico" style="width:1em;height:1em;"><use href="#i-spark"/></svg> Troubleshooting</h3>
           <div class="faq-item">
             <button class="faq-q" onclick="toggleFaq(this)">What is the rate limit? <span class="faq-arrow">▼</span></button>
             <div class="faq-a">Each username can perform at most <strong>10 write operations</strong> (register, verify, add version) per 60 seconds. This prevents the blockchain from being flooded. If you hit the limit, wait a moment and try again — the Register tab shows your remaining quota after each operation.</div>
@@ -1404,7 +2047,7 @@
 <!-- Welcome / Onboarding Modal -->
 <div class="welcome-overlay" id="welcomeModal">
   <div class="welcome-box">
-    <div class="welcome-logo">🔗</div>
+    <div class="welcome-logo"><span class="logo-badge"><svg class="ico"><use href="#i-shield"/></svg></span></div>
     <div class="welcome-title">Welcome to BlockVerify</div>
     <div class="welcome-sub">AI model integrity verification powered by the <strong>Algorand Testnet</strong> — a live public blockchain. Here's how it works in 3 steps:</div>
     <div class="steps-grid">
@@ -1443,8 +2086,8 @@
 <div class="modal-overlay" id="blockModal" onclick="closeBlockModal(event)">
   <div class="modal-box" id="blockModalBox">
     <div class="modal-head">
-      <h3 id="modalTitle">🧱 Block Details</h3>
-      <button class="modal-close" onclick="closeBlockModal(null)" title="Close (Esc)">✕</button>
+      <h3 id="modalTitle"><svg class="ico" style="color:var(--primary);"><use href="#i-cube"/></svg> Block Details</h3>
+      <button class="modal-close" onclick="closeBlockModal(null)" title="Close (Esc)"><svg class="ico"><use href="#i-x"/></svg></button>
     </div>
     <div class="modal-body" id="modalBody"></div>
   </div>
@@ -1454,12 +2097,12 @@
 <div class="modal-overlay" id="merkleModal" onclick="closeMerkleModal(event)">
   <div class="modal-box" id="merkleModalBox" style="max-width:760px;width:95vw;">
     <div class="modal-head">
-      <h3 id="merkleModalTitle">🌲 Merkle Tree — Block #0</h3>
-      <button class="modal-close" onclick="closeMerkleModal(null)">✕</button>
+      <h3 id="merkleModalTitle"><svg class="ico" style="color:var(--primary);"><use href="#i-merkle"/></svg> Merkle Tree — Block #0</h3>
+      <button class="modal-close" onclick="closeMerkleModal(null)"><svg class="ico"><use href="#i-x"/></svg></button>
     </div>
     <div class="modal-body" style="padding:1rem;">
       <div id="merkleInfo" style="font-size:.82rem;color:var(--text-muted);margin-bottom:.8rem;"></div>
-      <div id="merkleRoot" style="font-size:.78rem;font-family:var(--mono);background:rgba(108,92,231,.12);border:1px solid rgba(108,92,231,.3);border-radius:8px;padding:.6rem 1rem;margin-bottom:1rem;word-break:break-all;"></div>
+      <div id="merkleRoot" style="font-size:.78rem;font-family:var(--mono);background:rgba(var(--primary-rgb),.12);border:1px solid rgba(var(--primary-rgb),.3);border-radius:8px;padding:.6rem 1rem;margin-bottom:1rem;word-break:break-all;"></div>
       <div id="merkleSvg" style="width:100%;overflow-x:auto;min-height:200px;"></div>
     </div>
   </div>
@@ -1468,7 +2111,7 @@
 <!-- Auth Modal -->
 <div class="auth-overlay" id="authModal">
   <div class="auth-box">
-    <div class="auth-logo">🔐</div>
+    <div class="auth-logo"><span class="logo-badge"><svg class="ico"><use href="#i-lock"/></svg></span></div>
     <div class="auth-title" id="authModalTitle">Welcome Back</div>
     <div class="auth-sub" id="authModalSub">Sign in to register and verify AI models on the blockchain.</div>
     <div class="auth-tabs">
@@ -1520,6 +2163,7 @@ const API = window.location.hostname === 'localhost' || window.location.hostname
   : 'https://blockverify-backend-4xug.onrender.com/api';
 const hashes = {};
 const layerHashesMap = {};
+const layerDataMap = {};   // raw per-layer weight arrays — stays client-side, used for forensic analysis
 let _allModels = [];
 let _allBlocks = [];
 const BLOCKS_PER_PAGE = 5;
@@ -1731,6 +2375,14 @@ function switchTab(name, btn) {
   if (name === 'models')   loadMyModels();
   if (name === 'registry') loadRegistry();
   if (name === 'ledger')   loadLedger();
+  if (name === 'alerts' && typeof markAlertsRead === 'function') markAlertsRead();
+  if (name === 'analytics' && typeof loadAnalytics === 'function') loadAnalytics();
+  if (name === 'compare' && typeof initCmpOrbit === 'function') {
+    initCmpOrbit();
+    if (document.getElementById('cmp3dCard').style.display !== 'none') startCmpAuto();
+  } else if (typeof stopCmpAuto === 'function') {
+    stopCmpAuto();   // pause the 3D auto-rotate when leaving the Compare tab
+  }
   if (name === 'proof') {
     setTimeout(() => {
       if (typeof loadWalletInfo    === 'function') loadWalletInfo();
@@ -1858,6 +2510,17 @@ async function onFile(s) {
   const inputMap = { reg:'regFile', ver:'verFile', av:'avFile' };
   const file = document.getElementById(inputMap[s]).files[0];
   if (!file) return;
+
+  // Client-side size guard. The file is hashed in-browser and never uploaded,
+  // so this protects the user's tab (huge files freeze SHA-256), not the server.
+  const MAX_FILE_MB = 500;
+  if (file.size > MAX_FILE_MB * 1024 * 1024) {
+    toast('err', `File is ${(file.size / 1048576).toFixed(0)} MB — over the ${MAX_FILE_MB} MB limit. Hashing runs in your browser; very large files can freeze the tab.`);
+    document.getElementById(inputMap[s]).value = '';
+    document.getElementById(s + 'FN').textContent = '';
+    return;
+  }
+
   document.getElementById(s+'FN').textContent = `📄 ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
 
   // Show instant spinner while hashing
@@ -1897,11 +2560,16 @@ async function onFile(s) {
             lh[lName] = lHex;
           }
           layerHashesMap[s] = lh;
+          layerDataMap[s] = json.layers;   // keep raw weights for forensic outlier analysis
           console.log(`Extracted hashes for ${Object.keys(lh).length} layers`);
+        } else {
+          delete layerHashesMap[s];
+          delete layerDataMap[s];
         }
       } catch(ex) { console.warn("Could not parse JSON for layers:", ex); }
     } else {
       delete layerHashesMap[s];
+      delete layerDataMap[s];
     }
 
     hashEl.innerHTML = `<span style="display:inline-flex;align-items:center;gap:.5rem;">${hashIdenticon(hex, 24)}<span>${hex}</span></span>`;
@@ -2113,7 +2781,7 @@ async function registerModel() {
           </div>
           <div style="font-size:.75rem;color:var(--text-muted);margin-top:.5rem;">Algo TxID: <a href="https://lora.algokit.io/testnet/transaction/${d.algoTxId}" target="_blank" style="color:var(--primary)">${d.algoTxId.substring(0,8)}...</a> · Owner: ${user} · PoW nonce: ${powNonce}</div>
           <div style="margin-top:.8rem;">
-            <button class="btn" style="font-size:.8rem;padding:.45rem 1rem;background:linear-gradient(135deg,#6c5ce7,#00cec9);border:none;"
+            <button class="btn" style="font-size:.8rem;padding:.45rem 1rem;background:linear-gradient(135deg,#00e5a0,#2de2c5);border:none;"
               onclick="downloadAlgoCertificate('${d.modelId}','${name.replace(/'/g,"\\\\'")}','${hash}','${d.algoTxId}','${d.round}')">
               📄 Download Blockchain Certificate
             </button>
@@ -2179,10 +2847,10 @@ async function verifyModel() {
           <div style="font-size:.78rem;color:var(--text-muted);">Algo TxID: <a href="https://lora.algokit.io/testnet/transaction/${d.algoTxId}" target="_blank" style="color:var(--primary)">${d.algoTxId.substring(0,8)}...</a> · Verifier: ${user}</div>
           ${!valid && Object.keys(d.layerHashes || {}).length > 0 && layerHashesMap.ver ? `
           <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.05);">
-            <div style="font-size:.85rem;font-weight:700;color:var(--danger);margin-bottom:.5rem;">⚠️ Tampered Architecture Detected</div>
-            <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:1rem;">The overall file hash is broken. We can analyze the model layer-by-layer to determine exactly which neural network weights were modified.</p>
-            <button class="btn btn-sec" style="border-color:var(--danger);color:var(--danger);width:100%;font-size:.8rem;padding:.5rem;" onclick='runDeepInspection(${JSON.stringify(d.layerHashes)}, layerHashesMap.ver)'>
-              🔍 Run Deep Layer Inspection
+            <div style="font-size:.85rem;font-weight:700;color:var(--danger);margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem;"><svg class="ico" style="width:1em;height:1em;"><use href="#i-shield"/></svg> Tampered Architecture Detected</div>
+            <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:1rem;">The file signature is broken. The inspector diffs every layer against the on-chain manifest and classifies each tampering type — <strong>weight poisoning</strong>, <strong>rogue layer</strong>, <strong>layer excision</strong>, or <strong>reordering</strong> — using statistical outlier analysis on the actual tensors.</p>
+            <button class="btn btn-sec" style="border-color:var(--danger);color:var(--danger);width:100%;font-size:.8rem;padding:.5rem;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;" onclick='runDeepInspection(${JSON.stringify(d.layerHashes)})'>
+              <svg class="ico"><use href="#i-search"/></svg> Run Deep Layer Inspection
             </button>
             <div id="deepInspectionTerminal" style="display:none;margin-top:1rem;background:#050505;border:1px solid #333;border-radius:8px;padding:1rem;font-family:var(--mono);font-size:.75rem;min-height:150px;max-height:300px;overflow-y:auto;">
             </div>
@@ -2203,146 +2871,180 @@ async function verifyModel() {
   finally { setLoading('verBtn', false, 'Verify Integrity'); }
 }
 
-async function runDeepInspection(storedLayers, computedLayers) {
-  const term = document.getElementById('deepInspectionTerminal');
-  term.style.display = 'block';
-  term.innerHTML = `
-    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding-bottom:.5rem; margin-bottom:.5rem;">
-      <span style="color:var(--primary); font-weight:bold; letter-spacing:1px;">NEURAL ARCHITECTURE INSPECTOR v2.0</span>
-      <span style="color:#666;" id="deepTermSpin">⠋</span>
-    </div>
-    <div id="deepTermLog"></div>
-  `;
-
-  const logBox = document.getElementById('deepTermLog');
-  const spinner = document.getElementById('deepTermSpin');
-  
-  const spinFrames = ['⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏'];
-  let spinIdx = 0;
-  const spinInt = setInterval(() => { spinner.textContent = spinFrames[++spinIdx % spinFrames.length]; }, 80);
-
-  const cKeys = Object.keys(computedLayers);
-  const sKeys = Object.keys(storedLayers);
-  
-  for (let i = 0; i < cKeys.length; i++) {
-    const lName = cKeys[i];
-    const cHash = computedLayers[lName];
-    const sHash = storedLayers[lName]; // could be undefined if rogue
-    
-    // Create layer row
-    const row = document.createElement('div');
-    row.style.marginBottom = '0.4rem';
-    row.innerHTML = `<span style="color:#888;">[TENSOR_ALLOC]</span> Scanning layer <strong style="color:#ccc;">${lName}</strong> <span class="layer-ellipsis">...</span>`;
-    logBox.appendChild(row);
-    term.scrollTop = term.scrollHeight;
-    
-    // Simulate tensor reading time
-    await new Promise(r => setTimeout(r, 600));
-    
-    // 1. TOPOLOGY MISMATCH (Rogue Layer Detected)
-    if (!sHash) {
-      clearInterval(spinInt);
-      spinner.textContent = 'X';
-      spinner.style.color = 'var(--danger)';
-      
-      row.innerHTML = `<div style="display:flex; justify-content:space-between; background:rgba(255,50,50,0.1); padding:0.2rem 0.4rem;">
-        <span style="color:#fff; font-weight:bold;">[${String(i).padStart(2,'0')}] ${lName}</span>
-        <span style="color:var(--danger); font-weight:bold;">[ ANOMALY DETECTED ]</span>
-      </div>`;
-      
-      const errBox = document.createElement('div');
-      errBox.style.marginTop = '0.5rem';
-      errBox.style.border = '1px solid rgba(255, 50, 50, 0.4)';
-      errBox.style.padding = '0.5rem';
-      errBox.style.borderRadius = '4px';
-      errBox.style.background = 'rgba(10, 0, 0, 0.5)';
-      logBox.appendChild(errBox);
-      
-      errBox.innerHTML = `<div style="color:var(--danger); font-weight:bold; margin-bottom:0.5rem;">🚨 CRITICAL: TOPOLOGY MISMATCH 🚨</div>
-        <div style="color:#aaa; font-size:0.65rem; line-height:1.4;">
-          Expected Layer: <span style="color:var(--success)">NONE (Unexpected Architecture)</span><br>
-          Encountered: <span style="color:var(--danger)">${lName}</span>
-        </div>
-        <div style="margin-top:0.8rem; color:#888;">Scanning unverified tensor dimensions...</div>
-        <div style="color:#f44; word-break:break-all; font-size:0.6rem; margin-top:0.5rem; border-left:2px solid var(--danger); padding-left:5px;">
-          UNAUTHORIZED EXECUTION GRAPH DETECTED
-        </div>
-        <div style="margin-top:0.8rem;">
-          <span style="color:var(--danger);font-weight:bold;">Conclusion:</span> Structural anomaly. A rogue layer was illegally inserted into the model architecture. Malware injection vector suspected.
-        </div>
-        <button class="btn btn-prim" style="margin-top:1rem; width:100%; border-radius:4px; font-weight:700; padding:.5rem;" onclick="runSelfHealing('${lName}', 'topology')">
-          ⚕️ Initiate Decentralized Self-Healing (IPFS)
-        </button>
-      `;
-      term.scrollTop = term.scrollHeight;
-      return; // halt
-    }
-    
-    // 2. WEIGHT TAMPERING
-    if (sHash !== cHash) {
-      clearInterval(spinInt);
-      spinner.textContent = 'X';
-      spinner.style.color = 'var(--danger)';
-      
-      row.innerHTML = `<div style="display:flex; justify-content:space-between; background:rgba(255,50,50,0.1); padding:0.2rem 0.4rem;">
-        <span style="color:#fff; font-weight:bold;">[${String(i).padStart(2,'0')}] ${lName}</span>
-        <span style="color:var(--danger); font-weight:bold;">[ COMPROMISED ]</span>
-      </div>`;
-      
-      const errBox = document.createElement('div');
-      errBox.style.marginTop = '0.5rem';
-      errBox.style.border = '1px solid rgba(255, 50, 50, 0.4)';
-      errBox.style.padding = '0.5rem';
-      errBox.style.borderRadius = '4px';
-      errBox.style.background = 'rgba(10, 0, 0, 0.5)';
-      logBox.appendChild(errBox);
-      
-      errBox.innerHTML = `<div style="color:var(--danger); font-weight:bold; margin-bottom:0.5rem;">🚨 ANOMALY DETECTED IN WEIGHT TENSORS 🚨</div>
-        <div style="color:#aaa; font-size:0.65rem; line-height:1.4;">
-          Expected Root: <span style="color:var(--success)">${sHash.substring(0,32)}...</span><br>
-          Computed Root: <span style="color:var(--danger)">${cHash.substring(0,32)}...</span>
-        </div>
-        <div style="margin-top:0.8rem; color:#888;">Initiating micro-inspection of parameter array...</div>
-        <div id="matrixDump" style="color:#4a9; word-break:break-all; font-size:0.6rem; margin-top:0.5rem; max-height:40px; overflow:hidden;"></div>
-      `;
-      term.scrollTop = term.scrollHeight;
-
-      const matrix = document.getElementById('matrixDump');
-      for (let m = 0; m < 15; m++) {
-        let dump = '';
-        for (let j=0; j<40; j++) dump += (Math.random()*.999).toFixed(5) + " ";
-        matrix.textContent = dump;
-        await new Promise(r => setTimeout(r, 60));
-      }
-      
-      matrix.innerHTML = `0.02341 0.15822 0.88123 -0.55123 0.11111 ... <span style="background:var(--danger);color:#fff;font-weight:bold;padding:0 2px;"> 999.99999 </span> ... -0.19833`;
-      
-      const conclusion = document.createElement('div');
-      conclusion.style.marginTop = '0.8rem';
-      conclusion.innerHTML = `
-        <span style="color:var(--danger);font-weight:bold;">Analysis:</span> Backdoor payload detected at Tensor Offset [42]. Weight parameter was artificially altered. Halt execution immediately.
-        <button class="btn btn-prim" style="margin-top:1rem; width:100%; border-radius:4px; font-weight:700; padding:.5rem;" onclick="runSelfHealing('${lName}', 'weight')">
-          ⚕️ Initiate Decentralized Self-Healing (IPFS)
-        </button>
-      `;
-      errBox.appendChild(conclusion);
-      
-      term.scrollTop = term.scrollHeight;
-      return; // halt
-    }
-    
-    // 3. MATCH
-    row.innerHTML = `<div style="display:flex; justify-content:space-between;">
-      <span style="color:#888;">[${String(i).padStart(2,'0')}] <span style="color:#ccc;">${lName}</span></span>
-      <span style="color:var(--success); font-weight:bold;">[ INTEGRITY 100% ]</span>
-    </div>
-    <div style="color:#555; font-size:0.65rem; padding-left:2rem;">SIG: ${sHash.substring(0,40)}</div>`;
-  }
-  
-  clearInterval(spinInt);
-  spinner.textContent = 'OK';
-  spinner.style.color = 'var(--success)';
+// ── Forensic engine — REAL analysis of client-side weight tensors ──
+// (weights never leave the device; we analyse the uploaded copy in-browser)
+function bvNumericStats(arr){
+  let n=0,min=Infinity,max=-Infinity,sum=0;
+  if(Array.isArray(arr)) for(let i=0;i<arr.length;i++){const x=arr[i];if(typeof x==='number'&&isFinite(x)){n++;sum+=x;if(x<min)min=x;if(x>max)max=x;}}
+  if(!n) return null;
+  const mean=sum/n; let v=0;
+  for(let i=0;i<arr.length;i++){const x=arr[i];if(typeof x==='number'&&isFinite(x))v+=(x-mean)*(x-mean);}
+  return {n,min,max,mean,std:Math.sqrt(v/n)};
 }
+// Robust outlier detection (median + MAD) — catches injected backdoor weights from REAL data
+function bvFindOutliers(arr,maxReport=6){
+  const base=bvNumericStats(arr||[]);
+  const nums=[]; if(Array.isArray(arr)) for(const x of arr) if(typeof x==='number'&&isFinite(x)) nums.push(x);
+  const n=nums.length;
+  if(n<4) return {n,outliers:[],count:0,stats:base};
+  const sorted=[...nums].sort((a,b)=>a-b);
+  const median=sorted[Math.floor(n/2)];
+  const devs=nums.map(x=>Math.abs(x-median)).sort((a,b)=>a-b);
+  const mad=devs[Math.floor(n/2)]*1.4826;
+  const scale=mad>1e-9?mad:(base&&base.std>1e-9?base.std:1);
+  const out=[];
+  for(let i=0;i<arr.length;i++){const x=arr[i];if(typeof x!=='number'||!isFinite(x))continue;
+    const z=Math.abs(x-median)/scale; if(z>8) out.push({index:i,value:x,z});}
+  out.sort((a,b)=>b.z-a.z);
+  return {n,median,mad,scale,count:out.length,outliers:out.slice(0,maxReport),stats:base};
+}
+// Classify every tampering type by diffing on-chain manifest vs uploaded model
+function bvClassifyTopology(stored,computed){
+  const sN=Object.keys(stored||{}),cN=Object.keys(computed||{});
+  const sS=new Set(sN),cS=new Set(cN);
+  const added=cN.filter(n=>!sS.has(n));
+  const removed=sN.filter(n=>!cS.has(n));
+  const common=cN.filter(n=>sS.has(n));
+  const modified=common.filter(n=>stored[n]!==computed[n]);
+  const intact=common.filter(n=>stored[n]===computed[n]);
+  const reordered=(sN.filter(n=>cS.has(n)).join('>'))!==(cN.filter(n=>sS.has(n)).join('>'));
+  return {sN,cN,added,removed,modified,intact,reordered};
+}
+function bvFmtZ(z){ return z>=1000 ? z.toExponential(1) : z.toFixed(1); }
+function bvFmtVal(x){ return (Math.abs(x)>=1000||Number.isInteger(x))?String(x):(+x).toFixed(6); }
+
+async function runDeepInspection(storedLayers){
+  const computed = (typeof layerHashesMap!=='undefined' && layerHashesMap.ver) ? layerHashesMap.ver : {};
+  const data     = (typeof layerDataMap!=='undefined'  && layerDataMap.ver)  ? layerDataMap.ver  : {};
+  const term = document.getElementById('deepInspectionTerminal');
+  term.style.display='block';
+  term.innerHTML = `
+    <div style="display:flex;justify-content:space-between;border-bottom:1px solid #333;padding-bottom:.5rem;margin-bottom:.5rem;">
+      <span style="color:var(--primary);font-weight:bold;letter-spacing:1px;">NEURAL ARCHITECTURE INSPECTOR v3.0</span>
+      <span style="color:#666;" id="deepTermSpin">&#10287;</span>
+    </div>
+    <div id="deepTermLog"></div>`;
+  const logBox=document.getElementById('deepTermLog');
+  const spinner=document.getElementById('deepTermSpin');
+  const spinFrames=['⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏'];
+  let spinIdx=0; const spinInt=setInterval(()=>{spinner.textContent=spinFrames[++spinIdx%spinFrames.length];},80);
+  const log=(html)=>{const d=document.createElement('div');d.style.marginBottom='0.35rem';d.innerHTML=html;logBox.appendChild(d);term.scrollTop=term.scrollHeight;return d;};
+  const wait=(ms)=>new Promise(r=>setTimeout(r,ms));
+
+  const cls = bvClassifyTopology(storedLayers, computed);
+  log(`<span style="color:#888;">[manifest]</span> on-chain layers: <b style="color:#ccc;">${cls.sN.length}</b> &middot; uploaded layers: <b style="color:#ccc;">${cls.cN.length}</b>`);
+  await wait(380);
+  log(`<span style="color:#888;">[scan]</span> Diffing topology &amp; per-layer tensor signatures...`);
+  await wait(460);
+
+  let healFirst=null;
+  for(let i=0;i<cls.cN.length;i++){
+    const name=cls.cN[i];
+    const tag=String(i).padStart(2,'0');
+    const row=log(`<span style="color:#888;">[${tag}]</span> Scanning <strong style="color:#ccc;">${name}</strong> <span class="layer-ellipsis">...</span>`);
+    await wait(210);
+
+    // ROGUE LAYER — present in upload, absent on-chain (Topology Poisoning)
+    if(!(name in storedLayers)){
+      if(!healFirst) healFirst={name,type:'topology'};
+      const st=bvNumericStats(data[name]||[]);
+      row.innerHTML = `<div style="display:flex;justify-content:space-between;background:rgba(255,50,50,.10);padding:.15rem .4rem;border-radius:3px;">
+        <span style="color:#fff;font-weight:bold;">[${tag}] ${name}</span><span style="color:var(--danger);font-weight:bold;">[ ROGUE LAYER ]</span></div>
+        <div style="color:#9aa;font-size:.66rem;padding-left:1.2rem;margin-top:.2rem;line-height:1.55;">
+          &#9500;&#9472; type: <span style="color:var(--danger)">TOPOLOGY POISONING</span> &mdash; layer not present in signed manifest<br>
+          &#9500;&#9472; injected params: <b>${st?st.n:0}</b>${st?` &middot; range [${st.min.toFixed(3)}, ${st.max.toFixed(3)}] &middot; &mu;=${st.mean.toFixed(3)}`:''}<br>
+          &#9492;&#9472; sig <span style="color:var(--danger)">${(computed[name]||'').slice(0,40)}</span> has no on-chain counterpart
+        </div>`;
+      term.scrollTop=term.scrollHeight; continue;
+    }
+
+    // WEIGHT TAMPERING — same layer, different signature
+    if(storedLayers[name]!==computed[name]){
+      if(!healFirst) healFirst={name,type:'weight'};
+      const o=bvFindOutliers(data[name]||[]);
+      let detail;
+      if(o.count>0){
+        const top=o.outliers[0];
+        detail = `&#9500;&#9472; outlier scan: <b style="color:var(--danger)">${o.count}</b> anomalous parameter(s) / ${o.n}<br>`+
+          o.outliers.map(p=>`&#9474;&nbsp;&nbsp; &bull; index <b>[${p.index}]</b> = <span style="background:var(--danger);color:#fff;padding:0 3px;font-weight:bold;">${bvFmtVal(p.value)}</span> (robust z = ${bvFmtZ(p.z)}&sigma;)`).join('<br>')+'<br>'+
+          `&#9492;&#9472; <span style="color:var(--danger);font-weight:bold;">backdoor payload</span>: parameter [${top.index}] deviates ${bvFmtZ(top.z)}&sigma; from the layer median &mdash; classic weight-poisoning signature`;
+      } else {
+        detail = `&#9500;&#9472; signature changed, no extreme-value outliers detected<br>&#9492;&#9472; weights perturbed within normal range (subtle drift / unauthorized fine-tuning)`;
+      }
+      row.innerHTML = `<div style="display:flex;justify-content:space-between;background:rgba(255,50,50,.10);padding:.15rem .4rem;border-radius:3px;">
+        <span style="color:#fff;font-weight:bold;">[${tag}] ${name}</span><span style="color:var(--danger);font-weight:bold;">[ WEIGHT TAMPERED ]</span></div>
+        <div style="color:#9aa;font-size:.66rem;padding-left:1.2rem;margin-top:.2rem;line-height:1.6;">
+          &#9500;&#9472; on-chain sig <span style="color:var(--success)">${storedLayers[name].slice(0,22)}&hellip;</span> &ne; uploaded sig <span style="color:var(--danger)">${(computed[name]||'').slice(0,22)}&hellip;</span><br>
+          ${detail}
+        </div>`;
+      term.scrollTop=term.scrollHeight; continue;
+    }
+
+    // INTACT
+    row.innerHTML = `<div style="display:flex;justify-content:space-between;">
+      <span style="color:#888;">[${tag}] <span style="color:#ccc;">${name}</span></span>
+      <span style="color:var(--success);font-weight:bold;">[ INTACT ]</span></div>
+      <div style="color:#556;font-size:.62rem;padding-left:1.2rem;">sig ${storedLayers[name].slice(0,40)}</div>`;
+  }
+
+  // EXCISED — on-chain but missing from upload (Layer Excision)
+  for(const name of cls.removed){
+    if(!healFirst) healFirst={name,type:'excision'};
+    log(`<div style="display:flex;justify-content:space-between;background:rgba(254,202,87,.10);padding:.15rem .4rem;border-radius:3px;">
+      <span style="color:#fff;font-weight:bold;">[--] ${name}</span><span style="color:var(--warn);font-weight:bold;">[ EXCISED ]</span></div>
+      <div style="color:#9aa;font-size:.66rem;padding-left:1.2rem;margin-top:.2rem;line-height:1.5;">
+        &#9500;&#9472; type: <span style="color:var(--warn)">LAYER EXCISION</span> &mdash; signed on-chain, removed from uploaded model<br>
+        &#9492;&#9472; expected sig <span style="color:var(--warn)">${storedLayers[name].slice(0,40)}</span></div>`);
+    await wait(180);
+  }
+
+  // REORDERED — shared layers in a different sequence (data-flow path altered)
+  if(cls.reordered){
+    log(`<div style="display:flex;justify-content:space-between;background:rgba(254,202,87,.10);padding:.15rem .4rem;border-radius:3px;">
+      <span style="color:#fff;font-weight:bold;">[~~] execution graph order</span><span style="color:var(--warn);font-weight:bold;">[ REORDERED ]</span></div>
+      <div style="color:#9aa;font-size:.66rem;padding-left:1.2rem;margin-top:.2rem;">&#9492;&#9472; shared layers appear in a different order than the signed manifest &mdash; inference data-flow path altered</div>`);
+    await wait(180);
+  }
+
+  clearInterval(spinInt);
+  const anomalyCount = cls.added.length + cls.modified.length + cls.removed.length + (cls.reordered?1:0);
+  const critical = cls.added.length || cls.modified.length;
+  spinner.textContent = anomalyCount? 'X':'OK';
+  spinner.style.color = anomalyCount? 'var(--danger)':'var(--success)';
+
+  const types=[];
+  if(cls.modified.length) types.push('Weight Tampering');
+  if(cls.added.length)    types.push('Topology Poisoning');
+  if(cls.removed.length)  types.push('Layer Excision');
+  if(cls.reordered)       types.push('Layer Reordering');
+  const verdict = critical ? 'CRITICAL' : (anomalyCount ? 'WARNING' : 'SECURE');
+  const vColor  = critical ? 'var(--danger)' : (anomalyCount ? 'var(--warn)' : 'var(--success)');
+
+  const sum=document.createElement('div');
+  sum.style.cssText='margin-top:1rem;border-top:1px dashed #333;padding-top:.8rem;';
+  sum.innerHTML = `
+    <div style="color:var(--primary);font-weight:bold;letter-spacing:.5px;margin-bottom:.5rem;">FORENSIC SUMMARY</div>
+    <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.6rem;font-size:.63rem;">
+      <span style="background:rgba(var(--success-rgb),.14);color:var(--success);border:1px solid rgba(var(--success-rgb),.3);padding:.15rem .5rem;border-radius:20px;">intact ${cls.intact.length}</span>
+      <span style="background:rgba(255,50,50,.12);color:var(--danger);border:1px solid rgba(255,50,50,.3);padding:.15rem .5rem;border-radius:20px;">weight-tampered ${cls.modified.length}</span>
+      <span style="background:rgba(255,50,50,.12);color:var(--danger);border:1px solid rgba(255,50,50,.3);padding:.15rem .5rem;border-radius:20px;">rogue ${cls.added.length}</span>
+      <span style="background:rgba(254,202,87,.12);color:var(--warn);border:1px solid rgba(254,202,87,.3);padding:.15rem .5rem;border-radius:20px;">excised ${cls.removed.length}</span>
+      <span style="background:rgba(254,202,87,.12);color:var(--warn);border:1px solid rgba(254,202,87,.3);padding:.15rem .5rem;border-radius:20px;">reordered ${cls.reordered?'yes':'no'}</span>
+    </div>
+    <div style="font-size:.72rem;color:#ccc;">Verdict: <span style="color:${vColor};font-weight:bold;">${verdict}</span>${types.length?` &mdash; ${types.join(' + ')}`:' &mdash; every layer matches the on-chain manifest'}</div>`;
+  logBox.appendChild(sum);
+
+  if(healFirst){
+    const btn=document.createElement('button');
+    btn.className='btn btn-prim';
+    btn.style.cssText='margin-top:.8rem;width:100%;border-radius:6px;font-weight:700;padding:.5rem;';
+    btn.innerHTML='Initiate Decentralized Self-Healing (IPFS)';
+    btn.onclick=()=>{ btn.disabled=true; runSelfHealing(healFirst.name, healFirst.type); };
+    logBox.appendChild(btn);
+  }
+  term.scrollTop=term.scrollHeight;
+}
+
 
 async function runZkProof() {
   const term = document.getElementById('zkProofTerminal');
@@ -2397,7 +3099,7 @@ async function runZkProof() {
 
   logBox.innerHTML += `
     <div style="margin-top:0.8rem; color:#888;">[4.32s] Generating proof vector (π)...</div>
-    <div style="margin-top:0.5rem; word-break:break-all; font-size:0.65rem; color:#fff; background:rgba(187, 134, 252, 0.1); padding:0.5rem; border:1px solid rgba(187, 134, 252, 0.4); border-radius:4px;">
+    <div style="margin-top:0.5rem; word-break:break-all; font-size:0.65rem; color:#fff; background:rgba(var(--primary-light-rgb), 0.1); padding:0.5rem; border:1px solid rgba(var(--primary-light-rgb), 0.4); border-radius:4px;">
       <div style="color:#bb86fc; font-weight:bold; margin-bottom:0.3rem;">Proof π:</div>
       0x${generateHex(64)}<br>
       0x${generateHex(64)}<br>
@@ -2432,9 +3134,13 @@ async function runSelfHealing(layerName, type) {
   `;
   const healLog = document.getElementById('healLog');
 
-  const actionText = type === 'topology' 
-    ? `Excising rogue topology \`<span style="color:var(--danger)">${layerName}</span>\`...`
-    : `Purging compromised tensor matrix \`<span style="color:var(--danger)">${layerName}</span>\`...`;
+  const actionMap = {
+    topology:  `Excising rogue topology \`<span style="color:var(--danger)">${layerName}</span>\`...`,
+    weight:    `Purging compromised tensor matrix \`<span style="color:var(--danger)">${layerName}</span>\`...`,
+    excision:  `Restoring excised layer \`<span style="color:var(--warn)">${layerName}</span>\` from pristine genesis state...`,
+    reorder:   `Re-sequencing execution graph to the signed manifest order...`,
+  };
+  const actionText = actionMap[type] || actionMap.weight;
 
   const steps = [
     { delay: 400, text: `<span style="color:#888;">[ipfs-client]</span> Connecting to local IPFS gateway (127.0.0.1:5001)...` },
@@ -2636,7 +3342,7 @@ function renderModels(models, query) {
       : '<span class="badge badge-err">Deactivated</span>';
     const privBadge = m.isPrivate
       ? '<span class="badge" style="background:rgba(255,107,107,0.15);color:#ff6b6b;border:1px solid rgba(255,107,107,0.3);">🔒 Private</span>'
-      : '<span class="badge" style="background:rgba(0,206,201,0.12);color:var(--success);border:1px solid rgba(0,206,201,0.25);">🌐 Public</span>';
+      : '<span class="badge" style="background:rgba(var(--success-rgb),0.12);color:var(--success);border:1px solid rgba(var(--success-rgb),0.25);">🌐 Public</span>';
     h += `<div class="model-item">
       <div class="model-item-name">${m.modelName} ${statusBadge} <span class="badge badge-warn">v${m.currentVersion}</span> ${privBadge}</div>
       <div style="display:flex;align-items:center;gap:.6rem;margin:.4rem 0;">
@@ -2657,8 +3363,9 @@ function renderModels(models, query) {
       <div class="model-item-actions">
         <button class="btn btn-sec" style="font-size:.8rem;padding:.45rem .9rem;" onclick="prefillVerify('${m.modelId}')" data-tip="Go to Verify tab with this model's ID pre-filled — re-upload your file to check its integrity.">Verify</button>
         <button class="btn btn-sec" style="font-size:.8rem;padding:.45rem .9rem;" onclick="prefillVersion('${m.modelId}')" data-tip="Add a new version — upload a new file and add a changelog note while keeping the full history.">Add Version</button>
-        <button class="btn btn-sec" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(108,92,231,0.2),rgba(0,206,201,0.15));border-color:rgba(108,92,231,0.4);" onclick="downloadReport('${m.modelId}','${m.modelName.replace(/'/g,'')}')" data-tip="Download a PDF integrity report — includes model metadata, hash, version history, and full audit trail.">📄 PDF Report</button>
-        <button class="btn btn-sec" id="ocBtn_${m.modelId}" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(0,206,201,0.2),rgba(108,92,231,0.15));border-color:rgba(0,206,201,0.4);" onclick="verifyOnChain('${m.modelId}',this)" data-tip="Read the Algorand smart contract's global state and compare the on-chain hash with the local hash — proves the blockchain is used for verification.">🔗 Verify On-Chain</button>
+        <button class="btn btn-sec" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(var(--primary-rgb),0.2),rgba(var(--success-rgb),0.15));border-color:rgba(var(--primary-rgb),0.4);" onclick="downloadReport('${m.modelId}','${m.modelName.replace(/'/g,'')}')" data-tip="Download a PDF integrity report — includes model metadata, hash, version history, and full audit trail.">📄 PDF Report</button>
+        <button class="btn btn-sec" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(var(--primary-rgb),0.22),rgba(var(--accent-rgb),0.15));border-color:rgba(var(--primary-rgb),0.45);" onclick="downloadCertificate('${m.modelId}','${m.modelName.replace(/'/g,'')}')" data-tip="Download a professional PDF certificate with a QR code linking to the Algorand transaction."><svg class="ico"><use href="#i-award"/></svg> Certificate</button>
+        <button class="btn btn-sec" id="ocBtn_${m.modelId}" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(var(--success-rgb),0.2),rgba(var(--primary-rgb),0.15));border-color:rgba(var(--success-rgb),0.4);" onclick="verifyOnChain('${m.modelId}',this)" data-tip="Read the Algorand smart contract's global state and compare the on-chain hash with the local hash — proves the blockchain is used for verification.">🔗 Verify On-Chain</button>
         <button class="btn btn-sec" id="tamperBtn_${m.modelId}" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(255,107,107,0.2),rgba(253,203,110,0.15));border-color:rgba(255,107,107,0.4);color:#ff6b6b;" onclick="tamperSimulate('${m.modelId}',this)" data-tip="DEMO: Deliberately corrupt this model's local hash, then run On-Chain Verify to prove the blockchain detects tampering.">⚠️ Tamper Demo</button>
         <button class="btn btn-sec" id="privBtn_${m.modelId}" style="font-size:.8rem;padding:.45rem .9rem;" onclick="togglePrivacy('${m.modelId}',${!m.isPrivate})" data-tip="${m.isPrivate ? 'Make this model public — anyone can see and verify it in the Registry.' : 'Make this model private — only you can verify it, hidden from public Registry.'}">${m.isPrivate ? '🔒 Make Public' : '🌐 Make Private'}</button>
         ${m.isActive ? `<button class="btn btn-danger" style="font-size:.8rem;padding:.45rem .9rem;" onclick="deactivateModel('${m.modelId}')" data-tip="Permanently deactivate this model — it will no longer accept verifications.">Deactivate</button>` : ''}
@@ -2754,9 +3461,9 @@ function build3DChain(blocks) {
   destroy3DScene();
 
   const isGenColor = '#f0b429';
-  const blockColor = '#6c5ce7';
+  const blockColor = '#00e5a0';
   const isGenGlow  = 'rgba(240,180,41,0.55)';
-  const blockGlow  = 'rgba(108,92,231,0.55)';
+  const blockGlow  = 'rgba(var(--primary-rgb),0.55)';
 
   // Inject keyframes once
   if (!document.getElementById('_3dkf2')) {
@@ -2814,7 +3521,7 @@ function build3DChain(blocks) {
     const isGenesis = b.index === 0;
     const col   = isGenesis ? isGenColor : blockColor;
     const glow  = isGenesis ? isGenGlow  : blockGlow;
-    const bg    = isGenesis ? 'rgba(240,180,41,0.13)' : 'rgba(108,92,231,0.13)';
+    const bg    = isGenesis ? 'rgba(240,180,41,0.13)' : 'rgba(var(--primary-rgb),0.13)';
     const borderCol = isGenesis ? 'rgba(240,180,41,0.7)' : 'rgba(162,155,254,0.6)';
     const ts    = new Date(b.timestamp * 1000).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
     const delay = (i * 0.3).toFixed(1);
@@ -2948,7 +3655,7 @@ async function validateChain() {
     const d = await res.json();
     const el = document.getElementById('chainValid');
     if (d.isValid) {
-      el.innerHTML = `<div style="background:rgba(0,206,201,0.1);border:1px solid rgba(0,206,201,0.3);border-radius:10px;padding:.8rem 1.1rem;color:var(--success);font-weight:600;display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem;">✅ Blockchain is valid — all blocks pass integrity checks.</div>`;
+      el.innerHTML = `<div style="background:rgba(var(--success-rgb),0.1);border:1px solid rgba(var(--success-rgb),0.3);border-radius:10px;padding:.8rem 1.1rem;color:var(--success);font-weight:600;display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem;">✅ Blockchain is valid — all blocks pass integrity checks.</div>`;
     } else {
       let errHtml = d.errors.map(e => `<li>${e}</li>`).join('');
       el.innerHTML = `<div style="background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);border-radius:10px;padding:.8rem 1.1rem;color:var(--danger);font-weight:600;margin-bottom:.5rem;">
@@ -2982,8 +3689,8 @@ async function runTamperDemo() {
           <ul style="margin:.5rem 0 0 1rem;padding:0;">${errList}</ul>
         </div>
       </div>
-      <div style="border-radius:12px;overflow:hidden;margin-bottom:1rem;border:1px solid rgba(0,206,201,0.4);">
-        <div style="background:rgba(0,206,201,0.1);padding:.8rem 1.1rem;display:flex;align-items:center;gap:.5rem;">
+      <div style="border-radius:12px;overflow:hidden;margin-bottom:1rem;border:1px solid rgba(var(--success-rgb),0.4);">
+        <div style="background:rgba(var(--success-rgb),0.1);padding:.8rem 1.1rem;display:flex;align-items:center;gap:.5rem;">
           <span style="font-size:1.1rem;">🟢</span>
           <strong style="color:var(--success);">Step 2 — Block Restored to Original State</strong>
         </div>
@@ -3040,9 +3747,9 @@ function openBlockModal(blockIndex) {
 
   const badgeColor = isGenesis ? '#f6d860' : 'var(--primary)';
   document.getElementById('modalTitle').innerHTML =
-    `🧱 Block #${b.index}
+    `<svg class="ico" style="color:var(--primary);"><use href="#i-cube"/></svg> Block #${b.index}
      <span style="font-size:.75rem;font-weight:600;padding:.15rem .55rem;border-radius:20px;
-       background:rgba(108,92,231,.15);color:${badgeColor};border:1px solid rgba(108,92,231,.3);
+       background:rgba(var(--primary-rgb),.15);color:${badgeColor};border:1px solid rgba(var(--primary-rgb),.3);
        margin-left:.5rem;vertical-align:middle;">${isGenesis ? 'GENESIS' : 'BLOCK'}</span>`;
 
   document.getElementById('modalBody').innerHTML = `
@@ -3110,7 +3817,7 @@ document.addEventListener('keydown', e => {
 async function openMerkleModal(blockIndex) {
   document.getElementById('merkleModal').classList.add('open');
   document.body.style.overflow = 'hidden';
-  document.getElementById('merkleModalTitle').textContent = `🌲 Merkle Tree — Block #${blockIndex}`;
+  document.getElementById('merkleModalTitle').innerHTML = `<svg class="ico" style="color:var(--primary);"><use href="#i-merkle"/></svg> Merkle Tree — Block #${blockIndex}`;
   document.getElementById('merkleInfo').textContent = 'Loading…';
   document.getElementById('merkleRoot').textContent = '';
   document.getElementById('merkleSvg').innerHTML = '';
@@ -3147,7 +3854,7 @@ function _drawMerkleTree(tree, leaves) {
   container.innerHTML = '';
 
   const isDark   = !document.body.classList.contains('light-theme');
-  const leafCol  = isDark ? '#6c5ce7' : '#7c6af7';   // purple  = leaf
+  const leafCol  = isDark ? '#00e5a0' : '#7c6af7';   // purple  = leaf
   const intCol   = isDark ? '#00b894' : '#00897b';   // green   = internal
   const rootCol  = isDark ? '#fd79a8' : '#e84393';   // pink    = root
   const lineCol  = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)';
@@ -3289,19 +3996,23 @@ async function togglePrivacy(modelId, makePrivate) {
 }
 
 // ── Theme ──
+function _setThemeIcon(isLight) {
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.innerHTML = '<svg class="ico"><use href="#i-' + (isLight ? 'moon' : 'sun') + '"/></svg>';
+}
 function initTheme() {
   if (localStorage.getItem('blockverify_theme') === 'light') {
     document.body.classList.add('light-theme');
-    document.getElementById('themeToggle').innerText = '🌙';
+    _setThemeIcon(true);
   }
 }
 function toggleTheme() {
-  const body = document.body, btn = document.getElementById('themeToggle');
+  const body = document.body;
   if (body.classList.contains('light-theme')) {
-    body.classList.remove('light-theme'); btn.innerText = '☀️';
+    body.classList.remove('light-theme'); _setThemeIcon(false);
     localStorage.setItem('blockverify_theme', 'dark');
   } else {
-    body.classList.add('light-theme'); btn.innerText = '🌙';
+    body.classList.add('light-theme'); _setThemeIcon(true);
     localStorage.setItem('blockverify_theme', 'light');
   }
 }
@@ -3402,21 +4113,19 @@ async function loadActivityChart(days = 14) {
           {
             label: 'Registrations',
             data: d.registrations,
-            backgroundColor: 'rgba(108,92,231,0.7)',
-            borderColor: 'rgba(108,92,231,1)',
+            backgroundColor: 'rgba(124, 58, 237, 0.9)',
+            borderColor: '#7c3aed',
             borderWidth: 1.5,
             borderRadius: 5,
           },
           {
             label: 'Verifications',
             data: d.verifications,
-            backgroundColor: 'rgba(0,206,201,0.55)',
-            borderColor: 'rgba(0,206,201,1)',
+            backgroundColor: 'rgba(135, 206, 250, 0.35)',
+            borderColor: '#87cefa',
             borderWidth: 1.5,
             borderRadius: 5,
-            type: 'line',
-            fill: true,
-            tension: 0.4,
+            type: 'bar',
             pointRadius: 3,
             pointHoverRadius: 6,
           },
@@ -3432,7 +4141,7 @@ async function loadActivityChart(days = 14) {
             backgroundColor: isDark ? 'rgba(15,20,32,0.95)' : 'rgba(255,255,255,0.96)',
             titleColor: isDark ? '#e8eaf0' : '#1e293b',
             bodyColor:  isDark ? '#8e9bb0' : '#64748b',
-            borderColor: 'rgba(108,92,231,0.4)',
+            borderColor: 'rgba(var(--primary-rgb),0.4)',
             borderWidth: 1,
             padding: 10,
           },
@@ -3518,7 +4227,7 @@ function renderRegistry(models, total, page, pages) {
       ? '<span class="badge badge-ok">Active</span>'
       : '<span class="badge badge-err">Inactive</span>';
     h += `
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1rem 1.2rem;display:flex;flex-wrap:wrap;gap:.6rem;align-items:flex-start;transition:border-color .2s;" onmouseover="this.style.borderColor='rgba(108,92,231,0.4)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1rem 1.2rem;display:flex;flex-wrap:wrap;gap:.6rem;align-items:flex-start;transition:border-color .2s;" onmouseover="this.style.borderColor='rgba(var(--primary-rgb),0.4)'" onmouseout="this.style.borderColor='var(--border)'">
         <div style="flex-shrink:0;margin-top:.1rem;">${hashIdenticon(m.modelHash, 38)}</div>
         <div style="flex:1;min-width:180px;">
           <div style="font-weight:700;font-size:.95rem;margin-bottom:.3rem;">${m.modelName} ${status} <span class="badge badge-warn">v${m.currentVersion}</span></div>
@@ -3531,7 +4240,8 @@ function renderRegistry(models, total, page, pages) {
         </div>
         <div style="display:flex;gap:.5rem;flex-shrink:0;align-items:center;">
           <button class="btn btn-sec" style="font-size:.78rem;padding:.35rem .8rem;" onclick="copyText('${m.modelId}',this)">Copy ID</button>
-          <button class="btn btn-sec" style="font-size:.78rem;padding:.35rem .8rem;background:linear-gradient(135deg,rgba(108,92,231,0.18),rgba(0,206,201,0.12));border-color:rgba(108,92,231,0.35);" onclick="downloadReport('${m.modelId}','${m.modelName.replace(/'/g,'')}')">📄 PDF</button>
+          <button class="btn btn-sec" style="font-size:.78rem;padding:.35rem .8rem;background:linear-gradient(135deg,rgba(var(--primary-rgb),0.18),rgba(var(--success-rgb),0.12));border-color:rgba(var(--primary-rgb),0.35);" onclick="downloadReport('${m.modelId}','${m.modelName.replace(/'/g,'')}')">📄 PDF</button>
+          <button class="btn btn-sec" style="font-size:.78rem;padding:.35rem .8rem;background:linear-gradient(135deg,rgba(var(--primary-rgb),0.2),rgba(var(--accent-rgb),0.13));border-color:rgba(var(--primary-rgb),0.4);" onclick="downloadCertificate('${m.modelId}','${m.modelName.replace(/'/g,'')}')" data-tip="Download a blockchain certificate (PDF) with QR code."><svg class="ico"><use href="#i-award"/></svg> Cert</button>
         </div>
       </div>`;
   });
@@ -3552,6 +4262,32 @@ function downloadReport(modelId, modelName) {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+}
+
+// ── Download a reportlab blockchain certificate (POST → PDF blob) ──
+async function downloadCertificate(modelId, modelName) {
+  toast('info', `Generating certificate for "${modelName || modelId}"…`, 2500);
+  try {
+    const res = await fetch(`${API}/certificate/${encodeURIComponent(modelId)}`, { method: 'POST' });
+    if (!res.ok) {
+      let msg = 'Certificate generation failed';
+      try { msg = (await res.json()).error || msg; } catch (e) {}
+      toast('err', msg);
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `blockverify_certificate_${modelId.slice(0, 8)}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('ok', 'Certificate downloaded ✓');
+  } catch (e) {
+    toast('err', 'Network error: ' + e.message);
+  }
 }
 
 // ── Live Activity Feed ────────────────────────────────────────────────
@@ -3585,7 +4321,7 @@ function timeAgo(ts) {
 
 function badgeStyle(type) {
   switch (type) {
-    case 'register': return 'background:rgba(108,92,231,0.15);color:#a29bfe;';
+    case 'register': return 'background:rgba(var(--primary-rgb),0.15);color:#a29bfe;';
     case 'verify':   return 'background:rgba(0,184,148,0.15);color:#00b894;';
     case 'version':  return 'background:rgba(253,203,110,0.15);color:#fdcb6e;';
     default:         return 'background:rgba(255,255,255,0.08);color:var(--text-muted);';
@@ -3657,10 +4393,544 @@ setTimeout(() => {
     }).catch(() => {});
 }, 1500);
 
+// ════════════════════════════════════════════════════════════════════
+//  Analytics — Chart.js dashboards from /api/stats + /api/chain
+// ════════════════════════════════════════════════════════════════════
+let _anCharts = {};
+function _anRGB(name, fallback) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+function _anTip(isDark, rgb) {
+  return {
+    backgroundColor: isDark ? 'rgba(10,14,21,0.96)' : 'rgba(255,255,255,0.97)',
+    titleColor: isDark ? '#eef2f8' : '#0f1729',
+    bodyColor: isDark ? '#9aa6b8' : '#475569',
+    borderColor: `rgba(${rgb},0.5)`, borderWidth: 1, padding: 10, cornerRadius: 8,
+  };
+}
+function _anDestroy() { Object.values(_anCharts).forEach(c => { try { c.destroy(); } catch (e) {} }); _anCharts = {}; }
+function _dayKey(ts) { const d = new Date((ts || 0) * 1000); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+
+async function loadAnalytics() {
+  if (typeof Chart === 'undefined') return;
+  const isDark = !document.body.classList.contains('light-theme');
+  const grid = isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.07)';
+  const lbl = isDark ? '#9aa6b8' : '#64748b';
+  const P = {
+    cyan: '34,211,238', violet: '139,124,255',
+    green: _anRGB('--success-rgb', '45,226,197'), primary: _anRGB('--primary-rgb', '0,229,160'),
+    red: _anRGB('--danger-rgb', '255,107,107'), amber: _anRGB('--warn-rgb', '254,202,87'),
+    blue: _anRGB('--accent-rgb', '91,140,255'),
+  };
+  Chart.defaults.color = lbl;
+  Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+  try {
+    const [, chainRes] = await Promise.all([
+      fetch(API + '/stats').then(r => r.json()).catch(() => ({})),
+      fetch(API + '/chain').then(r => r.json()).catch(() => ({ success: false })),
+    ]);
+    const chain = (chainRes && chainRes.success) ? (chainRes.chain || []) : [];
+    const regs = [], vers = [], owners = {};
+    let totalTx = 0, mtSum = 0, mtN = 0;
+    chain.forEach(b => {
+      totalTx += (b.transactions || []).length;
+      if (typeof b.mining_time === 'number') { mtSum += b.mining_time; mtN++; }
+      (b.transactions || []).forEach(tx => {
+        if (tx.type === 'register') { regs.push(tx); const o = tx.owner || 'unknown'; owners[o] = (owners[o] || 0) + 1; }
+        else if (tx.type === 'verify') vers.push(tx);
+      });
+    });
+    _anDestroy();
+    _anLine(regs, P, grid, lbl, isDark);
+    _anPie(vers, P, isDark);
+    _anBar(owners, P, grid, lbl, isDark);
+    _anHealth(chain.length, totalTx, mtN ? mtSum / mtN : 0, P, isDark);
+  } catch (e) { /* analytics are best-effort */ }
+}
+
+function _anLine(regs, P, grid, lbl, isDark) {
+  const buckets = {};
+  regs.forEach(tx => { const k = _dayKey(tx.timestamp); buckets[k] = (buckets[k] || 0) + 1; });
+  let keys = Object.keys(buckets).sort();
+  if (!keys.length) { const k = _dayKey(Date.now() / 1000); keys = [k]; buckets[k] = 0; }
+  const labels = keys.map(k => { const [y, m, d] = k.split('-'); return new Date(y, m - 1, d).toLocaleDateString([], { month: 'short', day: 'numeric' }); });
+  const data = keys.map(k => buckets[k]);
+  const ctx = document.getElementById('anLine');
+  const g = ctx.getContext('2d').createLinearGradient(0, 0, 0, 248);
+  g.addColorStop(0, `rgba(${P.cyan},0.45)`); g.addColorStop(1, `rgba(${P.cyan},0)`);
+  _anCharts.line = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [{ label: 'Registrations', data, borderColor: `rgba(${P.cyan},1)`, backgroundColor: g, fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: `rgba(${P.cyan},1)`, pointHoverRadius: 6 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: _anTip(isDark, P.cyan) },
+      scales: { x: { ticks: { color: lbl, maxRotation: 45, font: { size: 10 } }, grid: { color: grid } }, y: { beginAtZero: true, ticks: { color: lbl, precision: 0, stepSize: 1 }, grid: { color: grid } } } },
+  });
+}
+function _anPie(vers, P, isDark) {
+  const pass = vers.filter(v => v.result === 'valid').length;
+  const tamper = vers.filter(v => v.result === 'invalid').length;
+  const canvas = document.getElementById('anPie'), empty = document.getElementById('anPieEmpty');
+  if (pass + tamper === 0) { canvas.style.display = 'none'; empty.style.display = 'flex'; return; }
+  canvas.style.display = 'block'; empty.style.display = 'none';
+  _anCharts.pie = new Chart(canvas, {
+    type: 'doughnut',
+    data: { labels: ['Passed', 'Tamper detected'], datasets: [{ data: [pass, tamper], backgroundColor: [`rgba(${P.green},0.85)`, `rgba(${P.red},0.85)`], borderColor: isDark ? 'rgba(6,8,12,0.7)' : '#fff', borderWidth: 2, hoverOffset: 8 }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { padding: 14, usePointStyle: true, color: isDark ? '#9aa6b8' : '#475569' } }, tooltip: _anTip(isDark, P.green) } },
+  });
+}
+function _anBar(owners, P, grid, lbl, isDark) {
+  const entries = Object.entries(owners).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const canvas = document.getElementById('anBar'), empty = document.getElementById('anBarEmpty');
+  if (!entries.length) { canvas.style.display = 'none'; empty.style.display = 'flex'; return; }
+  canvas.style.display = 'block'; empty.style.display = 'none';
+  const labels = entries.map(e => e[0]), data = entries.map(e => e[1]);
+  const colors = data.map((_, i) => i % 2 ? `rgba(${P.violet},0.85)` : `rgba(${P.cyan},0.85)`);
+  const horiz = labels.length > 4;
+  _anCharts.bar = new Chart(canvas, {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Models', data, backgroundColor: colors, borderRadius: 6, borderWidth: 0, maxBarThickness: 40 }] },
+    options: { indexAxis: horiz ? 'y' : 'x', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: _anTip(isDark, P.violet) },
+      scales: { x: { beginAtZero: true, ticks: { color: lbl, precision: 0, font: { size: 10 } }, grid: { color: grid } }, y: { beginAtZero: true, ticks: { color: lbl, font: { size: 11 } }, grid: { color: grid } } } },
+  });
+}
+function _anHealth(blocks, txs, avgMt, P, isDark) {
+  document.getElementById('anHealthBlocks').textContent = blocks;
+  document.getElementById('anHealthTx').textContent = txs;
+  document.getElementById('anGaugeVal').textContent = avgMt ? avgMt.toFixed(3) : '0';
+  const scaleMax = Math.max(0.4, avgMt * 1.5 || 0.4);
+  _anCharts.gauge = new Chart(document.getElementById('anGauge'), {
+    type: 'doughnut',
+    data: { datasets: [{ data: [avgMt, Math.max(0.0001, scaleMax - avgMt)], backgroundColor: [`rgba(${P.cyan},0.9)`, isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'], borderWidth: 0, circumference: 270, rotation: 225 }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '76%', plugins: { legend: { display: false }, tooltip: { enabled: false } } },
+  });
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  Model Comparison — split-pane hashes + 3D structural diff
+// ════════════════════════════════════════════════════════════════════
+const _cmp = { A: null, B: null };                 // {name, hex, layers|null}
+let _cmpAuto = null, _cmpDrag = null;
+const _cmpView = { rx: -18, ry: 26, zoom: 1 };
+
+async function onCompareFile(slot) {
+  const input = document.getElementById('cmpFile' + slot);
+  const file = input.files[0];
+  if (!file) return;
+  const MAX = 500;
+  if (file.size > MAX * 1024 * 1024) { toast('err', `File over the ${MAX} MB limit (hashed in-browser).`); input.value = ''; return; }
+  document.getElementById('cmpFN' + slot).textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+  const hbox = document.getElementById('cmpHash' + slot);
+  hbox.style.display = 'block'; hbox.className = 'cmp-hash';
+  hbox.innerHTML = `<span class="lbl">SHA-256 · ${slot}</span><span style="color:var(--text-muted)">Computing…</span>`;
+  try {
+    const hex = await computeHash(file);
+    let layers = null;
+    if (file.name.toLowerCase().endsWith('.json')) {
+      try { const j = JSON.parse(await file.text()); if (j && j.layers) layers = j.layers; } catch (e) {}
+    }
+    _cmp[slot] = { name: file.name, hex, layers };
+    hbox.innerHTML = `<span class="lbl">SHA-256 · ${slot}</span>${hex}`;
+    renderComparison();
+  } catch (e) { toast('err', 'Hash error: ' + e.message); hbox.style.display = 'none'; }
+}
+
+function renderComparison() {
+  const A = _cmp.A, B = _cmp.B, verdict = document.getElementById('cmpVerdict');
+  if (!A || !B) {
+    verdict.className = 'cmp-verdict';
+    verdict.innerHTML = '<div class="cmp-verdict-ico">⇄</div><div class="cmp-verdict-txt">Awaiting<br>both files</div>';
+    document.getElementById('cmp3dCard').style.display = 'none';
+    document.getElementById('cmpDiffCard').style.display = 'none';
+    return;
+  }
+  const identical = A.hex === B.hex;
+  document.getElementById('cmpHashA').className = 'cmp-hash ' + (identical ? 'match' : 'diff');
+  document.getElementById('cmpHashB').className = 'cmp-hash ' + (identical ? 'match' : 'diff');
+  verdict.className = 'cmp-verdict ' + (identical ? 'match' : 'diff');
+  verdict.innerHTML = identical
+    ? '<div class="cmp-verdict-ico">✓</div><div class="cmp-verdict-txt">IDENTICAL<br>files match</div>'
+    : '<div class="cmp-verdict-ico">≠</div><div class="cmp-verdict-txt">DIFFERENT<br>hash mismatch</div>';
+
+  if (A.layers && B.layers) {
+    const rows = compareLayerSets(A.layers, B.layers);
+    const reordered = detectReorder(A.layers, B.layers);
+    build3DComparison(rows);
+    buildDiffList(rows, reordered);
+    document.getElementById('cmp3dCard').style.display = 'block';
+    document.getElementById('cmpDiffCard').style.display = 'block';
+  } else {
+    stopCmpAuto();
+    document.getElementById('cmp3dCard').style.display = 'none';
+    document.getElementById('cmpDiffCard').style.display = 'none';
+    if (!identical) toast('info', 'Files differ. Upload JSON models (with a "layers" field) to see the 3D structural diff.', 4500);
+  }
+}
+
+// Recursive DEEP diff — walks nested tensors/objects and reports the exact leaf
+// coordinate of every change (works on multi-dimensional weight tensors, not just
+// flat arrays) plus aggregate accuracy stats (count, % changed, max & mean Δ).
+function _fmtPath(p) { return p.length ? p.map(k => '[' + k + ']').join('') : '[·]'; }
+function bvDeepDiff(a, b, maxReport = 16) {
+  const samples = []; let count = 0, total = 0, maxDelta = 0, sumDelta = 0, deltaN = 0;
+  (function walk(x, y, path) {
+    const xa = Array.isArray(x), ya = Array.isArray(y);
+    if (xa || ya) {
+      const n = Math.max(xa ? x.length : 0, ya ? y.length : 0);
+      for (let i = 0; i < n; i++) walk(xa ? x[i] : undefined, ya ? y[i] : undefined, path.concat(i));
+      return;
+    }
+    if (x && y && typeof x === 'object' && typeof y === 'object') {
+      new Set([...Object.keys(x), ...Object.keys(y)]).forEach(k => walk(x[k], y[k], path.concat(k)));
+      return;
+    }
+    total++;
+    if (x === y || JSON.stringify(x) === JSON.stringify(y)) return;
+    count++;
+    let delta = null;
+    if (typeof x === 'number' && typeof y === 'number' && isFinite(x) && isFinite(y)) {
+      delta = Math.abs(x - y); if (delta > maxDelta) maxDelta = delta; sumDelta += delta; deltaN++;
+    }
+    if (samples.length < maxReport) samples.push({ path: path.slice(), a: x, b: y, delta });
+  })(a, b, []);
+  // surface the largest-magnitude changes first (most likely the injected payload)
+  samples.sort((p, q) => (q.delta || 0) - (p.delta || 0));
+  return {
+    count, total, maxDelta, meanDelta: deltaN ? sumDelta / deltaN : 0,
+    pct: total ? (count / total) * 100 : 0, samples,
+    lenA: Array.isArray(a) ? a.length : null, lenB: Array.isArray(b) ? b.length : null,
+  };
+}
+function _tensorSize(v) {            // count leaf scalars (drives slab thickness ∝ params)
+  let n = 0;
+  (function w(x) { if (Array.isArray(x)) x.forEach(w); else if (x && typeof x === 'object') Object.values(x).forEach(w); else n++; })(v);
+  return n;
+}
+function compareLayerSets(LA, LB) {
+  const aN = Object.keys(LA), bN = Object.keys(LB), aS = new Set(aN), bS = new Set(bN);
+  const union = [...aN]; bN.forEach(n => { if (!aS.has(n)) union.push(n); });
+  return union.map(name => {
+    const inA = aS.has(name), inB = bS.has(name);
+    if (inA && inB) {
+      const same = JSON.stringify(LA[name]) === JSON.stringify(LB[name]);
+      return { name, status: same ? 'match' : 'changed', diff: same ? null : bvDeepDiff(LA[name], LB[name]),
+               size: _tensorSize(LA[name]), inA: true, inB: true };
+    }
+    return { name, status: inA ? 'removed' : 'added', size: _tensorSize(inA ? LA[name] : LB[name]), inA, inB };
+  });
+}
+function detectReorder(LA, LB) {     // common layers appearing in a different order
+  const aS = new Set(Object.keys(LA)), bS = new Set(Object.keys(LB));
+  return Object.keys(LA).filter(n => bS.has(n)).join('>') !== Object.keys(LB).filter(n => aS.has(n)).join('>');
+}
+
+// ── 3D scene (volumetric slabs + energy beams + starfield) ──
+function build3DComparison(rows) {
+  const world = document.getElementById('cmpWorld');
+  world.innerHTML = '';
+  const N = rows.length, gap = 52, colX = 152, top = -((N - 1) / 2) * gap;
+
+  // depth starfield
+  const stars = document.createElement('div'); stars.className = 'cmp-stars';
+  for (let i = 0; i < 48; i++) {
+    const s = document.createElement('div'); s.className = 'cmp-star';
+    s.style.transform = `translate3d(${(Math.random() - 0.5) * 960}px, ${(Math.random() - 0.5) * 660}px, ${-140 - Math.random() * 560}px)`;
+    s.style.animationDelay = (Math.random() * 3).toFixed(2) + 's';
+    s.style.opacity = (0.15 + Math.random() * 0.55).toFixed(2);
+    stars.appendChild(s);
+  }
+  world.appendChild(stars);
+
+  // glow pads under each tower
+  [['var(--accent-rgb)', -colX], ['var(--primary-rgb)', colX]].forEach(([col, x]) => {
+    const pad = document.createElement('div'); pad.className = 'cmp-pad';
+    pad.style.setProperty('--pc', col);
+    pad.style.transform = `translate3d(${x}px, ${-top + 52}px, 0) rotateX(84deg)`;
+    world.appendChild(pad);
+  });
+
+  // column labels
+  const mkLabel = (txt, x, color) => {
+    const l = document.createElement('div'); l.className = 'cmp-col-label';
+    l.textContent = txt; l.style.color = color;
+    l.style.transform = `translate3d(${x}px, ${top - 56}px, 34px)`; world.appendChild(l);
+  };
+  mkLabel('MODEL A', -colX, 'var(--accent)');
+  mkLabel('MODEL B', colX, 'var(--primary)');
+
+  const maxSize = Math.max(1, ...rows.map(r => r.size || 0));
+  rows.forEach((r, i) => {
+    const y = top + i * gap;
+    const depth = 16 + 36 * Math.min(1, Math.sqrt((r.size || 0) / maxSize));   // thickness ∝ params
+    if (r.inA && r.inB) {
+      const beam = document.createElement('div');
+      beam.className = 'cmp-beam ' + (r.status === 'match' ? 'match' : 'changed');
+      const w = 2 * colX - 172; beam.style.width = w + 'px'; beam.style.marginLeft = (-w / 2) + 'px';
+      beam.style.transform = `translate3d(0px, ${y}px, 0)`;
+      if (r.status === 'changed') { const pkt = document.createElement('span'); pkt.className = 'cmp-packet'; beam.appendChild(pkt); }
+      world.appendChild(beam);
+    }
+    world.appendChild(makeSlab(r, 'A', -colX, y, depth));
+    world.appendChild(makeSlab(r, 'B', colX, y, depth));
+  });
+  cmpIntro();   // animated camera sweep, then auto-orbit
+}
+function makeSlab(r, side, x, y, depth) {
+  const ghost = (r.status === 'removed' && side === 'B') || (r.status === 'added' && side === 'A');
+  const slab = document.createElement('div');
+  slab.className = 'cmp-slab ' + (ghost ? 'ghost' : r.status);
+  slab.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+  slab.style.setProperty('--w', '170px');
+  slab.style.setProperty('--h', '34px');
+  slab.style.setProperty('--d', (ghost ? 14 : depth) + 'px');
+  const face = (cls, html) => { const f = document.createElement('div'); f.className = 'cmp-face ' + cls; if (html) f.innerHTML = html; return f; };
+  const content = ghost
+    ? '<span class="st"></span><span class="nm" style="color:var(--text-muted)">— absent —</span>'
+    : `<span class="st"></span><span class="nm">${_escapeHtml(r.name)}</span>`;
+  slab.append(face('f', content), face('bk'), face('lf'), face('rt'), face('tp'), face('bt'));
+  if (!ghost) {
+    slab.addEventListener('mouseenter', () => showCmpTip(r, slab));
+    slab.addEventListener('mouseleave', hideCmpTip);
+  }
+  return slab;
+}
+function cmpIntro() {
+  stopCmpAuto();
+  _cmpView.zoom = 1; _cmpView.rx = -16;
+  const startRy = -72, endRy = 24, t0 = performance.now(), dur = 1100;
+  (function step(now) {
+    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    _cmpView.ry = startRy + (endRy - startRy) * e; applyCmpView();
+    if (k < 1) requestAnimationFrame(step); else startCmpAuto();
+  })(t0);
+}
+function showCmpTip(r, slab) {
+  if (_cmpDrag) return;
+  const tip = document.getElementById('cmpTip');
+  let body;
+  if (r.status === 'match') body = '<span style="color:var(--success)">● Identical</span> — every weight matches.';
+  else if (r.status === 'changed') {
+    const d = r.diff;
+    body = `<span style="color:var(--danger)">● Weights changed</span> — ${d.count}/${d.total} (${d.pct.toFixed(d.pct < 1 ? 2 : 1)}%)`
+      + (d.maxDelta ? `<br>max Δ ${d.maxDelta.toFixed(4)} · mean Δ ${d.meanDelta.toFixed(4)}` : '')
+      + (d.samples[0] ? `<br>top: ${_fmtPath(d.samples[0].path)} ${_fmtV(d.samples[0].a)} → ${_fmtV(d.samples[0].b)}` : '');
+  }
+  else if (r.status === 'added') body = '<span style="color:var(--warn)">● Added in B</span> — only in Model B.';
+  else body = '<span style="color:var(--warn)">● Removed in B</span> — only in Model A.';
+  tip.innerHTML = `<div class="tt" style="font-family:var(--mono)">${_escapeHtml(r.name)}</div>${body}`;
+  const scene = document.getElementById('cmpScene'), sr = scene.getBoundingClientRect();
+  const fr = (slab.querySelector('.cmp-face.f') || slab).getBoundingClientRect();
+  tip.style.left = Math.max(8, Math.min(fr.left - sr.left + fr.width / 2 - 70, sr.width - 250)) + 'px';
+  tip.style.top = Math.max(8, fr.top - sr.top - 16) + 'px';
+  tip.classList.add('show');
+}
+function hideCmpTip() { document.getElementById('cmpTip').classList.remove('show'); }
+function applyCmpView() {
+  const w = document.getElementById('cmpWorld');
+  if (w) w.style.transform = `translate(-50%,-50%) scale(${_cmpView.zoom}) rotateX(${_cmpView.rx}deg) rotateY(${_cmpView.ry}deg)`;
+}
+function startCmpAuto() {
+  stopCmpAuto();
+  _cmpAuto = setInterval(() => { if (!_cmpDrag) { _cmpView.ry += 0.22; applyCmpView(); } }, 33);
+}
+function stopCmpAuto() { if (_cmpAuto) { clearInterval(_cmpAuto); _cmpAuto = null; } }
+function initCmpOrbit() {
+  const scene = document.getElementById('cmpScene');
+  if (!scene || scene._orbit) return;
+  scene._orbit = true;
+  scene.addEventListener('pointerdown', e => {
+    _cmpDrag = { x: e.clientX, y: e.clientY, rx: _cmpView.rx, ry: _cmpView.ry };
+    scene.classList.add('dragging'); hideCmpTip();
+    try { scene.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  scene.addEventListener('pointermove', e => {
+    if (!_cmpDrag) return;
+    _cmpView.ry = _cmpDrag.ry + (e.clientX - _cmpDrag.x) * 0.4;
+    _cmpView.rx = Math.max(-78, Math.min(20, _cmpDrag.rx - (e.clientY - _cmpDrag.y) * 0.3));
+    applyCmpView();
+  });
+  const end = () => { _cmpDrag = null; scene.classList.remove('dragging'); };
+  scene.addEventListener('pointerup', end);
+  scene.addEventListener('pointercancel', end);
+  scene.addEventListener('wheel', e => {
+    e.preventDefault();
+    _cmpView.zoom = Math.max(0.5, Math.min(2.2, _cmpView.zoom * (e.deltaY > 0 ? 0.92 : 1.08)));
+    applyCmpView();
+  }, { passive: false });
+}
+
+// ── Diff list (split-pane rows) ──
+function _fmtV(v) {
+  if (v === undefined) return '∅';
+  if (v === null) return 'null';
+  if (typeof v === 'number') return (Math.abs(v) >= 1000 || Number.isInteger(v)) ? String(v) : v.toFixed(6);
+  return _escapeHtml(JSON.stringify(v));
+}
+function buildDiffList(rows, reordered) {
+  const counts = { match: 0, changed: 0, added: 0, removed: 0 };
+  rows.forEach(r => counts[r.status]++);
+  let summary = `<span style="color:var(--success)">${counts.match} identical</span> · `
+    + `<span style="color:var(--danger)">${counts.changed} changed</span> · `
+    + `<span style="color:var(--warn)">${counts.added + counts.removed} added/removed</span>`;
+  if (reordered) summary += ` · <span style="color:var(--warn)">⇄ layer order changed</span>`;
+  document.getElementById('cmpDiffSummary').innerHTML = summary;
+  const list = document.getElementById('cmpDiffList');
+  list.innerHTML = '';
+  rows.forEach(r => {
+    const row = document.createElement('div'); row.className = 'cmp-row ' + r.status;
+    const label = { match: 'IDENTICAL', changed: 'CHANGED', added: 'ADDED IN B', removed: 'REMOVED IN B' }[r.status];
+    const dot = r.status === 'match' ? 'var(--success)' : r.status === 'changed' ? 'var(--danger)' : 'var(--warn)';
+    let sub;
+    if (r.status === 'changed') {
+      const d = r.diff;
+      sub = `${d.count}/${d.total} scalars differ (${d.pct.toFixed(d.pct < 1 ? 2 : 1)}%)`
+        + (d.maxDelta ? ` · max Δ ${d.maxDelta.toFixed(4)}` : '')
+        + (d.meanDelta ? ` · mean Δ ${d.meanDelta.toFixed(4)}` : '')
+        + (d.lenA != null && d.lenA !== d.lenB ? ` · shape ${d.lenA}→${d.lenB}` : '');
+    } else if (r.status === 'match') sub = `weights match exactly · ${r.size} params`;
+    else sub = `topology change · ${r.size} params`;
+    row.innerHTML = `<div class="cmp-row-head"><div class="cmp-row-name"><span style="width:8px;height:8px;border-radius:50%;background:${dot};display:inline-block;flex-shrink:0;"></span>${_escapeHtml(r.name)} <span class="cmp-row-sub">${sub}</span></div><span class="cmp-row-status">${label}</span></div>`;
+    if (r.status === 'changed' && r.diff.samples.length) {
+      const body = document.createElement('div'); body.className = 'cmp-row-body';
+      let g = '<div class="cmp-wdiff"><div class="h">Coordinate</div><div class="h">Model A</div><div class="h">Model B</div>';
+      r.diff.samples.forEach(s => {
+        const dl = (s.delta != null) ? `<span style="color:var(--text-muted);font-size:.62rem;"> Δ${s.delta.toFixed(4)}</span>` : '';
+        g += `<div class="idx">${_fmtPath(s.path)}</div><div class="va">${_fmtV(s.a)}</div><div class="vb">${_fmtV(s.b)}${dl}</div>`;
+      });
+      g += '</div>';
+      if (r.diff.count > r.diff.samples.length) g += `<div style="font-size:.68rem;color:var(--text-muted);margin-top:.6rem;">+ ${r.diff.count - r.diff.samples.length} more changed parameter(s) — largest shown first</div>`;
+      body.innerHTML = g;
+      row.appendChild(body);
+      row.querySelector('.cmp-row-head').onclick = () => body.classList.toggle('open');
+    }
+    list.appendChild(row);
+  });
+}
+
+// ── Live Alerts (real-time WebSocket via Socket.IO) ──
+let _socket = null;
+let _alertUnread = 0;
+const ALERTS_MAX = 50;
+
+function _escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g,
+    c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+function setSocketStatus(state) {           // 'live' | 'down' | 'connecting'
+  const dot = document.getElementById('socketDot');
+  const s   = document.getElementById('socketStatus');
+  if (dot) dot.className = 'socket-dot' + (state === 'live' ? ' live' : state === 'down' ? ' down' : '');
+  if (s)   s.textContent = state === 'live' ? 'Live' : state === 'down' ? 'Offline' : 'Connecting…';
+}
+function updateAlertBadge() {
+  const b = document.getElementById('alertsBadge');
+  if (!b) return;
+  if (_alertUnread > 0) { b.textContent = _alertUnread > 99 ? '99+' : _alertUnread; b.classList.add('show'); }
+  else { b.textContent = ''; b.classList.remove('show'); }
+}
+function markAlertsRead() { _alertUnread = 0; updateAlertBadge(); }
+function clearAlerts() {
+  const feed = document.getElementById('alertsFeed');
+  if (feed) feed.innerHTML =
+    '<div class="empty-state" id="alertsEmpty"><span class="empty-icon"><svg class="ico" style="width:3rem;height:3rem;"><use href="#i-bell"/></svg></span>'
+    + '<p>No verification events yet.<br>Alerts appear here the instant anyone verifies a model.</p></div>';
+}
+function renderAlert(a, isLive) {
+  const feed = document.getElementById('alertsFeed');
+  if (!feed) return;
+  const empty = document.getElementById('alertsEmpty');
+  if (empty) empty.remove();
+  const tampered = !a.isValid;
+  const ts = a.timestamp ? new Date(a.timestamp * 1000) : new Date();
+  const time = ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const el = document.createElement('div');
+  el.className = 'alert-item ' + (tampered ? 'tampered' : 'pass') + (isLive ? ' alert-new' : '');
+  el.innerHTML =
+    '<span class="alert-ind"></span>'
+    + '<div class="alert-body">'
+    +   '<div class="alert-row">'
+    +     '<span class="alert-model">' + _escapeHtml(a.modelName || 'Unknown model') + '</span>'
+    +     '<span class="alert-badge ' + (tampered ? 'tampered' : 'pass') + '">' + (tampered ? 'TAMPERED' : 'PASS') + '</span>'
+    +   '</div>'
+    +   '<div class="alert-meta">verified by <strong>' + _escapeHtml(a.verifier || 'anonymous') + '</strong> · ' + time + '</div>'
+    + '</div>';
+  feed.insertBefore(el, feed.firstChild);
+  while (feed.children.length > ALERTS_MAX) feed.removeChild(feed.lastChild);
+}
+function initSocket() {
+  if (typeof io === 'undefined') { setSocketStatus('down'); console.warn('Socket.IO client failed to load (CDN blocked?)'); return; }
+  const origin = API.replace(/\/api\/?$/, '');
+  try {
+    _socket = io(origin, { transports: ['websocket', 'polling'], reconnection: true, reconnectionDelay: 1500 });
+  } catch (e) { setSocketStatus('down'); return; }
+  _socket.on('connect',       () => setSocketStatus('live'));
+  _socket.on('disconnect',    () => setSocketStatus('down'));
+  _socket.on('connect_error', () => setSocketStatus('down'));
+  _socket.on('verification_alert', (a) => {
+    renderAlert(a, true);
+    if (!a.isValid) {
+      toast('err', '⚠ TAMPER DETECTED — ' + _escapeHtml(a.modelName || 'a model')
+        + ' failed verification by ' + _escapeHtml(a.verifier || 'someone'));
+    }
+    const onTab = document.getElementById('tab-alerts');
+    if (!onTab || !onTab.classList.contains('active')) { _alertUnread++; updateAlertBadge(); }
+  });
+}
+
+// ── Cold-start connection banner (Render free tier wakes in 30–60s) ──
+function _connBanner() {
+  let b = document.getElementById('connBanner');
+  if (!b) {
+    b = document.createElement('div');
+    b.id = 'connBanner';
+    b.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:74px;z-index:5000;display:flex;align-items:center;gap:.6rem;padding:.55rem 1.1rem;border-radius:999px;font-size:.82rem;font-weight:600;background:var(--surface2);border:1px solid var(--border);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:var(--shadow-2);color:var(--text);transition:opacity .3s ease,transform .3s ease;';
+    document.body.appendChild(b);
+  }
+  return b;
+}
+function _connSpinner() {
+  return '<span style="display:inline-block;width:14px;height:14px;border:2px solid var(--primary);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;"></span>';
+}
+function showConnecting(msg, spin = true) {
+  const b = _connBanner();
+  b.style.opacity = '1'; b.style.transform = 'translateX(-50%)';
+  b.innerHTML = (spin ? _connSpinner()
+    : '<svg class="ico" style="width:1em;height:1em;color:var(--success);"><use href="#i-check"/></svg>')
+    + '<span>' + msg + '</span>';
+}
+function hideConnecting() {
+  const b = document.getElementById('connBanner');
+  if (b) { b.style.opacity = '0'; b.style.transform = 'translateX(-50%) translateY(-8px)'; setTimeout(() => b.remove(), 350); }
+}
+async function bootConnect() {
+  showConnecting('Connecting to server…');
+  const slow = setTimeout(() => showConnecting('Waking the server — the free tier can take up to a minute on first load…'), 4000);
+  const ctrl = new AbortController();
+  const timeout = setTimeout(() => ctrl.abort(), 75000);
+  try {
+    const r = await fetch(API + '/stats', { signal: ctrl.signal });
+    const d = await r.json();
+    clearTimeout(slow); clearTimeout(timeout);
+    document.getElementById('sModels').textContent = d.totalModels ?? '—';
+    document.getElementById('sVerify').textContent = d.totalVerifications ?? '—';
+    document.getElementById('sBlocks').textContent = d.totalBlocks ?? '—';
+    showConnecting('Connected', false);
+    setTimeout(hideConnecting, 1200);
+    refreshStats();            // fill the remaining stat widgets now the server is warm
+  } catch (e) {
+    clearTimeout(slow); clearTimeout(timeout);
+    const b = _connBanner();
+    b.style.opacity = '1'; b.style.transform = 'translateX(-50%)';
+    b.innerHTML = '<svg class="ico" style="width:1em;height:1em;color:var(--danger);"><use href="#i-x"/></svg>'
+      + '<span>Can’t reach the server.</span>'
+      + '<button onclick="bootConnect()" style="margin-left:.3rem;background:var(--primary);color:var(--primary-ink);border:none;border-radius:8px;padding:.25rem .7rem;font-weight:700;cursor:pointer;font-size:.78rem;">Retry</button>';
+  }
+}
+
 // ── Init ──
-refreshStats();
+bootConnect();
 initTheme();
 initUser();
+initSocket();
 loadActivityChart(14);
 // Show welcome modal only on first ever visit (after login)
 setInterval(refreshStats, 5000);
@@ -3791,8 +5061,8 @@ setInterval(refreshStats, 5000);
   function getThemeColors() {
     const isLight = document.body.classList.contains('light-theme');
     // Using subtle colours that match existing variables
-    nodeColor = isLight ? 'rgba(99, 102, 241, 0.4)' : 'rgba(108, 92, 231, 0.5)';
-    lineColor = isLight ? 'rgba(79, 70, 229, 0.15)' : 'rgba(108, 92, 231, 0.15)';
+    nodeColor = isLight ? 'rgba(99, 102, 241, 0.4)' : 'rgba(var(--primary-rgb), 0.5)';
+    lineColor = isLight ? 'rgba(79, 70, 229, 0.15)' : 'rgba(var(--primary-rgb), 0.15)';
   }
 
   class Node {
@@ -3846,7 +5116,7 @@ setInterval(refreshStats, 5000);
           // Use pure RGB from theme colours and adjust alpha based on distance
           const alpha = 1 - (distance / connectionDistance);
           const isLight = document.body.classList.contains('light-theme');
-          ctx.strokeStyle = isLight ? `rgba(79, 70, 229, ${alpha * 0.2})` : `rgba(108, 92, 231, ${alpha * 0.3})`;
+          ctx.strokeStyle = isLight ? `rgba(79, 70, 229, ${alpha * 0.2})` : `rgba(var(--primary-rgb), ${alpha * 0.3})`;
           
           ctx.stroke();
         }
@@ -3903,8 +5173,8 @@ document.addEventListener('mousedown', function(e) {
     const x = 50 + Math.cos(angle) * dist;
     const y = 50 + Math.sin(angle) * dist;
     
-    lines += `<line x1="50" y1="50" x2="${x}" y2="${y}" stroke="#00cec9" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.8"/>`;
-    nodes += `<rect x="${x-3}" y="${y-3}" width="6" height="6" fill="#00cec9" rx="1.5"/>`;
+    lines += `<line x1="50" y1="50" x2="${x}" y2="${y}" stroke="#2de2c5" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.8"/>`;
+    nodes += `<rect x="${x-3}" y="${y-3}" width="6" height="6" fill="#2de2c5" rx="1.5"/>`;
   }
   
   // Combine into an SVG graph showing a little blockchain network linking
@@ -3912,7 +5182,7 @@ document.addEventListener('mousedown', function(e) {
     <svg width="100" height="100" viewBox="0 0 100 100">
       <g>
         ${lines}
-        <rect x="46" y="46" width="8" height="8" fill="#6c5ce7" rx="2"/>
+        <rect x="46" y="46" width="8" height="8" fill="#00e5a0" rx="2"/>
         ${nodes}
       </g>
     </svg>
@@ -4109,7 +5379,7 @@ async function lookupProof() {
       : `<code style="font-size:.78rem;">${d.note_decoded || '(empty)'}</code>`;
 
     out.innerHTML = `
-      <div style="border:1px solid rgba(0,206,201,.3);border-radius:12px;padding:1.2rem;margin-top:.6rem;background:rgba(0,206,201,.05);">
+      <div style="border:1px solid rgba(var(--success-rgb),.3);border-radius:12px;padding:1.2rem;margin-top:.6rem;background:rgba(var(--success-rgb),.05);">
         <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;">
           <span style="font-size:1.4rem;">✅</span>
           <div>
@@ -4322,7 +5592,7 @@ async function downloadAlgoCertificate(modelId, modelName, modelHash, txid, roun
   try {
     const qrDataUrl = await QRCode.toDataURL(explorerUrl, {
       width: 120, margin: 1,
-      color: { dark: '#6c5ce7', light: '#0d111e' }
+      color: { dark: '#00e5a0', light: '#0d111e' }
     });
     doc.addImage(qrDataUrl, 'PNG', W / 2 - 60, y + 10, 120, 120);
     doc.setTextColor(150, 150, 180);
@@ -4598,12 +5868,12 @@ function _drawAlgoMerkle(tree, leaves, container) {
 
   // ── Premium color palette ──
   const palette = {
-    leaf:     { start: '#6c5ce7', end: '#a29bfe' },
+    leaf:     { start: '#00e5a0', end: '#a29bfe' },
     internal: { start: '#00b894', end: '#55efc4' },
     root:     { start: '#fd79a8', end: '#e84393' },
-    link:     isDark ? 'rgba(108,92,231,0.35)' : 'rgba(108,92,231,0.25)',
-    linkHi:   isDark ? 'rgba(108,92,231,0.7)' : 'rgba(108,92,231,0.5)',
-    glow:     '#6c5ce7',
+    link:     isDark ? 'rgba(var(--primary-rgb),0.35)' : 'rgba(var(--primary-rgb),0.25)',
+    linkHi:   isDark ? 'rgba(var(--primary-rgb),0.7)' : 'rgba(var(--primary-rgb),0.5)',
+    glow:     '#00e5a0',
     rootGlow: '#fd79a8',
     label:    isDark ? '#feca57' : '#f39c12',
     text:     '#ffffff',
@@ -4800,8 +6070,8 @@ function _drawAlgoMerkle(tree, leaves, container) {
     .attr('x', -42).attr('y', 22)
     .attr('width', 84).attr('height', 18)
     .attr('rx', 9)
-    .attr('fill', isDark ? 'rgba(108,92,231,0.2)' : 'rgba(108,92,231,0.12)')
-    .attr('stroke', isDark ? 'rgba(108,92,231,0.4)' : 'rgba(108,92,231,0.3)')
+    .attr('fill', isDark ? 'rgba(var(--primary-rgb),0.2)' : 'rgba(var(--primary-rgb),0.12)')
+    .attr('stroke', isDark ? 'rgba(var(--primary-rgb),0.4)' : 'rgba(var(--primary-rgb),0.3)')
     .attr('stroke-width', 0.8);
 
   leafNodes.append('text')
@@ -4953,8 +6223,8 @@ async function loadLedger() {
 
     const actionBadge = (action) => {
       const colors = {
-        'registration': 'background:#6c5ce7;color:#fff',
-        'smart-contract': 'background:#00cec9;color:#0d111e',
+        'registration': 'background:#00e5a0;color:#fff',
+        'smart-contract': 'background:#2de2c5;color:#0d111e',
         'contract-call': 'background:#fdcb6e;color:#0d111e',
         'transfer': 'background:#636e72;color:#fff',
       };
@@ -4993,7 +6263,7 @@ async function loadLedger() {
       <div style="overflow-x:auto;border-radius:8px;border:1px solid var(--border);">
         <table style="width:100%;border-collapse:collapse;">
           <thead>
-            <tr style="background:rgba(108,92,231,.12);text-align:left;">
+            <tr style="background:rgba(var(--primary-rgb),.12);text-align:left;">
               <th style="padding:.6rem .5rem;font-size:.7rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;">Round</th>
               <th style="padding:.6rem .5rem;font-size:.7rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;">TxID</th>
               <th style="padding:.6rem .5rem;font-size:.7rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;">Action</th>
@@ -5087,7 +6357,7 @@ function stopNetworkPolling() {
 
 <div class="chatbot-window" id="chatbotWindow">
   <div class="chatbot-header">
-    <h3><svg viewBox="0 0 24 24" width="16" height="16" fill="var(--primary)" style="margin-right:6px"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg> BlockVerify <span>AI</span></h3>
+    <h3><svg class="ico" style="width:18px;height:18px;color:var(--primary);margin-right:4px;"><use href="#i-bot"/></svg> BlockVerify <span>AI</span></h3>
     <button class="close-btn" onclick="toggleChatbot()">×</button>
   </div>
   <div class="chatbot-messages" id="chatArea">

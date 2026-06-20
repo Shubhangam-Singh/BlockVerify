@@ -1,4 +1,4 @@
-import json, random, os
+import json, random
 
 def generate():
     print("Generating Academic Demo Models for BlockVerify...")
@@ -49,11 +49,31 @@ def generate():
         
     rogue_model["layers"] = new_layers
     rogue_model["metadata"]["params"] += 128
-    
+
     with open("demo_rogue_layer.json", "w") as f:
         json.dump(rogue_model, f)
     print("🧨 Created demo_rogue_layer.json (Topology compromised: 'backdoor_bypass_layer' inserted)")
 
+    # 4. Layer Excision (a signed layer is deleted from the model)
+    excised_model = json.loads(json.dumps(base_model))
+    removed = excised_model["layers"].pop("batch_normalization_1")
+    excised_model["metadata"]["params"] -= len(removed)
+    with open("demo_excised_layer.json", "w") as f:
+        json.dump(excised_model, f)
+    print("✂️  Created demo_excised_layer.json (Layer Excision: 'batch_normalization_1' removed)")
+
+    # 5. Layer Reordering (same layers, altered execution-graph order)
+    reordered_model = json.loads(json.dumps(base_model))
+    items = list(reordered_model["layers"].items())
+    # swap the two dense layers' positions to alter the data-flow path
+    names = [k for k, _ in items]
+    i1, i2 = names.index("dense_1"), names.index("dense_output")
+    items[i1], items[i2] = items[i2], items[i1]
+    reordered_model["layers"] = dict(items)
+    with open("demo_reordered.json", "w") as f:
+        json.dump(reordered_model, f)
+    print("🔀 Created demo_reordered.json (Layer Reordering: 'dense_1' <-> 'dense_output')")
+
 if __name__ == "__main__":
     generate()
-    print("Done! You can use these files to demonstrate both Weight Tampering & Structural Anomalies.")
+    print("Done! Demonstrates 4 tampering classes: Weight Poisoning, Topology Poisoning, Layer Excision & Reordering.")

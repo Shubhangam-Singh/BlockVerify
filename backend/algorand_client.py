@@ -25,6 +25,26 @@ ALGOD_TOKEN       = ""
 
 client = algod.AlgodClient(ALGOD_TOKEN, ALGOD_ADDRESS)
 
+# ── Friendly error mapping ─────────────────────────────────────────────
+_NET_HINTS = (
+    "timed out", "timeout", "connection", "max retries", "failed to establish",
+    "temporarily unavailable", "service unavailable", "502", "503", "504",
+    "name resolution", "getaddrinfo", "unreachable", "remote end closed",
+    "connection reset", "connection refused", "ssl",
+)
+
+def _friendly_algo_error(exc) -> str:
+    """Translate low-level network/SDK failures into a clear, actionable message."""
+    if isinstance(exc, (requests.exceptions.ConnectionError, requests.exceptions.Timeout)):
+        return ("Algorand network unreachable — the Testnet node (AlgoNode) isn't responding "
+                "right now. Please try again in a few minutes.")
+    low = str(exc).lower()
+    if any(h in low for h in _NET_HINTS):
+        return ("Algorand network unreachable — the Testnet node (AlgoNode) isn't responding "
+                "right now. Please try again in a few minutes.")
+    return f"Algorand transaction failed: {exc}"
+
+
 # ── Wallet persistence ─────────────────────────────────────────────────
 WALLET_FILE = os.path.join(os.path.dirname(__file__), "data", "algo_wallet.json")
 
@@ -156,7 +176,7 @@ def broadcast_hash_to_algorand(model_id, model_name, model_hash, owner):
         }
 
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        return {"success": False, "error": _friendly_algo_error(e)}
 
 
 # ── 2. Live transaction lookup ─────────────────────────────────────────
@@ -205,7 +225,7 @@ def get_transaction_info(txid: str) -> dict:
         }
 
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        return {"success": False, "error": _friendly_algo_error(e)}
 
 
 # ── 3. Wallet / account info ───────────────────────────────────────────
@@ -247,7 +267,7 @@ def get_wallet_info() -> dict:
     except requests.Timeout:
         return {"success": False, "error": "AlgoNode timed out (>8s). Check your internet connection."}
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        return {"success": False, "error": _friendly_algo_error(e)}
 
 
 # ── 4. Live Algorand network stats ─────────────────────────────────────
@@ -280,7 +300,7 @@ def get_network_stats() -> dict:
         }
 
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        return {"success": False, "error": _friendly_algo_error(e)}
 
 
 # ── 5. Transaction history ledger ──────────────────────────────────────
@@ -346,4 +366,4 @@ def get_transaction_ledger(limit: int = 50) -> dict:
     except requests.Timeout:
         return {"success": False, "error": "Indexer timed out (>12s)"}
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        return {"success": False, "error": _friendly_algo_error(e)}

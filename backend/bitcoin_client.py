@@ -14,6 +14,7 @@ Author: razor_hats team | Branch: future-bitcoin-integration
 """
 
 import hashlib
+import os
 import requests
 try:
     from bit import PrivateKeyTestnet
@@ -23,9 +24,11 @@ except ImportError:
     PrivateKeyTestnet = None
 
 # ── Wallet configuration ────────────────────────────────────────────────────
-# Testnet wallet funded via coinfaucet.eu
+# Bitcoin *Testnet* WIF — override via the BTC_WIF environment variable (.env).
+# The fallback below is a throwaway testnet key (no real-money value) kept only so
+# the demo works out-of-the-box; set BTC_WIF in your .env to use your own wallet.
 # Address: mrDTrvKrLpW969E8CbqagN8KRRJ3u49huZ
-BTC_WIF = "cVTqu1VtqxqzAkKNAQUTVh5FFwcbCRPEeo4EaH5TzgLw8UQpCU7y"
+BTC_WIF = os.environ.get("BTC_WIF", "cVTqu1VtqxqzAkKNAQUTVh5FFwcbCRPEeo4EaH5TzgLw8UQpCU7y")
 
 BLOCKSTREAM_API   = "https://blockstream.info/testnet/api"
 EXPLORER_BASE_URL = "https://blockstream.info/testnet/tx"

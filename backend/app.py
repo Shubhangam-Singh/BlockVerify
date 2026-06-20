@@ -35,6 +35,30 @@ app = Flask(__name__)
 CORS(app, origins="*", supports_credentials=True)
 app.register_blueprint(auth_bp)
 
+# ------------------------------------------------------------------ #
+#  Real-time alerts (Flask-SocketIO)                                  #
+#  Optional dependency — the app degrades gracefully if missing so    #
+#  tests / minimal deploys still run. Uses pure-Python threading mode  #
+#  (+ simple-websocket) so no C-extensions are required.              #
+# ------------------------------------------------------------------ #
+try:
+    from flask_socketio import SocketIO
+    socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+    SOCKETIO_AVAILABLE = True
+except ImportError:
+    socketio = None
+    SOCKETIO_AVAILABLE = False
+
+
+def emit_alert(event: str, payload: dict) -> None:
+    """Broadcast a real-time event to all connected clients (no-op if SocketIO is unavailable)."""
+    if socketio is None:
+        return
+    try:
+        socketio.emit(event, payload)
+    except Exception as e:                       # never let a broadcast break the request
+        print(f"[socketio] emit failed (non-fatal): {e}")
+
 # Persistence file paths
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 REGISTRY_FILE = os.path.join(DATA_DIR, "models_registry.json")
@@ -114,7 +138,8 @@ def _get_pow_chain():
             vtx = {
                 "type": "verify",
                 "model_id": model_id,
-                "result": log.get("result", "unknown"),
+                # verification_logs store `isValid`; expose a clear result for chain consumers
+                "result": "valid" if log.get("isValid") else "invalid",
                 "timestamp": log.get("timestamp", 0),
             }
             bc.pending_transactions.append(vtx)
@@ -308,6 +333,16 @@ def verify_model():
             }
         )
         save_state()
+
+        # ── Real-time broadcast to ALL connected clients (Live Alerts feed) ──
+        emit_alert("verification_alert", {
+            "modelId":   data["modelId"],
+            "modelName": model["modelName"],
+            "verifier":  verifier,
+            "isValid":   is_valid,
+            "status":    "PASS" if is_valid else "TAMPERED",
+            "timestamp": int(time()),
+        })
 
         return jsonify(
             {
@@ -1178,6 +1213,187 @@ def download_report(model_id):
     )
 
 
+@app.route("/api/certificate/<model_id>", methods=["POST"])
+def generate_certificate(model_id):
+    """
+    Generate a professional, dark-themed PDF *certificate* using ReportLab.
+
+    Contains: model name, SHA-256 hash, owner, registration date, the Algorand
+    TxID rendered as a scannable QR code (links to the explorer), and a
+    "Verified on Algorand Testnet" badge. Returns the PDF as an attachment.
+
+    NB: styled to match the app's current "signal" brand (electric-green on a
+    cool-black) rather than the original purple, so the certificate matches the
+    live UI.
+    """
+    try:
+        import io
+        from datetime import datetime, timezone
+        from flask import Response
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib.colors import HexColor, white
+        from reportlab.graphics.barcode import qr
+        from reportlab.graphics.shapes import Drawing
+        from reportlab.graphics import renderPDF
+
+        model = models_registry.get(model_id)
+        if not model:
+            return jsonify({"success": False, "error": "Model not found"}), 404
+
+        # ── Brand palette (cool-black + signal green/blue) ──
+        BG    = HexColor("#06080c"); PANEL = HexColor("#10151f")
+        GREEN = HexColor("#00e5a0"); BLUE  = HexColor("#5b8cff")
+        TEXT  = HexColor("#eef2f8"); MUTED = HexColor("#8a94a6")
+        LINE  = HexColor("#222c3a"); HAIR  = HexColor("#161d28")
+        GTINT = HexColor("#06140f")
+
+        # ── Data ──
+        name  = str(model.get("modelName", "Unknown Model"))
+        mhash = str(model.get("modelHash", "—"))
+        owner = str(model.get("owner", "—"))
+        txid  = str(model.get("algoTxId") or "")
+        ts    = model.get("registeredAt")
+        reg_date = (datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%B %d, %Y · %H:%M UTC")
+                    if ts else "Pending confirmation")
+        explorer = (f"https://lora.algokit.io/testnet/transaction/{txid}"
+                    if txid else "https://lora.algokit.io/testnet")
+
+        def ascii_safe(s):  # core PDF fonts are latin-1
+            return s.encode("latin-1", "replace").decode("latin-1")
+        name, owner, reg_date = map(ascii_safe, (name, owner, reg_date))
+
+        W, H = letter                      # 612 x 792 pts
+        buf = io.BytesIO()
+        c = canvas.Canvas(buf, pagesize=letter, pageCompression=1)
+        c.setTitle(f"BlockVerify Certificate — {name}")
+        cx = W / 2.0
+
+        # ── Background + frames ──
+        c.setFillColor(BG);   c.rect(0, 0, W, H, fill=1, stroke=0)
+        mg = 34
+        c.setStrokeColor(LINE); c.setLineWidth(1.4)
+        c.roundRect(mg, mg, W - 2*mg, H - 2*mg, 16, fill=0, stroke=1)
+        c.setStrokeColor(HAIR); c.setLineWidth(0.8)
+        c.roundRect(mg + 8, mg + 8, W - 2*mg - 16, H - 2*mg - 16, 12, fill=0, stroke=1)
+
+        # corner accents
+        def corner(x, y, dx, dy):
+            c.setStrokeColor(GREEN); c.setLineWidth(2)
+            c.line(x, y, x + dx, y); c.line(x, y, x, y + dy)
+        corner(mg + 8, H - mg - 8, 22, -22);  corner(W - mg - 8, H - mg - 8, -22, -22)
+        corner(mg + 8, mg + 8, 22, 22);       corner(W - mg - 8, mg + 8, -22, 22)
+
+        # ── Header wordmark with check mark ──
+        ly = H - 78
+        c.setFillColor(GREEN); c.roundRect(cx - 96, ly - 6, 26, 26, 6, fill=1, stroke=0)
+        c.setStrokeColor(BG); c.setLineWidth(2.6)
+        c.line(cx - 90, ly + 6, cx - 86, ly + 2); c.line(cx - 86, ly + 2, cx - 78, ly + 13)
+        c.setFont("Helvetica-Bold", 17)
+        c.setFillColor(TEXT); c.drawString(cx - 62, ly + 2, "Block")
+        c.setFillColor(GREEN); c.drawString(cx - 62 + c.stringWidth("Block", "Helvetica-Bold", 17), ly + 2, "Verify")
+
+        # ── Title ──
+        c.setFillColor(TEXT); c.setFont("Helvetica-Bold", 26)
+        c.drawCentredString(cx, H - 150, "CERTIFICATE OF INTEGRITY")
+        c.setStrokeColor(GREEN); c.setLineWidth(2); c.line(cx - 64, H - 160, cx + 64, H - 160)
+        c.setFillColor(MUTED); c.setFont("Helvetica", 9.5)
+        c.drawCentredString(cx, H - 178, "Cryptographic attestation that this AI model is registered and tamper-evident")
+        c.drawCentredString(cx, H - 191, "on a live, public blockchain ledger.")
+
+        # ── Verified badge pill ──
+        badge = "VERIFIED ON ALGORAND TESTNET"
+        c.setFont("Helvetica-Bold", 9)
+        bw = c.stringWidth(badge, "Helvetica-Bold", 9) + 50
+        bh = 22; bx = cx - bw/2; by = H - 230
+        c.setFillColor(GTINT); c.setStrokeColor(GREEN); c.setLineWidth(1)
+        c.roundRect(bx, by, bw, bh, 11, fill=1, stroke=1)
+        c.setFillColor(GREEN); c.circle(bx + 16, by + bh/2, 5.5, fill=1, stroke=0)
+        c.setStrokeColor(BG); c.setLineWidth(1.5)
+        c.line(bx + 13, by + bh/2, bx + 15, by + bh/2 - 2.5); c.line(bx + 15, by + bh/2 - 2.5, bx + 19, by + bh/2 + 2.5)
+        c.setFillColor(GREEN); c.setFont("Helvetica-Bold", 9)
+        c.drawCentredString(cx + 9, by + bh/2 - 3.2, badge)
+
+        # ── Model name ──
+        c.setFillColor(MUTED); c.setFont("Helvetica-Bold", 8); c.drawCentredString(cx, H - 264, "ISSUED FOR THE MODEL")
+        c.setFillColor(TEXT); c.setFont("Helvetica-Bold", 22)
+        disp = name if c.stringWidth(name, "Helvetica-Bold", 22) < (W - 170) else (name[:38] + "…")
+        c.drawCentredString(cx, H - 290, disp)
+
+        # ── Details panel ──
+        px = mg + 30; pw = W - 2*(mg + 30); py = 248; ph = 196
+        c.setFillColor(PANEL); c.setStrokeColor(LINE); c.setLineWidth(1)
+        c.roundRect(px, py, pw, ph, 12, fill=1, stroke=1)
+
+        lx = px + 24
+        # SHA-256 fingerprint (wrapped 2 x 32)
+        c.setFillColor(MUTED); c.setFont("Helvetica-Bold", 7.5); c.drawString(lx, py + ph - 24, "SHA-256 FINGERPRINT")
+        c.setFillColor(GREEN); c.setFont("Courier", 9.5)
+        c.drawString(lx, py + ph - 39, mhash[:32]); c.drawString(lx, py + ph - 52, mhash[32:64])
+
+        def field(y, label, value, mono=False, color=TEXT, vsize=10.5):
+            c.setFillColor(MUTED); c.setFont("Helvetica-Bold", 7.5); c.drawString(lx, y, label)
+            c.setFillColor(color); c.setFont("Courier" if mono else "Helvetica", vsize)
+            c.drawString(lx, y - 14, value)
+
+        field(py + ph - 78,  "REGISTERED OWNER", owner)
+        field(py + ph - 118, "REGISTRATION DATE", reg_date)
+        tx_disp = (txid[:22] + "…" + txid[-6:]) if len(txid) > 30 else (txid or "Pending on-chain confirmation")
+        field(py + ph - 158, "ALGORAND TRANSACTION ID", tx_disp, mono=True, color=BLUE, vsize=9)
+
+        # ── QR code on a white card (right side of panel) ──
+        qsize = 116; qpad = 11
+        qcard_x = px + pw - (qsize + 2*qpad) - 22
+        qcard_y = py + (ph - (qsize + 2*qpad)) / 2.0
+        c.setFillColor(white); c.roundRect(qcard_x, qcard_y, qsize + 2*qpad, qsize + 2*qpad, 8, fill=1, stroke=0)
+        qwidget = qr.QrCodeWidget(explorer)
+        b = qwidget.getBounds(); bw_, bh_ = b[2] - b[0], b[3] - b[1]
+        d = Drawing(qsize, qsize, transform=[qsize / bw_, 0, 0, qsize / bh_, 0, 0])
+        d.add(qwidget)
+        renderPDF.draw(d, c, qcard_x + qpad, qcard_y + qpad)
+        c.setFillColor(MUTED); c.setFont("Helvetica", 7)
+        c.drawCentredString(qcard_x + (qsize + 2*qpad) / 2.0, qcard_y - 12, "Scan to verify on Algorand Explorer")
+
+        # ── Hexagonal authenticity seal (balances the lower band) ──
+        import math
+        def hexagon(x0, y0, r):
+            return [(x0 + r*math.cos(math.pi/2 + i*math.pi/3),
+                     y0 + r*math.sin(math.pi/2 + i*math.pi/3)) for i in range(6)]
+        sx, sy = cx, 176
+        for rr, col, wdt in ((42, GREEN, 1.6), (35, HexColor("#0d4a37"), 1.0)):
+            pts = hexagon(sx, sy, rr)
+            path = c.beginPath(); path.moveTo(*pts[0])
+            for p in pts[1:]:
+                path.lineTo(*p)
+            path.close()
+            c.setStrokeColor(col); c.setLineWidth(wdt); c.drawPath(path, fill=0, stroke=1)
+        # check mark inside
+        c.setStrokeColor(GREEN); c.setLineWidth(3)
+        c.line(sx - 13, sy + 2, sx - 4, sy - 8); c.line(sx - 4, sy - 8, sx + 14, sy + 13)
+        c.setFillColor(GREEN); c.setFont("Helvetica-Bold", 6.5)
+        c.drawCentredString(sx, sy + 50, "INTEGRITY SEAL")
+        c.setFillColor(MUTED); c.setFont("Helvetica", 6)
+        c.drawCentredString(sx, sy - 56, "IMMUTABLE  ·  PUBLICLY VERIFIABLE  ·  TAMPER-EVIDENT")
+
+        # ── Footer ──
+        c.setStrokeColor(LINE); c.setLineWidth(0.8); c.line(mg + 30, 96, W - mg - 30, 96)
+        gen = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        c.setFillColor(MUTED); c.setFont("Helvetica", 8)
+        c.drawCentredString(cx, 80, f"Issued {gen}  ·  SHA-256 fingerprint  ·  Algorand Pure-Proof-of-Stake  ·  blockverify.app")
+        c.setFillColor(HexColor("#5b6678")); c.setFont("Helvetica-Oblique", 7)
+        c.drawCentredString(cx, 67, "This certificate attests to an immutable on-chain record. Re-verify any time by re-hashing the model file.")
+
+        c.showPage(); c.save(); buf.seek(0)
+        filename = f"blockverify_certificate_{model_id[:8]}.pdf"
+        return Response(
+            buf.getvalue(),
+            mimetype="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 
 
 
@@ -1450,7 +1666,12 @@ if __name__ == "__main__":
     print("══════════════════════════════════════════════")
     print("  Ledger      : Algorand Testnet (AlgoNode)")
     print("  Settlement  : Bitcoin Testnet3 (OP_RETURN)")
+    print("  Real-time   : " + ("Flask-SocketIO (WebSocket) ✓" if SOCKETIO_AVAILABLE else "disabled (flask-socketio not installed)"))
     print("  Server      : http://localhost:5000")
     print("══════════════════════════════════════════════")
     port = int(os.environ.get("PORT", 5000))
-    app.run(debug=False, host="0.0.0.0", port=port)
+    if socketio is not None:
+        # allow_unsafe_werkzeug lets the threading-mode dev server run under `python app.py` on Render
+        socketio.run(app, debug=False, host="0.0.0.0", port=port, allow_unsafe_werkzeug=True)
+    else:
+        app.run(debug=False, host="0.0.0.0", port=port)

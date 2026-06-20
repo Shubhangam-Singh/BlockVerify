@@ -35,13 +35,24 @@ SECRET_FILE = os.path.join(DATA_DIR, "secret.key")
 os.makedirs(DATA_DIR, exist_ok=True)
 
 # ── Secret key (generated once, persisted) ───────────────────────────────────
+def _lock_down(path: str) -> None:
+    """Restrict the secret file to owner read/write only (chmod 600). No-op on Windows."""
+    try:
+        os.chmod(path, 0o600)
+    except (OSError, NotImplementedError):
+        pass  # non-POSIX filesystem (e.g. Windows) — best effort only
+
 def _load_secret() -> str:
     if os.path.exists(SECRET_FILE):
+        _lock_down(SECRET_FILE)          # ensure existing key is owner-only
         with open(SECRET_FILE) as f:
             return f.read().strip()
     key = secrets.token_hex(48)          # 384-bit random key
-    with open(SECRET_FILE, "w") as f:
+    # Create the file with 0600 perms BEFORE writing the secret (avoids a brief world-readable window)
+    fd = os.open(SECRET_FILE, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
         f.write(key)
+    _lock_down(SECRET_FILE)
     return key
 
 SECRET_KEY = _load_secret()

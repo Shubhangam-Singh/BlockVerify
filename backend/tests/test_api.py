@@ -23,6 +23,8 @@ def reset_state(monkeypatch):
     models_registry.clear()
     verification_logs.clear()
     _rate_log.clear()
+    # Drop any cached PoW chain so chain/Merkle tests start from a clean registry
+    app_module._invalidate_chain_cache()
 
     # Prevent tests from writing to the real JSON database
     monkeypatch.setattr(app_module, "save_state", lambda: None)
@@ -93,6 +95,15 @@ def mine_pow(hash_val: str, difficulty: int = 3) -> int:
         if candidate.startswith(prefix):
             return nonce
         nonce += 1
+
+
+# Helper – return the first nonce that does NOT satisfy PoW (guaranteed-invalid)
+def invalid_pow(hash_val: str, difficulty: int = 3) -> int:
+    prefix = '0' * difficulty
+    nonce = 0
+    while hashlib.sha256(f"{hash_val}{nonce}".encode()).hexdigest().startswith(prefix):
+        nonce += 1
+    return nonce
 
 
 # Helper – register a model and return the parsed JSON
@@ -445,3 +456,251 @@ class TestSearch:
 # ═══════════════════════════════════════════════════════════════════
 
 
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Proof-of-Work anti-spam  (verify_pow + /api/register enforcement)
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TestProofOfWork:
+
+    def test_prefix_matches_difficulty(self):
+        assert app_module.POW_PREFIX == "0" * app_module.POW_DIFFICULTY
+
+    def test_verify_pow_accepts_valid_nonce(self):
+        h = "deadbeefcafe"
+        assert app_module.verify_pow(h, mine_pow(h)) is True
+
+    def test_verify_pow_rejects_invalid_nonce(self):
+        h = "deadbeefcafe"
+        assert app_module.verify_pow(h, invalid_pow(h)) is False
+
+    def test_verify_pow_hash_construction(self):
+        # Must hash exactly model_hash + str(nonce) and compare against the prefix
+        h, nonce = "xyz", 12345
+        digest = hashlib.sha256(f"{h}{nonce}".encode()).hexdigest()
+        assert app_module.verify_pow(h, nonce) == digest.startswith(app_module.POW_PREFIX)
+
+    def test_register_rejects_invalid_pow(self, client):
+        h = "powhashbad"
+        resp = client.post("/api/register", json={
+            "modelName": "M", "modelHash": h, "owner": "alice", "powNonce": invalid_pow(h),
+        })
+        assert resp.status_code == 400
+        assert "Proof-of-Work" in resp.get_json()["error"]
+
+    def test_register_accepts_valid_pow(self, client):
+        h = "powhashgood"
+        resp = client.post("/api/register", json={
+            "modelName": "M", "modelHash": h, "owner": "alice", "powNonce": mine_pow(h),
+        })
+        assert resp.status_code == 200
+        assert resp.get_json()["success"] is True
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Local PoW-chain cache  (_get_pow_chain / _invalidate_chain_cache)
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TestChainCache:
+
+    def test_cached_chain_is_reused(self, client):
+        c1 = app_module._get_pow_chain()
+        c2 = app_module._get_pow_chain()
+        assert c1 is c2, "second call should return the cached object, not rebuild"
+
+    def test_invalidation_forces_rebuild(self, client):
+        c1 = app_module._get_pow_chain()
+        app_module._invalidate_chain_cache()
+        c2 = app_module._get_pow_chain()
+        assert c1 is not c2, "after invalidation the chain must be rebuilt"
+
+    def test_empty_registry_is_genesis_only(self, client):
+        chain = app_module._get_pow_chain()
+        assert len(chain) == 1, "no models → genesis block only"
+
+    def test_new_registration_grows_chain_after_invalidation(self, client):
+        before = len(app_module._get_pow_chain())
+        _register(client, name="CacheModel", hash_val="cachehash", owner="alice")
+        app_module._invalidate_chain_cache()   # save_state() does this in production
+        after = len(app_module._get_pow_chain())
+        assert after > before, "registering a model must add at least one block"
+
+    def test_chain_endpoint_reflects_registry(self, client):
+        _register(client, name="ChainModel", hash_val="chainhash", owner="alice")
+        app_module._invalidate_chain_cache()
+        data = client.get("/api/chain").get_json()
+        assert data["success"] is True
+        # genesis + at least the registration block
+        assert len(data["chain"]) >= 2
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Merkle tree endpoints  (/api/algo/merkle  &  /api/block/<i>/merkle)
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TestMerkle:
+
+    def test_algo_merkle_empty(self, client):
+        data = client.get("/api/algo/merkle").get_json()
+        assert data["success"] is True
+        assert data["count"] == 0
+        assert data["merkleRoot"] is None
+
+    def test_algo_merkle_with_models(self, client):
+        _register(client, name="A", hash_val="hashA", owner="alice")
+        _register(client, name="B", hash_val="hashB", owner="alice")
+        data = client.get("/api/algo/merkle").get_json()
+        assert data["count"] == 2
+        assert data["merkleRoot"] is not None
+        assert len(data["merkleRoot"]) == 64       # SHA-256 hex digest
+        assert data["tree"] is not None
+
+    def test_algo_merkle_is_deterministic(self, client):
+        _register(client, name="A", hash_val="hashA", owner="alice")
+        r1 = client.get("/api/algo/merkle").get_json()["merkleRoot"]
+        r2 = client.get("/api/algo/merkle").get_json()["merkleRoot"]
+        assert r1 == r2, "same registry must yield the same Merkle root"
+
+    def test_algo_merkle_tamper_changes_root(self, client):
+        d = _register(client, name="A", hash_val="hashA", owner="alice").get_json()
+        root_before = client.get("/api/algo/merkle").get_json()["merkleRoot"]
+        # Mutate a single stored hash — the root MUST change (tamper-evidence)
+        models_registry[d["modelId"]]["modelHash"] = "TAMPERED_HASH"
+        root_after = client.get("/api/algo/merkle").get_json()["merkleRoot"]
+        assert root_before != root_after
+
+    def test_block_merkle_genesis(self, client):
+        data = client.get("/api/block/0/merkle").get_json()
+        assert data["success"] is True
+        assert data["blockIndex"] == 0
+        assert len(data["merkleRoot"]) == 64
+        assert data["tree"] is not None
+
+    def test_block_merkle_out_of_range(self, client):
+        resp = client.get("/api/block/9999/merkle")
+        assert resp.status_code == 404
+        assert resp.get_json()["success"] is False
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Real-time alerts  (Flask-SocketIO verification_alert broadcast)
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TestRealtimeAlerts:
+    """Verify that /api/verify broadcasts a live alert to connected clients."""
+
+    def _sio_client(self):
+        if not getattr(app_module, "SOCKETIO_AVAILABLE", False):
+            pytest.skip("flask-socketio not installed")
+        return app_module.socketio.test_client(app_module.app)
+
+    def test_tamper_emits_tampered_alert(self, client):
+        model_id = _register(client, name="ResNet", hash_val="goodhash").get_json()["modelId"]
+        sio = self._sio_client()
+        assert sio.is_connected()
+        sio.get_received()  # clear connect noise
+        # Verify with a WRONG hash → tamper
+        client.post("/api/verify", json={"modelId": model_id, "providedHash": "WRONGHASH", "verifier": "bob"})
+        events = [r for r in sio.get_received() if r["name"] == "verification_alert"]
+        assert len(events) == 1, "exactly one alert should be broadcast"
+        payload = events[0]["args"][0]
+        assert payload["isValid"] is False
+        assert payload["status"] == "TAMPERED"
+        assert payload["verifier"] == "bob"
+        assert payload["modelName"] == "ResNet"
+        assert payload["modelId"] == model_id
+        assert "timestamp" in payload
+        sio.disconnect()
+
+    def test_valid_emits_pass_alert(self, client):
+        model_id = _register(client, name="BERT", hash_val="okhash").get_json()["modelId"]
+        sio = self._sio_client()
+        sio.get_received()
+        client.post("/api/verify", json={"modelId": model_id, "providedHash": "okhash", "verifier": "carol"})
+        events = [r for r in sio.get_received() if r["name"] == "verification_alert"]
+        assert len(events) == 1
+        assert events[0]["args"][0]["status"] == "PASS"
+        assert events[0]["args"][0]["isValid"] is True
+        sio.disconnect()
+
+    def test_alert_broadcasts_to_all_clients(self, client):
+        model_id = _register(client, hash_val="multi").get_json()["modelId"]
+        a = self._sio_client()
+        b = self._sio_client()
+        a.get_received(); b.get_received()
+        client.post("/api/verify", json={"modelId": model_id, "providedHash": "WRONG", "verifier": "bob"})
+        a_evt = [r for r in a.get_received() if r["name"] == "verification_alert"]
+        b_evt = [r for r in b.get_received() if r["name"] == "verification_alert"]
+        assert len(a_evt) == 1 and len(b_evt) == 1, "every connected client must receive the alert"
+        a.disconnect(); b.disconnect()
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Blockchain certificate  (POST /api/certificate/<id>, reportlab PDF)
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TestCertificate:
+
+    def _skip_if_no_reportlab(self):
+        try:
+            import reportlab  # noqa: F401
+        except ImportError:
+            pytest.skip("reportlab not installed")
+
+    def test_certificate_returns_pdf(self, client):
+        self._skip_if_no_reportlab()
+        model_id = _register(client, name="CertModel", hash_val="certhash").get_json()["modelId"]
+        resp = client.post(f"/api/certificate/{model_id}")
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "application/pdf"
+        assert resp.headers["Content-Disposition"].startswith("attachment")
+        data = resp.get_data()
+        assert data[:5] == b"%PDF-", "response must be a real PDF"
+        assert len(data) > 1500
+
+    def test_certificate_unknown_model(self, client):
+        self._skip_if_no_reportlab()
+        resp = client.post("/api/certificate/does-not-exist")
+        assert resp.status_code == 404
+        assert resp.get_json()["success"] is False
+
+    def test_certificate_without_txid_still_valid(self, client):
+        # A model with no Algorand TxID must still render a valid PDF (QR -> explorer home)
+        self._skip_if_no_reportlab()
+        models_registry["notx"] = {
+            "modelId": "notx", "modelName": "No-Tx Model", "owner": "alice",
+            "modelHash": "h" * 64, "registeredAt": 1700000000, "isActive": True,
+        }
+        resp = client.post("/api/certificate/notx")
+        assert resp.status_code == 200
+        assert resp.get_data()[:5] == b"%PDF-"
+
+    def test_certificate_is_post_only(self, client):
+        self._skip_if_no_reportlab()
+        model_id = _register(client, hash_val="getcert").get_json()["modelId"]
+        # GET is not allowed on the certificate route
+        assert client.get(f"/api/certificate/{model_id}").status_code == 405
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Chain verify-tx result field  (feeds the Analytics pie chart)
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TestChainResultField:
+
+    def test_verify_result_reflects_validity(self, client):
+        mid = _register(client, hash_val="rh").get_json()["modelId"]
+        client.post("/api/verify", json={"modelId": mid, "providedHash": "rh"})       # valid
+        client.post("/api/verify", json={"modelId": mid, "providedHash": "WRONG"})    # invalid
+        app_module._invalidate_chain_cache()
+        chain = client.get("/api/chain").get_json()["chain"]
+        results = [tx["result"] for b in chain for tx in b["transactions"] if tx.get("type") == "verify"]
+        assert "valid" in results and "invalid" in results
+        assert "unknown" not in results
