@@ -363,6 +363,89 @@ def verify_model():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route("/api/verify-batch", methods=["POST"])
+@require_auth
+def verify_batch():
+    """
+    Verify a whole repository of model files in one request.
+
+    Body: { "files": [ {"filename": "...", "hash": "<sha256>"}, ... ] }  (max 20)
+
+    For each file the hash is checked against the registry and classified:
+      - "verified"     → hash matches a registered model's current or historical hash
+      - "tampered"     → filename matches a registered model name but the hash does NOT
+      - "unregistered" → no match at all
+    Read-only: no blockchain writes, no audit logging (this is a fast scan).
+    """
+    try:
+        data  = request.get_json() or {}
+        files = data.get("files", [])
+        if not isinstance(files, list) or not files:
+            return jsonify({"success": False, "error": "Provide a non-empty 'files' list of {filename, hash}."}), 400
+        if len(files) > 20:
+            return jsonify({"success": False, "error": "Batch limit is 20 files per request."}), 400
+
+        # One batch counts as a single write-quota operation
+        allowed, err = check_rate_limit(g.user)
+        if not allowed:
+            return jsonify({"success": False, "error": err}), 429
+
+        def _norm(s: str) -> str:
+            return "".join(c for c in (s or "").lower() if c.isalnum())
+
+        # Build lookups once
+        by_current, by_version, by_name = {}, {}, {}
+        for m in models_registry.values():
+            ch = (m.get("modelHash") or "").lower()
+            if ch:
+                by_current.setdefault(ch, m)
+            for v in m.get("versions", []):
+                vh = (v.get("hash") or "").lower()
+                if vh:
+                    by_version.setdefault(vh, (m, v.get("version")))
+            nm = _norm(m.get("modelName", ""))
+            if nm:
+                by_name.setdefault(nm, m)
+
+        results = []
+        summary = {"verified": 0, "tampered": 0, "unregistered": 0}
+        for f in files:
+            fname = str(f.get("filename") or "file")
+            h     = str(f.get("hash") or "").strip().lower()
+            entry = {"filename": fname, "hash": h}
+
+            m = by_current.get(h) if h else None
+            vm = by_version.get(h) if (h and not m) else None
+            if m:
+                entry.update(status="verified", modelId=m["modelId"], modelName=m.get("modelName"),
+                             owner=m.get("owner"), version=m.get("currentVersion"),
+                             message="Matches the registered model hash")
+                summary["verified"] += 1
+            elif vm:
+                model, ver = vm
+                entry.update(status="verified", modelId=model["modelId"], modelName=model.get("modelName"),
+                             owner=model.get("owner"), version=ver,
+                             message=f"Matches registered version v{ver}")
+                summary["verified"] += 1
+            else:
+                base  = _norm(fname.rsplit(".", 1)[0])
+                named = by_name.get(base) if base else None
+                if named:
+                    entry.update(status="tampered", modelId=named["modelId"], modelName=named.get("modelName"),
+                                 owner=named.get("owner"),
+                                 message="Filename matches a registered model but the hash does NOT — possible tampering")
+                    summary["tampered"] += 1
+                else:
+                    entry.update(status="unregistered", message="No matching hash found in the registry")
+                    summary["unregistered"] += 1
+            results.append(entry)
+
+        return jsonify({"success": True, "results": results, "summary": summary, "total": len(results)}), 200
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @app.route("/api/add-version", methods=["POST"])
 @require_auth
 def add_version():

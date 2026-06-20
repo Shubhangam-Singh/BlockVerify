@@ -704,3 +704,47 @@ class TestChainResultField:
         results = [tx["result"] for b in chain for tx in b["transactions"] if tx.get("type") == "verify"]
         assert "valid" in results and "invalid" in results
         assert "unknown" not in results
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Batch verification  (POST /api/verify-batch)
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TestBatchVerify:
+
+    def test_batch_classifies_each_file(self, client):
+        _register(client, name="ModelA", hash_val="hashAAA")
+        _register(client, name="ModelB", hash_val="hashBBB")
+        resp = client.post("/api/verify-batch", json={"files": [
+            {"filename": "a.bin",       "hash": "hashAAA"},     # verified (hash match)
+            {"filename": "ModelB.pt",   "hash": "WRONGHASH"},   # tampered (name match, hash differs)
+            {"filename": "mystery.onnx", "hash": "zzz999"},     # unregistered
+        ]})
+        d = resp.get_json()
+        assert resp.status_code == 200 and d["success"] is True
+        by_file = {r["filename"]: r for r in d["results"]}
+        assert by_file["a.bin"]["status"] == "verified"
+        assert by_file["a.bin"]["modelName"] == "ModelA"
+        assert by_file["ModelB.pt"]["status"] == "tampered"
+        assert by_file["mystery.onnx"]["status"] == "unregistered"
+        assert d["summary"] == {"verified": 1, "tampered": 1, "unregistered": 1}
+        assert d["total"] == 3
+
+    def test_batch_matches_historical_version(self, client):
+        mid = _register(client, name="Vmodel", hash_val="v1hash").get_json()["modelId"]
+        client.post("/api/add-version", json={"modelId": mid, "newHash": "v2hash", "changelog": "v2"})
+        d = client.post("/api/verify-batch", json={"files": [{"filename": "old.bin", "hash": "v1hash"}]}).get_json()
+        assert d["results"][0]["status"] == "verified"
+        assert d["results"][0]["version"] == 1
+
+    def test_batch_rejects_empty(self, client):
+        assert client.post("/api/verify-batch", json={"files": []}).status_code == 400
+
+    def test_batch_rejects_over_20(self, client):
+        files = [{"filename": f"f{i}", "hash": f"h{i}"} for i in range(21)]
+        assert client.post("/api/verify-batch", json={"files": files}).status_code == 400
+
+    def test_batch_requires_auth(self, client):
+        resp = client.post("/api/verify-batch", json={"files": [{"filename": "x", "hash": "y"}]}, headers={"No-Auth": True})
+        assert resp.status_code == 401
