@@ -1228,6 +1228,38 @@
     .bv-badge.bad  { background: rgba(var(--danger-rgb),.16);  color: var(--danger);  border: 1px solid rgba(var(--danger-rgb),.4); }
     .bv-badge.warn { background: rgba(var(--warn-rgb),.16);    color: var(--warn);    border: 1px solid rgba(var(--warn-rgb),.4); }
 
+    /* ── Neural Forensic Scanner v4 (deep inspection terminal) ── */
+    .forensic-term { position: relative; max-height: 380px !important; }
+    .forensic-term::before {                       /* CRT scanlines */
+      content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2; border-radius: 8px;
+      background: repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 3px);
+    }
+    .ft-map { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: .7rem; }
+    .ft-cell { width: 15px; height: 15px; border-radius: 3px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.10); transition: background .25s, box-shadow .25s; }
+    .ft-cell.scanning { background: rgba(34,211,238,.4); border-color: #22d3ee; box-shadow: 0 0 12px rgba(34,211,238,.9); animation: ftPulse .45s ease-in-out infinite; }
+    .ft-cell.ok   { background: rgba(var(--success-rgb),.4); border-color: var(--success); box-shadow: 0 0 6px rgba(var(--success-rgb),.6); }
+    .ft-cell.bad  { background: rgba(var(--danger-rgb),.5);  border-color: var(--danger);  box-shadow: 0 0 10px rgba(var(--danger-rgb),.9); animation: ftPulse 1.1s ease-in-out infinite; }
+    .ft-cell.warn { background: rgba(var(--warn-rgb),.45);   border-color: var(--warn);    box-shadow: 0 0 8px rgba(var(--warn-rgb),.7); }
+    @keyframes ftPulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+    .ft-shake { animation: ftShake .45s linear; }
+    @keyframes ftShake {
+      10%,90% { transform: translateX(-2px); } 20%,80% { transform: translateX(3px); }
+      30%,70% { transform: translateX(-4px); } 40%,60% { transform: translateX(4px); }
+      50% { transform: translateX(-3px); }
+    }
+    .ft-alert {
+      margin: .5rem 0; padding: .5rem .8rem; border: 1px solid rgba(var(--danger-rgb),.6); border-radius: 6px;
+      background: rgba(var(--danger-rgb),.10); color: var(--danger); font-weight: 800; letter-spacing: .08em;
+      animation: ftGlitch .5s steps(2) 3, alertPulse 1.6s ease-in-out .9s infinite;
+    }
+    @keyframes ftGlitch {
+      0%   { text-shadow: 2px 0 rgba(34,211,238,.8), -2px 0 rgba(255,0,255,.6); transform: translateX(0); }
+      25%  { text-shadow: -2px 0 rgba(34,211,238,.8), 2px 0 rgba(255,0,255,.6); transform: translateX(1px); }
+      50%  { text-shadow: 1px 0 rgba(34,211,238,.8), -1px 0 rgba(255,0,255,.6); transform: translateX(-1px); }
+      100% { text-shadow: none; transform: translateX(0); }
+    }
+    .ft-hex { display: block; color: #3f8f6f; opacity: .75; font-size: .6rem; letter-spacing: .05em; min-height: .9em; padding-left: 1.6rem; }
+
     /* ══════════════════════════════════════════════════════════════
        LIGHT THEME — adapt v2 components & hardcoded-dark surfaces
        (body.light-theme .x out-specifies the base .x rules)
@@ -2805,7 +2837,11 @@ async function registerModel() {
   document.getElementById('regModelResult').innerHTML = '';
   try {
     const payload = { modelName:name, modelHash:hash, metadata:meta, powNonce };
-    if (layerHashesMap.reg) payload.layerHashes = layerHashesMap.reg;
+    if (layerHashesMap.reg) {
+      payload.layerHashes = layerHashesMap.reg;
+      // explicit signed sequence — JSON object key order is not a reliable carrier
+      payload.layerOrder = Object.keys(layerHashesMap.reg);
+    }
 
     const res = await apiFetch(API + '/register', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -2898,7 +2934,7 @@ async function verifyModel() {
           <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.05);">
             <div style="font-size:.85rem;font-weight:700;color:var(--danger);margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem;"><svg class="ico" style="width:1em;height:1em;"><use href="#i-shield"/></svg> Tampered Architecture Detected</div>
             <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:1rem;">The file signature is broken. The inspector diffs every layer against the on-chain manifest and classifies each tampering type — <strong>weight poisoning</strong>, <strong>rogue layer</strong>, <strong>layer excision</strong>, or <strong>reordering</strong> — using statistical outlier analysis on the actual tensors.</p>
-            <button class="btn btn-sec" style="border-color:var(--danger);color:var(--danger);width:100%;font-size:.8rem;padding:.5rem;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;" onclick='runDeepInspection(${JSON.stringify(d.layerHashes)})'>
+            <button class="btn btn-sec" style="border-color:var(--danger);color:var(--danger);width:100%;font-size:.8rem;padding:.5rem;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;" onclick='runDeepInspection(${JSON.stringify(d.layerHashes)}, ${JSON.stringify(d.layerOrder || [])}, ${JSON.stringify(modelId)})'>
               <svg class="ico"><use href="#i-search"/></svg> Run Deep Layer Inspection
             </button>
             <div id="deepInspectionTerminal" style="display:none;margin-top:1rem;background:#050505;border:1px solid #333;border-radius:8px;padding:1rem;font-family:var(--mono);font-size:.75rem;min-height:150px;max-height:300px;overflow-y:auto;">
@@ -2922,19 +2958,28 @@ async function verifyModel() {
 
 // ── Forensic engine — REAL analysis of client-side weight tensors ──
 // (weights never leave the device; we analyse the uploaded copy in-browser)
+// Row-major recursive flatten so probes work on N-dimensional tensors, not just
+// flat arrays (a flat array flattens to itself, so demo behaviour is unchanged).
+function bvFlatten(arr){
+  const out=[];
+  (function w(x){ if(Array.isArray(x)){ for(const e of x) w(e); }
+    else if(typeof x==='number' && isFinite(x)) out.push(x); })(arr);
+  return out;
+}
 function bvNumericStats(arr){
-  let n=0,min=Infinity,max=-Infinity,sum=0;
-  if(Array.isArray(arr)) for(let i=0;i<arr.length;i++){const x=arr[i];if(typeof x==='number'&&isFinite(x)){n++;sum+=x;if(x<min)min=x;if(x>max)max=x;}}
+  const nums=bvFlatten(arr||[]); const n=nums.length;
   if(!n) return null;
+  let min=Infinity,max=-Infinity,sum=0;
+  for(const x of nums){ sum+=x; if(x<min)min=x; if(x>max)max=x; }
   const mean=sum/n; let v=0;
-  for(let i=0;i<arr.length;i++){const x=arr[i];if(typeof x==='number'&&isFinite(x))v+=(x-mean)*(x-mean);}
+  for(const x of nums) v+=(x-mean)*(x-mean);
   return {n,min,max,mean,std:Math.sqrt(v/n)};
 }
 // Robust outlier detection (median + MAD) — catches injected backdoor weights from REAL data
 function bvFindOutliers(arr,maxReport=6){
-  const base=bvNumericStats(arr||[]);
-  const nums=[]; if(Array.isArray(arr)) for(const x of arr) if(typeof x==='number'&&isFinite(x)) nums.push(x);
+  const nums=bvFlatten(arr||[]);
   const n=nums.length;
+  const base=bvNumericStats(arr||[]);
   if(n<4) return {n,outliers:[],count:0,stats:base};
   const sorted=[...nums].sort((a,b)=>a-b);
   const median=sorted[Math.floor(n/2)];
@@ -2942,117 +2987,260 @@ function bvFindOutliers(arr,maxReport=6){
   const mad=devs[Math.floor(n/2)]*1.4826;
   const scale=mad>1e-9?mad:(base&&base.std>1e-9?base.std:1);
   const out=[];
-  for(let i=0;i<arr.length;i++){const x=arr[i];if(typeof x!=='number'||!isFinite(x))continue;
-    const z=Math.abs(x-median)/scale; if(z>8) out.push({index:i,value:x,z});}
+  for(let i=0;i<nums.length;i++){ const x=nums[i];
+    const z=Math.abs(x-median)/scale; if(z>8) out.push({index:i,value:x,z}); }
   out.sort((a,b)=>b.z-a.z);
   return {n,median,mad,scale,count:out.length,outliers:out.slice(0,maxReport),stats:base};
 }
-// Classify every tampering type by diffing on-chain manifest vs uploaded model
-function bvClassifyTopology(stored,computed){
-  const sN=Object.keys(stored||{}),cN=Object.keys(computed||{});
+// Classify every tampering type by diffing on-chain manifest vs uploaded model.
+// `storedOrder` (optional) is the EXPLICIT signed layer sequence recorded at
+// registration — order must never be inferred from JSON object keys alone
+// (RFC 8259 objects are unordered, and serializers may re-sort them).
+function bvClassifyTopology(stored,computed,storedOrder){
+  let sN=Object.keys(stored||{});
+  if(Array.isArray(storedOrder)&&storedOrder.length){
+    const inManifest=new Set(sN);
+    const ordered=storedOrder.filter(n=>inManifest.has(n));
+    const seen=new Set(ordered);
+    sN=ordered.concat(sN.filter(n=>!seen.has(n)));   // any stragglers keep key order
+  }
+  const cN=Object.keys(computed||{});
   const sS=new Set(sN),cS=new Set(cN);
   const added=cN.filter(n=>!sS.has(n));
   const removed=sN.filter(n=>!cS.has(n));
   const common=cN.filter(n=>sS.has(n));
   const modified=common.filter(n=>stored[n]!==computed[n]);
   const intact=common.filter(n=>stored[n]===computed[n]);
-  const reordered=(sN.filter(n=>cS.has(n)).join('>'))!==(cN.filter(n=>sS.has(n)).join('>'));
+  // element-wise sequence comparison of the common projection —
+  // join('<sep>') is collision-prone if a layer name contains the separator
+  const sProj=sN.filter(n=>cS.has(n)), cProj=common;
+  const reordered = sProj.length===cProj.length && sProj.some((n,i)=>n!==cProj[i]);
   return {sN,cN,added,removed,modified,intact,reordered};
 }
 function bvFmtZ(z){ return z>=1000 ? z.toExponential(1) : z.toFixed(1); }
 function bvFmtVal(x){ return (Math.abs(x)>=1000||Number.isInteger(x))?String(x):(+x).toFixed(6); }
 
-async function runDeepInspection(storedLayers){
+// ── Tensor health scan — real statistical tamper signals beyond hash mismatch ──
+// NaN/Inf injection, extreme magnitudes, low-entropy (constant-block) regions and
+// long identical runs are classic footprints of weight-poisoning payloads.
+function bvLayerHealth(arr){
+  const nums=[]; let nan=0, inf=0;
+  (function w(x){ if(Array.isArray(x)) x.forEach(w);
+    else if(typeof x==='number'){ if(Number.isNaN(x)) nan++; else if(!isFinite(x)) inf++; else nums.push(x); } })(arr||[]);
+  const n=nums.length;
+  let extremes=0, maxAbs=0;
+  for(const v of nums){ const a=Math.abs(v); if(a>maxAbs) maxAbs=a; if(a>100) extremes++; }
+  let entropy=null;                                  // Shannon entropy over 32 bins, normalized 0..1
+  if(n>16){
+    let mn=Infinity,mx=-Infinity; nums.forEach(v=>{ if(v<mn)mn=v; if(v>mx)mx=v; });
+    entropy=0;
+    if(mx>mn){ const bins=new Array(32).fill(0);
+      nums.forEach(v=>{ bins[Math.min(31,Math.floor((v-mn)/(mx-mn)*32))]++; });
+      bins.forEach(c=>{ if(c){ const p=c/n; entropy-=p*Math.log2(p); } });
+      entropy/=5;                                    // log2(32)=5
+    }
+  }
+  let maxRun=1, run=1;                               // longest identical consecutive run
+  for(let i=1;i<nums.length;i++){ if(nums[i]===nums[i-1]){ if(++run>maxRun)maxRun=run; } else run=1; }
+  return {n,nan,inf,extremes,maxAbs,entropy,maxRun};
+}
+function bvHealthFlags(h){
+  const f=[];
+  if(!h) return f;
+  if(h.nan) f.push(h.nan+' NaN');
+  if(h.inf) f.push(h.inf+' ±Inf');
+  if(h.extremes) f.push(h.extremes+' extreme |w|>100');
+  if(h.entropy!=null && h.entropy<0.35) f.push('low entropy '+h.entropy.toFixed(2));
+  if(h.maxRun>=8) f.push('constant run ×'+h.maxRun);
+  return f;
+}
+function _flatSample(v, cap=240){
+  const out=[]; (function w(x){ if(out.length>=cap) return;
+    if(Array.isArray(x)){ for(const e of x){ if(out.length>=cap) break; w(e); } }
+    else if(typeof x==='number') out.push(x); })(v);
+  return out;
+}
+
+// ── Trustless manifest verification — Merkle inclusion proofs vs on-chain root ──
+// The server's manifest is treated as UNTRUSTED input: the browser recomputes every
+// leaf, folds each sibling path, and only accepts a root it independently read from
+// the public Algorand indexer. Forging a passing manifest requires a SHA-256 preimage.
+async function bvSha256Hex(str){
+  const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+// leaf_i = SHA-256(JSON([i, name, layerHash])) — byte-identical to the backend encoding
+function bvMerkleLeaf(i, name, hash){ return bvSha256Hex(JSON.stringify([i, name, hash])); }
+async function bvFoldProof(leaf, proof){
+  let h = leaf;
+  for(const s of (proof || [])) h = await bvSha256Hex(s.right ? h + s.hash : s.hash + h);
+  return h;
+}
+async function bvVerifyManifestAnchor(modelId){
+  const out = { mode:'server', ok:0, bad:0, chainRoot:null, root:null, tx:null, leafCount:null };
+  try{
+    const mp = await (await fetch(API + '/manifest-proof/' + encodeURIComponent(modelId))).json();
+    if(!mp.success) return out;
+    out.root = mp.merkleRoot; out.tx = (mp.anchor && mp.anchor.algoTxId) || null;
+    // 1. on-chain root — fetched DIRECTLY from the public Algorand indexer (not our server)
+    try{
+      if(mp.anchor && mp.anchor.indexerUrl){
+        const tx = await (await fetch(mp.anchor.indexerUrl)).json();
+        const b64 = tx && tx.transaction && tx.transaction.note;
+        if(b64){ const note = JSON.parse(atob(b64)); out.chainRoot = note.lmr || null; out.leafCount = (note.lc ?? null); }
+      }
+    }catch(e){ /* indexer unreachable → stay in server-trusted mode */ }
+    // 2. recompute every leaf from the served (untrusted) manifest and fold its proof
+    for(const p of (mp.proofs || [])){
+      const leaf = await bvMerkleLeaf(p.index, p.name, p.layerHash);
+      ((await bvFoldProof(leaf, p.proof)) === mp.merkleRoot) ? out.ok++ : out.bad++;
+    }
+    const countOk = out.leafCount == null || out.leafCount === mp.layerCount;
+    if(out.chainRoot && out.chainRoot === mp.merkleRoot && out.bad === 0 && countOk) out.mode = 'trustless';
+    return out;
+  }catch(e){ return out; }
+}
+
+async function runDeepInspection(storedLayers, storedOrder, modelId){
   const computed = (typeof layerHashesMap!=='undefined' && layerHashesMap.ver) ? layerHashesMap.ver : {};
   const data     = (typeof layerDataMap!=='undefined'  && layerDataMap.ver)  ? layerDataMap.ver  : {};
   const term = document.getElementById('deepInspectionTerminal');
+  term.classList.add('forensic-term');
   term.style.display='block';
   term.innerHTML = `
-    <div style="display:flex;justify-content:space-between;border-bottom:1px solid #333;padding-bottom:.5rem;margin-bottom:.5rem;">
-      <span style="color:var(--primary);font-weight:bold;letter-spacing:1px;">NEURAL ARCHITECTURE INSPECTOR v3.0</span>
+    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #333;padding-bottom:.5rem;margin-bottom:.6rem;">
+      <span style="color:var(--primary);font-weight:bold;letter-spacing:1px;">NEURAL FORENSIC SCANNER v4.0</span>
       <span style="color:#666;" id="deepTermSpin">&#10287;</span>
     </div>
+    <div style="font-size:.58rem;color:#556;letter-spacing:.12em;margin-bottom:.3rem;">LAYER MAP</div>
+    <div class="ft-map" id="ftMap"></div>
     <div id="deepTermLog"></div>`;
   const logBox=document.getElementById('deepTermLog');
   const spinner=document.getElementById('deepTermSpin');
+  const map=document.getElementById('ftMap');
   const spinFrames=['⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏'];
   let spinIdx=0; const spinInt=setInterval(()=>{spinner.textContent=spinFrames[++spinIdx%spinFrames.length];},80);
-  const log=(html)=>{const d=document.createElement('div');d.style.marginBottom='0.35rem';d.innerHTML=html;logBox.appendChild(d);term.scrollTop=term.scrollHeight;return d;};
   const wait=(ms)=>new Promise(r=>setTimeout(r,ms));
+  const log=(html)=>{const d=document.createElement('div');d.style.marginBottom='0.35rem';d.innerHTML=html;logBox.appendChild(d);term.scrollTop=term.scrollHeight;return d;};
 
-  const cls = bvClassifyTopology(storedLayers, computed);
-  log(`<span style="color:#888;">[manifest]</span> on-chain layers: <b style="color:#ccc;">${cls.sN.length}</b> &middot; uploaded layers: <b style="color:#ccc;">${cls.cN.length}</b>`);
-  await wait(380);
-  log(`<span style="color:#888;">[scan]</span> Diffing topology &amp; per-layer tensor signatures...`);
-  await wait(460);
+  const cls = bvClassifyTopology(storedLayers, computed, storedOrder);
+
+  // layer-map cells: uploaded layers first, excised (on-chain-only) after
+  const cellByName={};
+  cls.cN.concat(cls.removed).forEach(name=>{
+    const c=document.createElement('div'); c.className='ft-cell'; c.title=name;
+    map.appendChild(c); cellByName[name]=c;
+  });
+
+  log(`<span style="color:#888;">[manifest]</span> on-chain layers: <b style="color:#ccc;">${cls.sN.length}</b> &middot; uploaded layers: <b style="color:#ccc;">${cls.cN.length}</b> &middot; probes: <span style="color:#22d3ee">hash · outlier · NaN/Inf · entropy · topology</span>`);
+  await wait(340);
+
+  // ── Trustless anchor check: is this manifest committed on Algorand? ──
+  if(modelId){
+    const aRow = log(`<span style="color:#888;">[anchor]</span> Verifying manifest Merkle commitment against Algorand… <span class="layer-ellipsis">...</span>`);
+    const a = await bvVerifyManifestAnchor(modelId);
+    if(a.mode === 'trustless'){
+      aRow.innerHTML = `<span style="color:#888;">[anchor]</span> <span style="color:var(--success);font-weight:bold;">TRUSTLESS ✓</span> ${a.ok}/${a.ok+a.bad} inclusion proofs valid &middot; on-chain root <span style="color:var(--success)">${a.chainRoot.slice(0,16)}…</span> (tx <span style="color:#22d3ee">${(a.tx||'').slice(0,8)}…</span>) — manifest verified without trusting the server`;
+    } else {
+      const rootState = !a.chainRoot ? 'on-chain root unavailable'
+        : (a.chainRoot === a.root ? `${a.bad} invalid inclusion proof(s)`
+        : '<span style="color:var(--danger);font-weight:bold;">ROOT MISMATCH — served manifest ≠ on-chain commitment!</span>');
+      aRow.innerHTML = `<span style="color:#888;">[anchor]</span> <span style="color:var(--warn);font-weight:bold;">server-trusted manifest</span> — ${rootState}`;
+    }
+    await wait(220);
+  }
+
+  // animated readout of REAL sampled weights while a layer is scanned
+  async function streamWeights(el, vals){
+    for(let f=0; f<5; f++){
+      let s='';
+      for(let j=0;j<9;j++){
+        if(vals && vals.length){ const v=vals[(Math.random()*vals.length)|0]; s+=(typeof v==='number'?v.toFixed(4):'····')+'  '; }
+        else s+=((Math.random()*0xffff)|0).toString(16).padStart(4,'0')+'  ';
+      }
+      el.textContent=s; term.scrollTop=term.scrollHeight;
+      await wait(46);
+    }
+    el.textContent='';
+  }
+  let alertShown=false;
+  const criticalAlert=(name)=>{
+    if(alertShown) return; alertShown=true;
+    const al=document.createElement('div'); al.className='ft-alert';
+    al.textContent='⚠ TAMPER SIGNATURE DETECTED — '+name;
+    logBox.appendChild(al);
+    term.classList.add('ft-shake'); setTimeout(()=>term.classList.remove('ft-shake'),500);
+    term.scrollTop=term.scrollHeight;
+  };
 
   let healFirst=null;
   for(let i=0;i<cls.cN.length;i++){
-    const name=cls.cN[i];
-    const tag=String(i).padStart(2,'0');
-    const row=log(`<span style="color:#888;">[${tag}]</span> Scanning <strong style="color:#ccc;">${name}</strong> <span class="layer-ellipsis">...</span>`);
-    await wait(210);
+    const name=cls.cN[i], tag=String(i).padStart(2,'0');
+    const cell=cellByName[name]; if(cell) cell.classList.add('scanning');
+    const row=log(`<span style="color:#888;">[${tag}]</span> Probing <strong style="color:#ccc;">${name}</strong> <span class="layer-ellipsis">...</span><span class="ft-hex"></span>`);
+    await streamWeights(row.querySelector('.ft-hex'), _flatSample(data[name]));
 
-    // ROGUE LAYER — present in upload, absent on-chain (Topology Poisoning)
+    // ROGUE LAYER — Topology Poisoning
     if(!(name in storedLayers)){
+      if(cell){ cell.classList.remove('scanning'); cell.classList.add('bad'); }
       if(!healFirst) healFirst={name,type:'topology'};
-      const st=bvNumericStats(data[name]||[]);
+      const h=bvLayerHealth(data[name]); const flags=bvHealthFlags(h);
       row.innerHTML = `<div style="display:flex;justify-content:space-between;background:rgba(255,50,50,.10);padding:.15rem .4rem;border-radius:3px;">
         <span style="color:#fff;font-weight:bold;">[${tag}] ${name}</span><span style="color:var(--danger);font-weight:bold;">[ ROGUE LAYER ]</span></div>
         <div style="color:#9aa;font-size:.66rem;padding-left:1.2rem;margin-top:.2rem;line-height:1.55;">
-          &#9500;&#9472; type: <span style="color:var(--danger)">TOPOLOGY POISONING</span> &mdash; layer not present in signed manifest<br>
-          &#9500;&#9472; injected params: <b>${st?st.n:0}</b>${st?` &middot; range [${st.min.toFixed(3)}, ${st.max.toFixed(3)}] &middot; &mu;=${st.mean.toFixed(3)}`:''}<br>
-          &#9492;&#9472; sig <span style="color:var(--danger)">${(computed[name]||'').slice(0,40)}</span> has no on-chain counterpart
-        </div>`;
-      term.scrollTop=term.scrollHeight; continue;
+          &#9500;&#9472; type: <span style="color:var(--danger)">TOPOLOGY POISONING</span> &mdash; not present in signed manifest<br>
+          &#9500;&#9472; injected params: <b>${h.n}</b>${h.n?` &middot; max |w| ${h.maxAbs.toFixed(3)}`:''}${flags.length?`<br>&#9500;&#9472; tensor health: <span style="color:var(--danger)">${flags.join(' · ')}</span>`:''}
+          <br>&#9492;&#9472; sig <span style="color:var(--danger)">${(computed[name]||'').slice(0,40)}</span> has no on-chain counterpart</div>`;
+      criticalAlert(name); continue;
     }
 
-    // WEIGHT TAMPERING — same layer, different signature
+    // WEIGHT TAMPERING — signature mismatch, analyse the real tensor
     if(storedLayers[name]!==computed[name]){
+      if(cell){ cell.classList.remove('scanning'); cell.classList.add('bad'); }
       if(!healFirst) healFirst={name,type:'weight'};
       const o=bvFindOutliers(data[name]||[]);
+      const h=bvLayerHealth(data[name]); const flags=bvHealthFlags(h);
       let detail;
       if(o.count>0){
         const top=o.outliers[0];
         detail = `&#9500;&#9472; outlier scan: <b style="color:var(--danger)">${o.count}</b> anomalous parameter(s) / ${o.n}<br>`+
-          o.outliers.map(p=>`&#9474;&nbsp;&nbsp; &bull; index <b>[${p.index}]</b> = <span style="background:var(--danger);color:#fff;padding:0 3px;font-weight:bold;">${bvFmtVal(p.value)}</span> (robust z = ${bvFmtZ(p.z)}&sigma;)`).join('<br>')+'<br>'+
-          `&#9492;&#9472; <span style="color:var(--danger);font-weight:bold;">backdoor payload</span>: parameter [${top.index}] deviates ${bvFmtZ(top.z)}&sigma; from the layer median &mdash; classic weight-poisoning signature`;
+          o.outliers.slice(0,4).map(p=>`&#9474;&nbsp;&nbsp; &bull; index <b>[${p.index}]</b> = <span style="background:var(--danger);color:#fff;padding:0 3px;font-weight:bold;">${bvFmtVal(p.value)}</span> (robust z = ${bvFmtZ(p.z)}&sigma;)`).join('<br>')+'<br>'+
+          `&#9492;&#9472; <span style="color:var(--danger);font-weight:bold;">backdoor payload</span>: parameter [${top.index}] deviates ${bvFmtZ(top.z)}&sigma; from the layer median`;
+      } else if(flags.length){
+        detail = `&#9500;&#9472; no extreme-value outliers, but tensor health failed:<br>&#9492;&#9472; <span style="color:var(--danger)">${flags.join(' · ')}</span> &mdash; degenerate/poisoned tensor suspected`;
       } else {
-        detail = `&#9500;&#9472; signature changed, no extreme-value outliers detected<br>&#9492;&#9472; weights perturbed within normal range (subtle drift / unauthorized fine-tuning)`;
+        detail = `&#9492;&#9472; weights perturbed within normal range &mdash; subtle drift / unauthorized fine-tuning`;
       }
       row.innerHTML = `<div style="display:flex;justify-content:space-between;background:rgba(255,50,50,.10);padding:.15rem .4rem;border-radius:3px;">
         <span style="color:#fff;font-weight:bold;">[${tag}] ${name}</span><span style="color:var(--danger);font-weight:bold;">[ WEIGHT TAMPERED ]</span></div>
         <div style="color:#9aa;font-size:.66rem;padding-left:1.2rem;margin-top:.2rem;line-height:1.6;">
-          &#9500;&#9472; on-chain sig <span style="color:var(--success)">${storedLayers[name].slice(0,22)}&hellip;</span> &ne; uploaded sig <span style="color:var(--danger)">${(computed[name]||'').slice(0,22)}&hellip;</span><br>
-          ${detail}
-        </div>`;
-      term.scrollTop=term.scrollHeight; continue;
+          &#9500;&#9472; on-chain <span style="color:var(--success)">${storedLayers[name].slice(0,20)}&hellip;</span> &ne; uploaded <span style="color:var(--danger)">${(computed[name]||'').slice(0,20)}&hellip;</span><br>
+          ${flags.length&&o.count>0?`&#9500;&#9472; tensor health: <span style="color:var(--danger)">${flags.join(' · ')}</span><br>`:''}${detail}</div>`;
+      criticalAlert(name); continue;
     }
 
     // INTACT
+    if(cell){ cell.classList.remove('scanning'); cell.classList.add('ok'); }
     row.innerHTML = `<div style="display:flex;justify-content:space-between;">
       <span style="color:#888;">[${tag}] <span style="color:#ccc;">${name}</span></span>
       <span style="color:var(--success);font-weight:bold;">[ INTACT ]</span></div>
       <div style="color:#556;font-size:.62rem;padding-left:1.2rem;">sig ${storedLayers[name].slice(0,40)}</div>`;
   }
 
-  // EXCISED — on-chain but missing from upload (Layer Excision)
+  // EXCISED — signed on-chain, missing from upload
   for(const name of cls.removed){
+    const cell=cellByName[name]; if(cell) cell.classList.add('warn');
     if(!healFirst) healFirst={name,type:'excision'};
     log(`<div style="display:flex;justify-content:space-between;background:rgba(254,202,87,.10);padding:.15rem .4rem;border-radius:3px;">
       <span style="color:#fff;font-weight:bold;">[--] ${name}</span><span style="color:var(--warn);font-weight:bold;">[ EXCISED ]</span></div>
-      <div style="color:#9aa;font-size:.66rem;padding-left:1.2rem;margin-top:.2rem;line-height:1.5;">
-        &#9500;&#9472; type: <span style="color:var(--warn)">LAYER EXCISION</span> &mdash; signed on-chain, removed from uploaded model<br>
-        &#9492;&#9472; expected sig <span style="color:var(--warn)">${storedLayers[name].slice(0,40)}</span></div>`);
-    await wait(180);
+      <div style="color:#9aa;font-size:.66rem;padding-left:1.2rem;margin-top:.2rem;">&#9492;&#9472; <span style="color:var(--warn)">LAYER EXCISION</span> &mdash; expected sig <span style="color:var(--warn)">${storedLayers[name].slice(0,36)}</span></div>`);
+    await wait(160);
   }
-
-  // REORDERED — shared layers in a different sequence (data-flow path altered)
   if(cls.reordered){
     log(`<div style="display:flex;justify-content:space-between;background:rgba(254,202,87,.10);padding:.15rem .4rem;border-radius:3px;">
       <span style="color:#fff;font-weight:bold;">[~~] execution graph order</span><span style="color:var(--warn);font-weight:bold;">[ REORDERED ]</span></div>
-      <div style="color:#9aa;font-size:.66rem;padding-left:1.2rem;margin-top:.2rem;">&#9492;&#9472; shared layers appear in a different order than the signed manifest &mdash; inference data-flow path altered</div>`);
-    await wait(180);
+      <div style="color:#9aa;font-size:.66rem;padding-left:1.2rem;margin-top:.2rem;">&#9492;&#9472; shared layers appear in a different order than the signed manifest</div>`);
+    await wait(160);
   }
 
   clearInterval(spinInt);
@@ -3069,24 +3257,61 @@ async function runDeepInspection(storedLayers){
   const verdict = critical ? 'CRITICAL' : (anomalyCount ? 'WARNING' : 'SECURE');
   const vColor  = critical ? 'var(--danger)' : (anomalyCount ? 'var(--warn)' : 'var(--success)');
 
+  // integrity score = intact share of the union, minus a reorder penalty
+  const denom = cls.intact.length + cls.modified.length + cls.added.length + cls.removed.length;
+  let score = denom ? Math.round(100*cls.intact.length/denom) : 100;
+  if(cls.reordered) score = Math.max(0, score-5);
+
+  const C = 2*Math.PI*38;
   const sum=document.createElement('div');
-  sum.style.cssText='margin-top:1rem;border-top:1px dashed #333;padding-top:.8rem;';
+  sum.style.cssText='margin-top:1rem;border-top:1px dashed #333;padding-top:.9rem;';
   sum.innerHTML = `
-    <div style="color:var(--primary);font-weight:bold;letter-spacing:.5px;margin-bottom:.5rem;">FORENSIC SUMMARY</div>
-    <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.6rem;font-size:.63rem;">
-      <span style="background:rgba(var(--success-rgb),.14);color:var(--success);border:1px solid rgba(var(--success-rgb),.3);padding:.15rem .5rem;border-radius:20px;">intact ${cls.intact.length}</span>
-      <span style="background:rgba(255,50,50,.12);color:var(--danger);border:1px solid rgba(255,50,50,.3);padding:.15rem .5rem;border-radius:20px;">weight-tampered ${cls.modified.length}</span>
-      <span style="background:rgba(255,50,50,.12);color:var(--danger);border:1px solid rgba(255,50,50,.3);padding:.15rem .5rem;border-radius:20px;">rogue ${cls.added.length}</span>
-      <span style="background:rgba(254,202,87,.12);color:var(--warn);border:1px solid rgba(254,202,87,.3);padding:.15rem .5rem;border-radius:20px;">excised ${cls.removed.length}</span>
-      <span style="background:rgba(254,202,87,.12);color:var(--warn);border:1px solid rgba(254,202,87,.3);padding:.15rem .5rem;border-radius:20px;">reordered ${cls.reordered?'yes':'no'}</span>
-    </div>
-    <div style="font-size:.72rem;color:#ccc;">Verdict: <span style="color:${vColor};font-weight:bold;">${verdict}</span>${types.length?` &mdash; ${types.join(' + ')}`:' &mdash; every layer matches the on-chain manifest'}</div>`;
+    <div style="color:var(--primary);font-weight:bold;letter-spacing:.5px;margin-bottom:.6rem;">FORENSIC SUMMARY</div>
+    <div style="display:flex;gap:1.1rem;align-items:center;flex-wrap:wrap;">
+      <div style="position:relative;width:92px;height:92px;flex-shrink:0;">
+        <svg width="92" height="92" viewBox="0 0 92 92">
+          <circle cx="46" cy="46" r="38" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="8"/>
+          <circle id="ftGaugeArc" cx="46" cy="46" r="38" fill="none" stroke="${vColor}" stroke-width="8"
+            stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C}"
+            transform="rotate(-90 46 46)" style="filter:drop-shadow(0 0 7px ${vColor});"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+          <span id="ftGaugeNum" style="font-size:1.25rem;font-weight:800;color:${vColor};">0</span>
+          <span style="font-size:.5rem;letter-spacing:.1em;color:#667;">INTEGRITY</span>
+        </div>
+      </div>
+      <div style="flex:1;min-width:210px;">
+        <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.55rem;font-size:.63rem;">
+          <span style="background:rgba(var(--success-rgb),.14);color:var(--success);border:1px solid rgba(var(--success-rgb),.3);padding:.15rem .5rem;border-radius:20px;">intact ${cls.intact.length}</span>
+          <span style="background:rgba(255,50,50,.12);color:var(--danger);border:1px solid rgba(255,50,50,.3);padding:.15rem .5rem;border-radius:20px;">weight-tampered ${cls.modified.length}</span>
+          <span style="background:rgba(255,50,50,.12);color:var(--danger);border:1px solid rgba(255,50,50,.3);padding:.15rem .5rem;border-radius:20px;">rogue ${cls.added.length}</span>
+          <span style="background:rgba(254,202,87,.12);color:var(--warn);border:1px solid rgba(254,202,87,.3);padding:.15rem .5rem;border-radius:20px;">excised ${cls.removed.length}</span>
+          <span style="background:rgba(254,202,87,.12);color:var(--warn);border:1px solid rgba(254,202,87,.3);padding:.15rem .5rem;border-radius:20px;">reordered ${cls.reordered?'yes':'no'}</span>
+        </div>
+        <div style="font-size:.72rem;color:#ccc;">Verdict: <span style="color:${vColor};font-weight:bold;">${verdict}</span>${types.length?` &mdash; ${types.join(' + ')}`:' &mdash; every layer matches the on-chain manifest'}</div>
+      </div>
+    </div>`;
   logBox.appendChild(sum);
+
+  // animate the gauge arc + counter (with a snap-to-final fallback so the
+  // end state is guaranteed even if rAF is throttled/backgrounded)
+  (function(){
+    const arc=sum.querySelector('#ftGaugeArc'), num=sum.querySelector('#ftGaugeNum');
+    const t0=performance.now(), dur=1200;
+    const finish=()=>{ arc.style.strokeDashoffset=C*(1-score/100); num.textContent=score; };
+    (function step(now){
+      const k=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-k,3);
+      arc.style.strokeDashoffset = C*(1-(score/100)*e);
+      num.textContent=Math.round(score*e);
+      if(k<1) requestAnimationFrame(step); else finish();
+    })(t0);
+    setTimeout(finish, dur+120);
+  })();
 
   if(healFirst){
     const btn=document.createElement('button');
     btn.className='btn btn-prim';
-    btn.style.cssText='margin-top:.8rem;width:100%;border-radius:6px;font-weight:700;padding:.5rem;';
+    btn.style.cssText='margin-top:.9rem;width:100%;border-radius:6px;font-weight:700;padding:.5rem;';
     btn.innerHTML='Initiate Decentralized Self-Healing (IPFS)';
     btn.onclick=()=>{ btn.disabled=true; runSelfHealing(healFirst.name, healFirst.type); };
     logBox.appendChild(btn);
@@ -4810,7 +5035,9 @@ function compareLayerSets(LA, LB) {
 }
 function detectReorder(LA, LB) {     // common layers appearing in a different order
   const aS = new Set(Object.keys(LA)), bS = new Set(Object.keys(LB));
-  return Object.keys(LA).filter(n => bS.has(n)).join('>') !== Object.keys(LB).filter(n => aS.has(n)).join('>');
+  const aP = Object.keys(LA).filter(n => bS.has(n));   // common projection, A order
+  const bP = Object.keys(LB).filter(n => aS.has(n));   // common projection, B order
+  return aP.some((n, i) => n !== bP[i]);               // element-wise (no join-collision)
 }
 
 // ── 3D scene (volumetric slabs + energy beams + starfield) ──

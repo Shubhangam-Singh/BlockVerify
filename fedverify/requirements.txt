@@ -1,0 +1,13 @@
+# FedVerify — Phase 1 dependencies
+#
+# IMPORTANT: install torch/torchvision from the CPU-only index, NOT plain PyPI.
+# Plain PyPI torch declares 5 NVIDIA CUDA deps (~4 GB). See CLAUDE.md amendment A2:
+#
+#   pip install --break-system-packages --index-url https://download.pytorch.org/whl/cpu \
+#       torch torchvision
+#   pip install --break-system-packages tqdm
+#
+torch>=2.0          # install from https://download.pytorch.org/whl/cpu
+torchvision>=0.15   # install from https://download.pytorch.org/whl/cpu
+numpy>=1.24
+tqdm>=4.65

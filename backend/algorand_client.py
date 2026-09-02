@@ -99,10 +99,18 @@ def _get_or_deploy_contract():
 
 # ── 1. Broadcast hash as note-transaction ─────────────────────────────
 
-def broadcast_hash_to_algorand(model_id, model_name, model_hash, owner):
+def broadcast_hash_to_algorand(model_id, model_name, model_hash, owner,
+                               layer_root=None, layer_count=0):
     """
     Sends a 0-ALGO self-transaction with JSON metadata in the note field.
     Also calls the smart contract to permanently store model_id → hash.
+
+    layer_root / layer_count (registration only): the Merkle root of the ordered
+    layer manifest ("lmr") and its leaf count ("lc") are embedded in the note so
+    the manifest commitment is publicly verifiable without trusting our server.
+    The leaf count is anchored alongside the root to preclude the classic
+    odd-duplication ambiguity (CVE-2012-2459-style) of duplicate-last trees.
+
     Returns {"success": True, "txid": ..., "round": ..., "app_id": ..., "contract_txid": ...}
     """
     try:
@@ -126,6 +134,9 @@ def broadcast_hash_to_algorand(model_id, model_name, model_hash, owner):
             "hash":  model_hash,
             "owner": owner,
         }
+        if layer_root:
+            payload["lmr"] = layer_root
+            payload["lc"]  = layer_count
         note = json.dumps(payload).encode()
 
         txn = PaymentTxn(
@@ -163,6 +174,13 @@ def broadcast_hash_to_algorand(model_id, model_name, model_hash, owner):
                 )
                 if cr.get("success"):
                     contract_txid = cr.get("contract_txid")
+                # Anchor the layer-manifest Merkle root in global state too
+                # (key "<model_id>:l"), so it is readable without the indexer.
+                if layer_root:
+                    call_contract_register(
+                        client, PRIVATE_KEY, ADDRESS,
+                        app_id, f"{model_id[:60]}:l", layer_root,
+                    )
         except Exception as ce:
             # Contract call failure must NOT block registration
             print(f"[contract] Non-fatal: {ce}")

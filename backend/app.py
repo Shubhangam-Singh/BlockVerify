@@ -35,6 +35,11 @@ app = Flask(__name__)
 CORS(app, origins="*", supports_credentials=True)
 app.register_blueprint(auth_bp)
 
+# Layer order is SEMANTIC for tamper detection (reordering = altered execution
+# graph). Flask sorts JSON keys alphabetically by default, which would destroy
+# the registered order of layerHashes in every response — disable that.
+app.json.sort_keys = False
+
 # ------------------------------------------------------------------ #
 #  Real-time alerts (Flask-SocketIO)                                  #
 #  Optional dependency — the app degrades gracefully if missing so    #
@@ -234,9 +239,16 @@ def register_model():
 
         model_id = generate_model_id(data["modelName"], data["modelHash"], owner)
 
+        # ── Trustless manifest commitment: MerkleRoot(Λ, π) anchored on-chain ──
+        layer_root, _, _ = compute_layer_merkle(
+            data.get("layerHashes") or {}, data.get("layerOrder")
+        )
+
         # ── Algorand Migration: Broadcast to Global Testnet ──
         algo_resp = algorand_client.broadcast_hash_to_algorand(
-            model_id, data["modelName"], data["modelHash"], owner
+            model_id, data["modelName"], data["modelHash"], owner,
+            layer_root=layer_root,
+            layer_count=len(data.get("layerHashes") or {}),
         )
         
         if not algo_resp.get("success"):
@@ -252,6 +264,10 @@ def register_model():
             "blockIndex": algo_resp.get("round"),
             "algoTxId": algo_resp.get("txid"),
             "layerHashes": data.get("layerHashes", {}), # For Deep Layer Inspection
+            # Explicit, signed layer sequence — reorder detection must NOT rely on
+            # JSON object key order (RFC 8259 declares objects unordered).
+            "layerOrder": data.get("layerOrder") or list((data.get("layerHashes") or {}).keys()),
+            "layerMerkleRoot": layer_root,   # also inside the on-chain note ("lmr")
             "currentVersion": 1,
             "isActive": True,
             "versions": [
@@ -356,6 +372,7 @@ def verify_model():
                 "storedHash": model["modelHash"],
                 "providedHash": data["providedHash"],
                 "layerHashes": model.get("layerHashes", {}) if not is_valid else {},
+                "layerOrder": (model.get("layerOrder") or list(model.get("layerHashes", {}).keys())) if not is_valid else [],
             }
         ), 200
 
@@ -564,6 +581,53 @@ def get_model(model_id):
     if not model:
         return jsonify({"success": False, "error": "Model not found"}), 404
     return jsonify({"success": True, "model": model}), 200
+
+
+@app.route("/api/manifest-proof/<model_id>", methods=["GET"])
+def manifest_proof(model_id):
+    """
+    Merkle inclusion proofs for the layer manifest — the trustless-localization
+    protocol. The client:
+      1. fetches the registration tx note DIRECTLY from the public Algorand
+         indexer and extracts the anchored root ("lmr") + leaf count ("lc");
+      2. recomputes each leaf  SHA-256(JSON([i, name, layerHash]))  from the
+         manifest served here (untrusted data);
+      3. folds each sibling path and checks it reaches the on-chain root.
+    A malicious server cannot forge a manifest that passes step 3 without a
+    SHA-256 second preimage — verification does not trust this endpoint.
+    """
+    model = models_registry.get(model_id)
+    if not model:
+        return jsonify({"success": False, "error": "Model not found"}), 404
+    layer_hashes = model.get("layerHashes") or {}
+    if not layer_hashes:
+        return jsonify({"success": False, "error": "No layer manifest registered for this model"}), 404
+
+    root, leaves, order = compute_layer_merkle(layer_hashes, model.get("layerOrder"))
+    proofs = [
+        {
+            "index": i,
+            "name": name,
+            "layerHash": layer_hashes[name],
+            "proof": merkle_inclusion_proof(leaves, i),
+        }
+        for i, name in enumerate(order)
+    ]
+    txid = model.get("algoTxId") or ""
+    return jsonify({
+        "success": True,
+        "modelId": model_id,
+        "merkleRoot": root,
+        "layerCount": len(order),
+        "order": order,
+        "proofs": proofs,
+        "anchor": {
+            "algoTxId": txid,
+            "noteFields": {"root": "lmr", "leafCount": "lc"},
+            "storedRoot": model.get("layerMerkleRoot"),
+            "indexerUrl": f"https://testnet-idx.algonode.cloud/v2/transactions/{txid}" if txid else None,
+        },
+    }), 200
 
 
 @app.route("/api/versions/<model_id>", methods=["GET"])
@@ -1486,6 +1550,54 @@ def generate_certificate(model_id):
 # ------------------------------------------------------------------ #
 #  Merkle tree helper                                                  #
 # ------------------------------------------------------------------ #
+
+# ── Trustless layer-manifest commitment (Merkle over Λ and π jointly) ──
+# Leaf i binds POSITION + NAME + LAYER-HASH:  leaf_i = SHA-256(JSON([i, ℓᵢ, Λ(ℓᵢ)]))
+# so any reordering changes the leaves and therefore the root. The JSON encoding
+# (compact separators, ensure_ascii=False) is byte-identical to JavaScript's
+# JSON.stringify for the same values — the browser recomputes leaves independently.
+
+def _manifest_leaf(index: int, name: str, layer_hash: str) -> str:
+    enc = json.dumps([index, name, layer_hash],
+                     separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    return hashlib.sha256(enc).hexdigest()
+
+
+def _manifest_order(layer_hashes: dict, layer_order) -> list:
+    """Explicit signed order first, filtered to the manifest; stragglers keep key order."""
+    order = [n for n in (layer_order or []) if n in layer_hashes]
+    seen = set(order)
+    return order + [n for n in layer_hashes if n not in seen]
+
+
+def compute_layer_merkle(layer_hashes: dict, layer_order=None):
+    """Return (root, leaves, order) for the ordered manifest; (None, [], []) if empty."""
+    order = _manifest_order(layer_hashes or {}, layer_order)
+    leaves = [_manifest_leaf(i, n, layer_hashes[n]) for i, n in enumerate(order)]
+    if not leaves:
+        return None, [], []
+    level = leaves[:]
+    while len(level) > 1:
+        if len(level) % 2:
+            level.append(level[-1])          # duplicate-last; leaf count is anchored on-chain
+        level = [hashlib.sha256((level[i] + level[i + 1]).encode()).hexdigest()
+                 for i in range(0, len(level), 2)]
+    return level[0], leaves, order
+
+
+def merkle_inclusion_proof(leaves: list, index: int) -> list:
+    """Sibling path from leaf `index` to the root: [{"hash": hex, "right": bool}, ...]."""
+    proof, level, idx = [], leaves[:], index
+    while len(level) > 1:
+        if len(level) % 2:
+            level.append(level[-1])
+        sib = idx ^ 1
+        proof.append({"hash": level[sib], "right": sib > idx})
+        level = [hashlib.sha256((level[i] + level[i + 1]).encode()).hexdigest()
+                 for i in range(0, len(level), 2)]
+        idx //= 2
+    return proof
+
 
 def _tx_hash(tx: dict) -> str:
     """SHA-256 of a deterministic JSON representation of a transaction."""

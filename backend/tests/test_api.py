@@ -33,7 +33,7 @@ def reset_state(monkeypatch):
     global mock_algo_round
     mock_algo_round = 1000
 
-    def mock_broadcast(model_id, name, hash_val, owner):
+    def mock_broadcast(model_id, name, hash_val, owner, **kwargs):
         global mock_algo_round
         mock_algo_round += 1
         return {
@@ -748,3 +748,160 @@ class TestBatchVerify:
     def test_batch_requires_auth(self, client):
         resp = client.post("/api/verify-batch", json={"files": [{"filename": "x", "hash": "y"}]}, headers={"No-Auth": True})
         assert resp.status_code == 401
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Layer order semantics  (reorder detection must survive serialization)
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TestLayerOrder:
+
+    def _register_layered(self, client):
+        h = "layeredhash"
+        return client.post("/api/register", json={
+            "modelName": "Layered", "modelHash": h, "owner": "alice",
+            "powNonce": mine_pow(h),
+            # deliberately NON-alphabetical registration order
+            "layerHashes": {"conv2d_1": "h1", "batch_norm_1": "h2", "activation_1": "h3"},
+            "layerOrder": ["conv2d_1", "batch_norm_1", "activation_1"],
+        })
+
+    def test_register_stores_layer_order(self, client):
+        mid = self._register_layered(client).get_json()["modelId"]
+        assert models_registry[mid]["layerOrder"] == ["conv2d_1", "batch_norm_1", "activation_1"]
+
+    def test_verify_returns_explicit_layer_order(self, client):
+        mid = self._register_layered(client).get_json()["modelId"]
+        d = client.post("/api/verify", json={"modelId": mid, "providedHash": "WRONG"}).get_json()
+        assert d["layerOrder"] == ["conv2d_1", "batch_norm_1", "activation_1"]
+
+    def test_json_responses_preserve_key_order(self, client):
+        # Flask's default sort_keys=True would alphabetize layerHashes and break
+        # order semantics — assert raw response bytes keep registration order.
+        mid = self._register_layered(client).get_json()["modelId"]
+        resp = client.post("/api/verify", json={"modelId": mid, "providedHash": "WRONG"})
+        raw = resp.get_data(as_text=True)
+        assert raw.index("conv2d_1") < raw.index("batch_norm_1") < raw.index("activation_1")
+
+    def test_layer_order_falls_back_to_manifest_keys(self, client):
+        h = "nofallback"
+        resp = client.post("/api/register", json={
+            "modelName": "NoOrder", "modelHash": h, "owner": "alice",
+            "powNonce": mine_pow(h),
+            "layerHashes": {"z_layer": "h1", "a_layer": "h2"},   # no explicit layerOrder
+        })
+        mid = resp.get_json()["modelId"]
+        assert models_registry[mid]["layerOrder"] == ["z_layer", "a_layer"]
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Trustless layer manifest  (MerkleRoot(Λ, π) + inclusion proofs)
+# ═══════════════════════════════════════════════════════════════════
+
+import hashlib as _hl
+
+
+def _fold(leaf, proof):
+    """Client-side proof folding, replicated for test verification."""
+    h = leaf
+    for step in proof:
+        h = _hl.sha256(((h + step["hash"]) if step["right"] else (step["hash"] + h)).encode()).hexdigest()
+    return h
+
+
+class TestManifestMerkle:
+
+    LH = {"conv2d_1": "a" * 64, "batch_norm_1": "b" * 64, "dense_1": "c" * 64}
+    ORDER = ["conv2d_1", "batch_norm_1", "dense_1"]
+
+    def test_root_deterministic(self):
+        r1, _, _ = app_module.compute_layer_merkle(self.LH, self.ORDER)
+        r2, _, _ = app_module.compute_layer_merkle(dict(self.LH), list(self.ORDER))
+        assert r1 == r2 and len(r1) == 64
+
+    def test_reorder_changes_root(self):
+        r1, _, _ = app_module.compute_layer_merkle(self.LH, self.ORDER)
+        r2, _, _ = app_module.compute_layer_merkle(self.LH, ["dense_1", "batch_norm_1", "conv2d_1"])
+        assert r1 != r2, "root must commit to the layer ORDER (π), not just the set"
+
+    def test_layer_hash_change_changes_root(self):
+        tampered = dict(self.LH); tampered["dense_1"] = "d" * 64
+        r1, _, _ = app_module.compute_layer_merkle(self.LH, self.ORDER)
+        r2, _, _ = app_module.compute_layer_merkle(tampered, self.ORDER)
+        assert r1 != r2
+
+    def test_every_proof_folds_to_root(self):
+        root, leaves, order = app_module.compute_layer_merkle(self.LH, self.ORDER)
+        for i, name in enumerate(order):
+            leaf = app_module._manifest_leaf(i, name, self.LH[name])
+            assert leaf == leaves[i]
+            proof = app_module.merkle_inclusion_proof(leaves, i)
+            assert _fold(leaf, proof) == root, f"proof for {name} must reach the root"
+
+    def test_forged_layer_hash_fails_proof(self):
+        root, leaves, order = app_module.compute_layer_merkle(self.LH, self.ORDER)
+        forged_leaf = app_module._manifest_leaf(0, "conv2d_1", "f" * 64)   # wrong hash
+        proof = app_module.merkle_inclusion_proof(leaves, 0)
+        assert _fold(forged_leaf, proof) != root
+
+    def test_forged_position_fails_proof(self):
+        # same name+hash claimed at a different index must NOT verify (π binding)
+        root, leaves, order = app_module.compute_layer_merkle(self.LH, self.ORDER)
+        moved_leaf = app_module._manifest_leaf(2, "conv2d_1", self.LH["conv2d_1"])
+        proof = app_module.merkle_inclusion_proof(leaves, 0)
+        assert _fold(moved_leaf, proof) != root
+
+    def test_single_layer_manifest(self):
+        root, leaves, order = app_module.compute_layer_merkle({"only": "e" * 64}, ["only"])
+        assert root == leaves[0]
+        assert app_module.merkle_inclusion_proof(leaves, 0) == []
+
+    def test_empty_manifest(self):
+        root, leaves, order = app_module.compute_layer_merkle({}, [])
+        assert root is None and leaves == [] and order == []
+
+
+class TestManifestProofEndpoint:
+
+    def _register_layered(self, client):
+        h = "merklehash"
+        return client.post("/api/register", json={
+            "modelName": "MerkleModel", "modelHash": h, "owner": "alice",
+            "powNonce": mine_pow(h),
+            "layerHashes": {"conv2d_1": "1" * 64, "dense_1": "2" * 64},
+            "layerOrder": ["conv2d_1", "dense_1"],
+        }).get_json()
+
+    def test_register_stores_merkle_root(self, client):
+        mid = self._register_layered(client)["modelId"]
+        expected, _, _ = app_module.compute_layer_merkle(
+            {"conv2d_1": "1" * 64, "dense_1": "2" * 64}, ["conv2d_1", "dense_1"])
+        assert models_registry[mid]["layerMerkleRoot"] == expected
+
+    def test_endpoint_serves_valid_proofs(self, client):
+        mid = self._register_layered(client)["modelId"]
+        d = client.get(f"/api/manifest-proof/{mid}").get_json()
+        assert d["success"] is True
+        assert d["layerCount"] == 2
+        assert d["merkleRoot"] == models_registry[mid]["layerMerkleRoot"]
+        for p in d["proofs"]:
+            leaf = app_module._manifest_leaf(p["index"], p["name"], p["layerHash"])
+            assert _fold(leaf, p["proof"]) == d["merkleRoot"]
+
+    def test_endpoint_unknown_model(self, client):
+        assert client.get("/api/manifest-proof/nope").status_code == 404
+
+    def test_endpoint_no_layers(self, client):
+        mid = _register(client, hash_val="plainhash").get_json()["modelId"]
+        assert client.get(f"/api/manifest-proof/{mid}").status_code == 404
+
+    def test_broadcast_receives_layer_root(self, client, monkeypatch):
+        captured = {}
+        def spy(model_id, name, hash_val, owner, **kw):
+            captured.update(kw)
+            return {"success": True, "txid": "TX", "round": 1}
+        monkeypatch.setattr(algorand_client, "broadcast_hash_to_algorand", spy)
+        self._register_layered(client)
+        assert captured.get("layer_root") and len(captured["layer_root"]) == 64
+        assert captured.get("layer_count") == 2
