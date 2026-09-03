@@ -19,6 +19,9 @@ DATA_ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file_
 _SPECS = {                       # name -> (torchvision class, mean, std, n_classes, in_shape)
     "mnist":  ("MNIST", (0.1307,), (0.3081,), 10, (1, 28, 28)),
     "fmnist": ("FashionMNIST", (0.2860,), (0.3530,), 10, (1, 28, 28)),
+    # MIT-BIH is not a torchvision dataset: it is built by fedverify/datasets/mitbih.py and
+    # z-normalised PER RECORD, so there is no global mean/std to apply here.
+    "mitbih": (None, None, None, 5, (1, 256)),
 }
 
 
@@ -33,6 +36,11 @@ def dataset_spec(name: str) -> dict:
 
 def load_dataset(name: str, root: str = DATA_ROOT):
     """Return (train_dataset, test_dataset), downloading into fedverify/data/."""
+    if name == "mitbih":
+        from ..datasets.mitbih import build_torch_datasets
+        train, test, _rec = build_torch_datasets()
+        return train, test
+
     import torchvision
     import torchvision.transforms as T
 
@@ -60,6 +68,21 @@ def iid_partition(labels: Sequence[int], num_clients: int, seed: int) -> List[Li
     idx = np.arange(len(labels))
     rng.shuffle(idx)
     return [sorted(chunk.tolist()) for chunk in np.array_split(idx, num_clients)]
+
+
+def patient_partition_for(cfg, train_set):
+    """Patient-disjoint hospitals for MIT-BIH; the skew is inherited, not synthesised.
+
+    Returns (partitions, extra) where `extra` records which patient records landed at each
+    hospital, so partition_report can show that the split is by person, not by draw.
+    """
+    from ..datasets.mitbih import build_torch_datasets, patient_partition, patients_per_client
+    _tr, _te, rec_ids = build_torch_datasets()
+    if len(rec_ids) != len(train_set):
+        # a --limit-train truncation was applied; restrict the ids the same way
+        rec_ids = rec_ids[:len(train_set)]
+    parts = patient_partition(rec_ids, cfg.num_clients, cfg.seed)
+    return parts, {"patients_per_client": patients_per_client(rec_ids, parts)}
 
 
 def dirichlet_partition(labels: Sequence[int], num_clients: int, alpha: float,

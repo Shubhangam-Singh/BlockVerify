@@ -1,0 +1,105 @@
+# Table 5 — qualitative comparison of blockchain-based / private federated learning systems.
+#
+# HONESTY RULE (CLAUDE.md, "Numbers"): a cell is "?" whenever the paper does not state the
+# property clearly enough to score it from the text. "?" is not a defect in this table —
+# guessing would be. Every "yes" below should be checkable against the cited paper, and a
+# reviewer who finds one wrong should be able to point at the sentence.
+#
+# columns:
+#   dp          formal differential-privacy guarantee with an accountant / epsilon budget
+#   byzantine   Byzantine-robust aggregation rule (not merely signature checking)
+#   commit      per-update commitment written to a ledger (not just a final model hash)
+#   proofs      client-verifiable inclusion proof that ITS update was in the committed round
+#   l1          settles on a public permissionless L1 (not a consortium/private chain)
+#   forensics   reuses model-integrity forensics at LAYER granularity
+#   rollback    self-healing rollback to a known-good round
+
+columns:
+  - {key: dp,        label: "DP guarantee"}
+  - {key: byzantine, label: "Byzantine-robust agg."}
+  - {key: commit,    label: "Per-update on-chain commitment"}
+  - {key: proofs,    label: "Client-verifiable inclusion proofs"}
+  - {key: l1,        label: "L1 settlement"}
+  - {key: forensics, label: "Layer-level forensics reuse"}
+  - {key: rollback,  label: "Self-healing rollback"}
+
+systems:
+  - name: "DeepChain"
+    cite: "Weng et al., IEEE TDSC 2021"
+    dp: "no"          # privacy comes from threshold Paillier homomorphic encryption, not DP
+    byzantine: "?"
+    commit: "yes"
+    proofs: "?"
+    l1: "no"          # purpose-built incentive blockchain
+    forensics: "no"
+    rollback: "no"
+
+  - name: "LearningChain"
+    cite: "Chen et al., 2018"
+    dp: "yes"         # noise added to gradients
+    byzantine: "yes"  # l-nearest aggregation
+    commit: "yes"
+    proofs: "?"
+    l1: "no"
+    forensics: "no"
+    rollback: "no"
+
+  - name: "BlockDFL"
+    cite: "Qin et al., 2023"
+    dp: "?"
+    byzantine: "yes"  # median-based defence
+    commit: "yes"
+    proofs: "?"
+    l1: "no"
+    forensics: "no"
+    rollback: "no"
+
+  - name: "B-FL"
+    cite: "Wang et al., IEEE IoT-J 2023"
+    dp: "yes"
+    byzantine: "?"
+    commit: "yes"
+    proofs: "?"
+    l1: "no"
+    forensics: "no"
+    rollback: "no"
+
+  - name: "FLchain"
+    cite: "Majeed & Hong, 2019"
+    dp: "?"
+    byzantine: "?"
+    commit: "yes"
+    proofs: "?"
+    l1: "no"
+    forensics: "no"
+    rollback: "?"
+
+  - name: "BAII"
+    cite: "Zheng, 2024"
+    dp: "?"
+    byzantine: "?"
+    commit: "?"
+    proofs: "?"
+    l1: "?"
+    forensics: "?"
+    rollback: "?"
+
+  - name: "NbAFL"
+    cite: "Wei et al., IEEE TIFS 2020"
+    dp: "yes"         # noising before aggregation, with a convergence bound
+    byzantine: "no"
+    commit: "no"      # no blockchain component at all
+    proofs: "no"
+    l1: "no"
+    forensics: "no"
+    rollback: "no"
+
+  - name: "FedVerify (this work)"
+    cite: "—"
+    dp: "yes"         # Opacus RDP accountant, sigma solved over TOTAL steps (Phase 2)
+    byzantine: "yes"  # FedVerify-Forensics + Krum/Multi-Krum/median/trimmed-mean (Phase 4)
+    commit: "yes"     # per-round Merkle root over per-client update digests (Phase 3)
+    proofs: "yes"     # GET /api/fl/proof/... folds to the anchored root (Phase 3)
+    l1: "yes"         # Algorand Testnet note txn + Bitcoin OP_RETURN checkpoints
+    forensics: "yes"  # the deployed layer probes, imported and applied across clients
+    rollback: "no"    # NOT implemented. The lineage identifies a bad round; nothing undoes it.

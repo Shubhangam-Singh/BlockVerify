@@ -78,3 +78,73 @@ still satisfies "82+".
 This session is configured to add a Co-authored-by trailer to commits. Rule 1 above
 forbids me from ever creating a commit, so no trailer is ever written by me. The
 human commits under their own identity. There is no conflict in practice.
+
+## A5. Determinism is per-thread-count
+Measured: the same seed at OMP/torch threads=2 vs 16 gives different results
+(MNIST K=5, 1 round: acc 0.9413 vs 0.9404). Intra-op parallelism changes
+floating-point reduction order; this is inherent, not a bug.
+
+**Agreed resolution:** "same seed => byte-identical rounds.jsonl" holds at a
+FIXED thread count. Every run records `torch_threads_effective` in config.json,
+and `FLConfig.torch_threads` / `--torch-threads` pins it. Run a whole experiment
+grid with one `--threads` value so its cells are mutually comparable.
+
+## A6. Phase-3 chain commitment is opt-in
+The Phase-3 spec puts the commitment step unconditionally in the round loop with
+`chain_backend="mock"` as the experiment default. Taken literally that would add
+`root`/`txid`/`anchor_ms` keys to EVERY `rounds.jsonl` record, including Phase-1/2 cells —
+changing the record shape of Table-1 cells mid-grid and making cells run before and after
+Phase 3 non-comparable. (This was not hypothetical: the exp1 grid was running when Phase 3
+landed.)
+
+**Agreed resolution:** commitment is gated on a new `FLConfig.commit` flag, default
+`False`. When off, the round record is byte-identical to Phase 2 and no chain code is
+imported. `exp3_chain_overhead` sets `commit=True`; so do the Phase-3 tests. Verified: a
+commit-off run is byte-identical (after `strip_timings`) to the same run produced before
+Phase 3 existed.
+
+Consequence: `config.json` for cells run before Phase 3 has no `commit`/`btc_checkpoint`
+key. The default is the behaviour those cells had, so the record stays complete in effect.
+
+## A7. Algorand App ID
+The master prompt says App `758544892`. The real deployed App ID is **764828342**
+(`backend/data/algo_app.json`), as recorded in `fedverify/INVENTORY.md` §1. Phase 3
+follows the real code. `algorand_client.broadcast_fl_round` uses the module's existing
+client/wallet, so it targets whatever App ID the repo actually has.
+
+## A8. Tables must ignore incomplete cells
+`make_tables.load_runs` originally took the last line of any `rounds.jsonl` it found. An
+interrupted cell would then be averaged into Table 1 as though it had finished (measured:
+a 2-of-30-round orphan contributed `acc=0.6057` beside real 30-round cells). It now skips
+any cell whose last record is below `config.rounds` and prints `[skip] incomplete run ...`
+on stderr, exactly like a missing cell.
+
+## A9. Phase-4 record shape and the exp1 grid
+Phase 4 landed while the exp1 grid was still running, so the same constraint as A6
+applies: a no-attack `fedavg` cell must keep its exact Phase-1/2 record shape.
+
+Two violations were caught by an explicit byte-comparison guard and fixed:
+- adding `"detector"` to the shared `Aggregator._empty_diag()` changed `diag` in EVERY
+  record. `detects` is now a class attribute read from the registry, never serialised.
+- the `"attack"` block is emitted only when an attack is configured OR the aggregator is
+  a detector, so clean `fedavg` cells emit nothing.
+
+`fedverify/tests/test_aggregators.py::test_phase1_record_shape_is_unchanged_by_phase4`
+pins this. Verified: an exp1-style run is byte-identical (after `strip_timings`) to a
+baseline captured before Phase 3 existed.
+
+## A10. evaluation/eval_lib.py needed a NumPy-2 fix
+`eval_lib.auc` called `np.trapz`, removed in NumPy 2.0. On the installed NumPy 2.5.2 the
+existing layer-level ROC evaluation was therefore already broken — the AUC numbers in
+docs/EVALUATION.md could not be regenerated. Phase 4 needs that same ROC for client-level
+calibration, so `auc` now binds `np.trapezoid` when present and falls back to `np.trapz`.
+Two lines, behaviour-preserving, verified against known AUCs (1.0 and 0.75). This is a
+repair of existing behaviour, not a change to it.
+
+## A11. Krum is a selection rule, not a detector
+Vanilla Krum keeps ONE client, so a naive reading of its `rejected` list says it "detects"
+K-1 malicious clients every round, which would put a meaningless F1 in Table 2b. Each
+aggregator now declares `detects`: True for `forensics` and `multikrum` (which exclude a
+specific set), False for `krum` (top-1 selection), `median` and `trimmed_mean` (no
+client-level exclusion at all). Table 2b renders non-detectors as `n/a`, distinct from a
+missing cell `—`.

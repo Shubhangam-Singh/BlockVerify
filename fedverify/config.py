@@ -31,6 +31,7 @@ class FLConfig:
     aggregator: str = "fedavg"
     seed: int = 0
     device: str = "cpu"
+    torch_threads: Optional[int] = None   # pin intra-op threads; None = leave as-is
     out_dir: str = "fedverify/results"
     run_id: Optional[str] = None            # auto: <exp>_<cell>_<seed>
 
@@ -42,17 +43,29 @@ class FLConfig:
     epsilon: Optional[float] = None         # Phase 2 (DP); None/inf == no DP
     delta: float = 1e-5                     # Phase 2
     max_grad_norm: float = 1.0              # Phase 2
-    attack: Optional[str] = None            # Phase 4
-    attacker_frac: float = 0.0              # Phase 4
-    attack_start_round: int = 0             # Phase 4
-    chain_backend: str = "mock"             # Phase 3
-    checkpoint_every: int = 10              # Phase 3
-    tau: Optional[float] = None             # Phase 4 (from calibration; never hardcoded)
+    attack: Optional[str] = None            # Phase 4: none|label_flip|sign_flip|gaussian|zero|scaling|backdoor
+    attacker_frac: float = 0.0              # Phase 4: fraction of clients that are malicious
+    attack_start_round: int = 0             # Phase 4: attacks dormant before this round
+    sign_flip_scale: float = 1.0            # Phase 4: delta -> -s*delta
+    gaussian_sigma: float = 1.0             # Phase 4: delta -> N(0, sigma^2)
+    poison_frac: float = 0.5                # Phase 4: share of an attacker's batch triggered
+    backdoor_target: int = 0                # Phase 4: label the trigger maps to
+    trim_beta: float = 0.2                  # Phase 4: trimmed-mean trim fraction per end
+    commit: bool = False                    # Phase 3: commit round roots to a ledger
+    chain_backend: str = "mock"             # Phase 3: mock | local | algorand
+    checkpoint_every: int = 10              # Phase 3: BTC checkpoint cadence (0 = off)
+    btc_checkpoint: bool = False            # Phase 3: real OP_RETURN (else mock)
+    tau: Optional[float] = None             # Phase 4: forensics threshold, FROM CALIBRATION
+    tau_coord: float = 3.0                  # Phase 4: per-coordinate z inside s_coord
+    tau_source: Optional[str] = None        # Phase 4: provenance of tau (path + key)
 
     def __post_init__(self):
         if self.cell is None:
             eps = "inf" if self.epsilon in (None, float("inf")) else f"{self.epsilon:g}"
-            cell = f"{self.dataset}_K{self.num_clients}_{_fmt_alpha(self.alpha)}_eps{eps}"
+            # MIT-BIH partitions by patient, so alpha does not influence it; naming the
+            # cell "a0.5" would imply a Dirichlet draw that never happened.
+            split = "patient" if self.dataset == "mitbih" else _fmt_alpha(self.alpha)
+            cell = f"{self.dataset}_K{self.num_clients}_{split}_eps{eps}"
             if self.aggregator != "fedavg":
                 cell += f"_{self.aggregator}"
             if self.attack:
@@ -98,6 +111,9 @@ class FLConfig:
         g.add_argument("--aggregator", default="fedavg")
         g.add_argument("--seed", type=int, default=0)
         g.add_argument("--device", default="cpu")
+        g.add_argument("--torch-threads", type=int, default=None,
+                       help="pin torch intra-op threads; results are only "
+                            "byte-reproducible at a FIXED thread count")
         g.add_argument("--out-dir", default="fedverify/results")
         g.add_argument("--run-id", default=None)
         g.add_argument("--exp", default="adhoc")
@@ -109,9 +125,22 @@ class FLConfig:
         g.add_argument("--attack", default=None)
         g.add_argument("--attacker-frac", type=float, default=0.0)
         g.add_argument("--attack-start-round", type=int, default=0)
-        g.add_argument("--chain-backend", default="mock")
+        g.add_argument("--sign-flip-scale", type=float, default=1.0)
+        g.add_argument("--gaussian-sigma", type=float, default=1.0)
+        g.add_argument("--poison-frac", type=float, default=0.5)
+        g.add_argument("--backdoor-target", type=int, default=0)
+        g.add_argument("--trim-beta", type=float, default=0.2)
+        g.add_argument("--commit", action="store_true",
+                       help="commit each round's Merkle root to the chain backend")
+        g.add_argument("--chain-backend", default="mock",
+                       choices=["mock", "local", "algorand"])
         g.add_argument("--checkpoint-every", type=int, default=10)
-        g.add_argument("--tau", type=float, default=None)
+        g.add_argument("--btc-checkpoint", action="store_true",
+                       help="use the real Bitcoin OP_RETURN path for checkpoints")
+        g.add_argument("--tau", type=float, default=None,
+                       help="forensics threshold; normally supplied from taus.json")
+        g.add_argument("--tau-coord", type=float, default=3.0)
+        g.add_argument("--tau-source", default=None)
         # Phase-1 convenience (not part of the config record)
         g.add_argument("--limit-train", type=int, default=None,
                        help="subsample the training set (smoke tests)")

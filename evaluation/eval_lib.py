@@ -169,8 +169,13 @@ def roc_curve(scores, labels):
     return fpr, tpr, thr
 
 
+# numpy 2.0 removed np.trapz in favour of np.trapezoid. Bind whichever exists so this
+# module keeps working on both; the computation is identical.
+_trapezoid = getattr(np, "trapezoid", None) or getattr(np, "trapz")
+
+
 def auc(fpr, tpr):
-    return float(np.trapz(tpr, fpr))
+    return float(_trapezoid(tpr, fpr))
 
 
 def rates_at(scores, labels, thresh, direction=">"):

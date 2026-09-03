@@ -1046,6 +1046,24 @@
     .step-content h4 { font-family: var(--display); }
 
     /* ── Live Alerts (real-time WebSocket feed) ── */
+    /* Federated is a flagship feature, so it gets a persistent accent rather than a
+       transient badge: a left rail, a tinted ground, and a small NEW chip. */
+    .tab-flagship { position: relative; }
+    .tab-flagship::before {
+      content: ""; position: absolute; left: 0; top: 18%; bottom: 18%; width: 3px;
+      border-radius: 0 3px 3px 0; background: linear-gradient(180deg,#8b7cff,#22d3ee);
+    }
+    .tab-flagship .tab-icon { color: #8b7cff; }
+    .tab-flagship:not(.active) { background: linear-gradient(90deg, rgba(139,124,255,.10), transparent 70%); }
+    .tab-flagship:hover { background: linear-gradient(90deg, rgba(139,124,255,.18), transparent 75%); }
+    .tab-new {
+      margin-left: auto; font-size: .54rem; font-weight: 800; letter-spacing: .09em;
+      background: linear-gradient(90deg,#8b7cff,#22d3ee); color: #0b0e17;
+      padding: .1rem .3rem; border-radius: 4px; line-height: 1.35;
+    }
+    body.light-theme .tab-new { color: #ffffff; }
+    @media (max-width: 900px) { .tab-new { display: none; } }
+
     .tab-badge {
       margin-left: auto; min-width: 17px; height: 17px; padding: 0 5px; border-radius: 9px;
       background: var(--danger); color: #fff; font-size: .6rem; font-weight: 800; line-height: 1;
@@ -1461,6 +1479,7 @@
       <button class="tab" onclick="switchTab('explorer',this)"><span class="tab-icon"><svg class="ico"><use href="#i-explorer"/></svg></span><span class="tab-label">Explorer</span></button>
       <button class="tab" onclick="switchTab('proof',this)"><span class="tab-icon"><svg class="ico"><use href="#i-proof"/></svg></span><span class="tab-label">Chain Proof</span></button>
       <button class="tab" onclick="switchTab('ledger',this)"><span class="tab-icon"><svg class="ico"><use href="#i-ledger"/></svg></span><span class="tab-label">Ledger</span></button>
+      <button class="tab tab-flagship" onclick="switchTab('federated',this)"><span class="tab-icon"><svg class="ico"><use href="#i-globe"/></svg></span><span class="tab-label">Federated</span><span class="tab-new">NEW</span></button>
       <div class="sidebar-label">System</div>
       <button class="tab" onclick="switchTab('help',this)"><span class="tab-icon"><svg class="ico"><use href="#i-help"/></svg></span><span class="tab-label">Help & FAQ</span></button>
     </nav>
@@ -2002,6 +2021,79 @@
   </div>
 
   <!-- Help / FAQ -->
+  <!-- Federated learning: per-round commitments, accept/reject lineage, trustless proofs -->
+  <div class="tab-content" id="tab-federated">
+
+    <div class="card" style="margin-bottom:.9rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem;">
+        <h2 style="margin:0;"><span class="card-title-ico"><svg class="ico"><use href="#i-globe"/></svg></span> Federated Learning</h2>
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+          <select id="flRunSelect" onchange="loadFlRun()" style="background:#151827;color:#dfe4f5;border:1px solid #2a2f45;border-radius:8px;padding:.45rem .7rem;font-size:.8rem;min-width:300px;"></select>
+          <button class="btn btn-sec" style="font-size:.76rem;padding:.4rem .8rem;display:inline-flex;align-items:center;gap:.35rem;" onclick="loadFederated()"><svg class="ico"><use href="#i-refresh"/></svg> Refresh</button>
+          <button class="btn btn-sec" style="font-size:.76rem;padding:.4rem .8rem;" onclick="flToggleHelp()" id="flHelpBtn">What is this?</button>
+        </div>
+      </div>
+
+      <div id="flHelp" style="display:none;margin-top:.8rem;padding:.85rem 1rem;border:1px solid #2a2f45;border-radius:10px;background:rgba(34,211,238,.04);font-size:.82rem;line-height:1.65;color:#b8c0d8;">
+        <b style="color:#22d3ee;">Federated learning</b> trains one model across many parties without pooling their data. Each round, every client trains locally and sends back a <em>delta</em> &mdash; how much it wants to change the model. The server averages those deltas.
+        <div style="margin-top:.55rem;">Two things can go wrong, and this page shows how both are handled:</div>
+        <div style="margin-top:.4rem;padding-left:.9rem;">
+          <div style="margin-bottom:.3rem;"><b style="color:#ef4444;">A malicious client</b> sends a poisoned delta to corrupt or backdoor the model. The <b>Accept / Reject Lineage</b> shows which clients the aggregator screened out, round by round.</div>
+          <div><b style="color:#eab308;">A dishonest server</b> could quietly drop, reorder, or rewrite a client&rsquo;s contribution. Each round therefore commits a <b>Merkle root</b> over its client updates to a blockchain. <b>Verify proof</b> lets anyone re-derive that root in their own browser and check it against the ledger &mdash; without trusting this server.</div>
+        </div>
+        <div style="margin-top:.55rem;color:#8890a8;font-size:.78rem;">Full threat model and guarantees: <code>fedverify/docs/FEDERATED.md</code></div>
+      </div>
+
+      <div id="flEmpty" style="display:none;margin-top:.6rem;padding:1.4rem;text-align:center;color:#8890a8;font-size:.86rem;line-height:1.8;border:1px dashed #2a2f45;border-radius:10px;">
+        <div style="font-size:1.5rem;margin-bottom:.4rem;">&#127760;</div>
+        <div style="color:#dfe4f5;font-weight:600;margin-bottom:.5rem;">No federated runs committed yet</div>
+        Train with <code>--commit</code>, then publish the run:
+        <div style="margin-top:.6rem;text-align:left;display:inline-block;background:#10131f;border:1px solid #2a2f45;border-radius:8px;padding:.6rem .9rem;font-size:.74rem;color:#9aa3bd;">
+          <div>python3 -m fedverify.core.runner --dataset mnist --num-clients 6 \</div>
+          <div style="padding-left:1.2rem;">--rounds 8 --commit --chain-backend local</div>
+          <div style="margin-top:.35rem;">python3 -m fedverify.chain.push &lt;run_dir&gt;</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="flBody" style="display:none;">
+
+      <!-- scenario banner + headline numbers -->
+      <div class="card" style="margin-bottom:.9rem;padding:.9rem 1.1rem;">
+        <div id="flScenario" style="font-size:.86rem;line-height:1.6;color:#b8c0d8;margin-bottom:.85rem;"></div>
+        <div id="flStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:.55rem;"></div>
+      </div>
+
+      <div class="analytics-grid" style="margin-bottom:.9rem;">
+        <div class="card an-card">
+          <div class="an-title"><svg class="ico" style="color:#22d3ee;width:1em;height:1em;"><use href="#i-chart"/></svg> Model Accuracy per Round</div>
+          <div class="an-sub">Is the global model still learning while under attack?</div>
+          <div class="an-canvas-wrap"><canvas id="flAccChart"></canvas><div class="an-empty" id="flAccEmpty" style="display:none;">This run was committed without per-round metrics.</div></div>
+        </div>
+
+        <div class="card an-card">
+          <div class="an-title"><svg class="ico" style="color:var(--success);width:1em;height:1em;"><use href="#i-shield"/></svg> Accept / Reject Lineage</div>
+          <div class="an-sub" id="flGridSub">Every client, every round &mdash; who was screened out, and was that right?</div>
+          <div id="flGridWrap" style="overflow:auto;max-height:250px;padding:.2rem;"><div id="flGrid"></div></div>
+          <div id="flGridLegend" style="margin-top:.5rem;font-size:.7rem;color:#8890a8;line-height:1.9;"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:.9rem;">
+        <div class="an-title" style="margin-bottom:.2rem;"><svg class="ico" style="color:var(--primary);width:1em;height:1em;"><use href="#i-merkle"/></svg> Round Commitments</div>
+        <div class="an-sub" style="margin-bottom:.75rem;">Each round&rsquo;s Merkle root fingerprints <em>exactly which updates went in, in what order</em>. Change one weight, reorder two clients, or drop one &mdash; the root changes. <b>Verify proof</b> re-derives it in your browser.</div>
+        <div style="overflow:auto;"><table id="flRoundsTable" style="width:100%;border-collapse:collapse;font-size:.79rem;"></table></div>
+      </div>
+
+      <div class="card" id="flProofCard" style="display:none;">
+        <div class="an-title" style="margin-bottom:.2rem;"><svg class="ico" style="color:#8b7cff;width:1em;height:1em;"><use href="#i-proof"/></svg> Inclusion Proof Verification</div>
+        <div class="an-sub" style="margin-bottom:.7rem;">Four steps, all run in <em>your</em> browser. Nothing below is taken on this server&rsquo;s word.</div>
+        <div id="flProofSteps" style="display:grid;gap:.42rem;"></div>
+        <div id="flProofVerdict" style="margin-top:.8rem;"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="tab-content" id="tab-help">
     <div class="card">
       <h2><span class="card-title-ico"><svg class="ico"><use href="#i-help"/></svg></span> Help &amp; Quick Start</h2>
@@ -2030,6 +2122,11 @@
             <div class="qs-icon"><svg class="ico"><use href="#i-explorer"/></svg></div>
             <h4>4. Algorand Explorer</h4>
             <p>Every registration is a live Algorand Testnet transaction. Click to explore your proofs on the global ledger.</p>
+          </div>
+          <div class="qs-card" onclick="switchTab('federated')" style="border-color:#8b7cff;">
+            <div class="qs-icon" style="color:#8b7cff;"><svg class="ico"><use href="#i-globe"/></svg></div>
+            <h4>5. Federated Learning <span style="font-size:.6rem;background:#8b7cff;color:#0b0e17;padding:.1rem .35rem;border-radius:4px;vertical-align:middle;margin-left:.2rem;">NEW</span></h4>
+            <p>Train one AI across many hospitals without sharing patient data — and prove on-chain exactly whose updates went in.</p>
           </div>
           <!-- Watch Demo Card -->
           <div class="qs-card" id="startTourBtn" onclick="startGuidedTour()" style="border-color: var(--primary);">
@@ -2101,6 +2198,47 @@
           <div class="faq-item">
             <button class="faq-q" onclick="toggleFaq(this)">Why can't I tamper with an Algorand transaction? <span class="faq-arrow">▼</span></button>
             <div class="faq-a">Algorand transactions are <strong>cryptographically signed</strong> and finalized by a globally distributed validator network. Once confirmed, a transaction cannot be deleted, modified, or reversed. Any attempt to alter a registered hash would produce a different SHA-256 fingerprint — making tampering immediately detectable when you re-verify the model.</div>
+          </div>
+        </div>
+
+        <!-- Federated Learning -->
+        <div class="faq-category">
+          <h3 style="font-size: .85rem; font-weight: 700; color: #8b7cff; margin: 1.5rem 0 .6rem; text-transform: uppercase;display:flex;align-items:center;gap:.45rem;"><svg class="ico" style="width:1em;height:1em;"><use href="#i-globe"/></svg> Federated Learning</h3>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">What is Federated Learning, in simple terms? <span class="faq-arrow">▼</span></button>
+            <div class="faq-a">Imagine ten hospitals that each want a better heart-scan AI. Alone, none has enough patients to train a good one — but patient records legally cannot leave the building, so they can't pool their data.<br><br><strong>Federated learning</strong> solves this: nobody sends data anywhere. Each hospital trains on its own patients and sends back only <em>the adjustment it wants to make to the shared model</em> — just a list of numbers. A server averages everyone's adjustments into one improved model and sends it back. Repeat for a few dozen "rounds" and everyone ends up with a model far better than any of them could have trained alone.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">What does the Federated tab actually show me? <span class="faq-arrow">▼</span></button>
+            <div class="faq-a">Pick a training run from the dropdown and you'll see four things:<br><br><strong>1. Accuracy per Round</strong> — is the model still improving while under attack?<br><strong>2. Accept / Reject Lineage</strong> — a grid with one square per participant per round. Green means their update was accepted, red means it was screened out for looking malicious.<br><strong>3. Round Commitments</strong> — the cryptographic fingerprint of each round, saved to the blockchain.<br><strong>4. Verify proof</strong> — a button that checks, in your own browser, that a participant's update really was included — <em>without trusting our server</em>.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">Why does federated learning need a blockchain at all? <span class="faq-arrow">▼</span></button>
+            <div class="faq-a">Because someone has to run the averaging server, and everyone else just has to <em>trust</em> it. That server could quietly drop a hospital's contribution, secretly reorder things, or later claim a round contained something it didn't. Nobody could prove otherwise.<br><br>So at the end of every round we take a fingerprint of every participant's update, combine them into one short code (a <strong>Merkle root</strong>), and write that code to a public blockchain. Change one number in one update and the code changes completely. Because it's public and permanent, the server can't tell two different stories — and any participant can check for themselves that their work was counted.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">What if one of the participants is malicious? <span class="faq-arrow">▼</span></button>
+            <div class="faq-a">That's the second problem federated learning creates. A bad participant can send a deliberately poisoned update to wreck the shared model — or worse, install a hidden <strong>backdoor</strong> so the model behaves perfectly on normal inputs but fails on anything carrying a secret trigger. Accuracy looks fine, so nobody notices.<br><br><strong>FedVerify-Forensics</strong> is our defence. Every round it compares each participant against all the others and asks: is this update abnormally large? Does it point the opposite way to everyone else? Does it contain corrupted values? Anything too far out of line is rejected before it reaches the model, and the decision is recorded on-chain.<br><br>The clever part is that this reuses BlockVerify's <em>existing</em> tamper-detection code. Finding a suspicious participant among many is the same statistical question as finding a suspicious layer inside one model — just one level up.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">The colours in the lineage grid — what do they mean? <span class="faq-arrow">▼</span></button>
+            <div class="faq-a"><strong style="color:#22c55e;">Bright green</strong> — a malicious participant that was correctly caught. Good.<br><strong style="color:#ef4444;">Red</strong> — a malicious participant that slipped through. Bad.<br><strong style="color:#eab308;">Amber</strong> — an honest participant wrongly excluded. This is the cost of the defence.<br><strong style="color:#1f6f4a;">Dark green</strong> — an honest participant accepted. Normal.<br><br>Rows belonging to malicious participants are labelled, so a perfect run is bright green on those rows and dark green everywhere else. A sentence underneath the grid states the outcome in plain words.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">What does "TRUSTLESS ✓" vs "SERVER-TRUSTED" mean? <span class="faq-arrow">▼</span></button>
+            <div class="faq-a">When you click <strong>Verify proof</strong>, your browser runs four checks. It recomputes the fingerprint from the raw data (it does not accept our server's version of it), folds the proof upward, and finally reads the committed code <em>directly from the public blockchain</em>.<br><br><strong style="color:var(--success);">TRUSTLESS ✓</strong> — all four passed. The update was provably included, and you did not have to trust us to establish that.<br><strong style="color:#eab308;">SERVER-TRUSTED</strong> — the first three passed, but this particular run was recorded on a local test chain, so there is no public ledger for the final check. Still honest, just weaker — and clearly labelled rather than hidden.<br><strong style="color:var(--danger);">VERIFICATION FAILED</strong> — something doesn't match. That's the alarm.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">Does this keep patient data private? <span class="faq-arrow">▼</span></button>
+            <div class="faq-a">Partly, and we're careful about the wording. The raw data never leaves its owner, but the updates that <em>are</em> sent are derived from that data, and researchers have shown you can sometimes reconstruct training examples from them. "We never sent the data" is not on its own a privacy guarantee.<br><br>So we optionally add <strong>differential privacy</strong> — controlled mathematical noise, calibrated so it is provably hard to tell whether any single record was in the training set. The strength is a number called epsilon (ε): lower means more privacy and lower accuracy. You can see that trade-off directly by comparing runs in the dropdown.<br><br><em>One honest limitation:</em> the protection applies per training example. For heart data that's one heartbeat, not one patient — and a patient contributes hundreds of beats. A true per-patient guarantee needs different machinery, and we don't claim to have it.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">How do I get my own training run to appear here? <span class="faq-arrow">▼</span></button>
+            <div class="faq-a">Two commands. Train with the <code>--commit</code> flag so each round's fingerprint is recorded, then publish the run to this dashboard:<br><br><code style="display:block;background:rgba(0,0,0,.35);padding:.6rem .8rem;border-radius:8px;margin:.4rem 0;font-size:.78rem;line-height:1.7;">python3 -m fedverify.core.runner --dataset mnist \<br>&nbsp;&nbsp;--num-clients 10 --rounds 8 --commit --chain-backend local<br><br>python3 -m fedverify.chain.push &lt;the run folder it prints&gt;</code>Then hit <strong>Refresh</strong> in the Federated tab. Use <code>--chain-backend algorand</code> instead of <code>local</code> to anchor on the real public Testnet and unlock the full TRUSTLESS ✓ verification.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">Is this different from the model registration on the other tabs? <span class="faq-arrow">▼</span></button>
+            <div class="faq-a">Yes — they solve related problems at different stages.<br><br><strong>Register / Verify</strong> covers a <em>finished</em> model: one file, registered once, checked later for tampering. The question is "has this artefact changed since I registered it?"<br><br><strong>Federated</strong> covers a model <em>while it is still being built</em> by many parties who don't fully trust each other. The question is "whose contributions actually went into this model, and were any of them malicious?"<br><br>They share the same foundations — the same hashing, the same Merkle proofs, the same on-chain anchoring, and even the same statistical tamper-detection code.</div>
           </div>
         </div>
 
@@ -2458,6 +2596,7 @@ function switchTab(name, btn) {
   if (name === 'ledger')   loadLedger();
   if (name === 'alerts' && typeof markAlertsRead === 'function') markAlertsRead();
   if (name === 'analytics' && typeof loadAnalytics === 'function') loadAnalytics();
+  if (name === 'federated' && typeof loadFederated === 'function') loadFederated();
   if (name === 'compare' && typeof initCmpOrbit === 'function') {
     initCmpOrbit();
     if (document.getElementById('cmp3dCard').style.display !== 'none') startCmpAuto();
@@ -3099,6 +3238,424 @@ async function bvVerifyManifestAnchor(modelId){
     if(out.chainRoot && out.chainRoot === mp.merkleRoot && out.bad === 0 && countOk) out.mode = 'trustless';
     return out;
   }catch(e){ return out; }
+}
+
+// Minimal HTML escaper for values that reach innerHTML. Run ids and client ids come from
+// the FL store, which POST /api/fl/round/commit populates without authentication, so they
+// are attacker-controllable strings and must never be interpolated raw.
+function escapeHtml(v){
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// ── Federated tab ───────────────────────────────────────────────────────────
+// Reuses bvSha256Hex / bvMerkleLeaf / bvFoldProof above unchanged: an FL round leaf is
+// SHA-256(JSON([i, client_id, digest])), the same encoding as a layer-manifest leaf, so
+// the browser-side verifier is literally the same code path. Only the on-chain note keys
+// differ (frr/flc for a round, lmr/lc for a manifest).
+let flRuns = [], flCurrent = null, flAccChart = null;
+const FL_EMPTY_HTML = `<div style="font-size:1.5rem;margin-bottom:.4rem;">&#127760;</div>
+  <div style="color:#dfe4f5;font-weight:600;margin-bottom:.5rem;">No federated runs committed yet</div>
+  Train with <code>--commit</code>, then publish the run:
+  <div style="margin-top:.6rem;text-align:left;display:inline-block;background:#10131f;border:1px solid #2a2f45;border-radius:8px;padding:.6rem .9rem;font-size:.74rem;color:#9aa3bd;">
+    <div>python3 -m fedverify.core.runner --dataset mnist --num-clients 10 \\</div>
+    <div style="padding-left:1.2rem;">--rounds 8 --commit --chain-backend local</div>
+    <div style="margin-top:.35rem;">python3 -m fedverify.chain.push &lt;run_dir&gt;</div>
+  </div>`;
+
+const FL_ATTACK_INFO = {
+  none:       {label:'Clean run',    blurb:'No attackers. The defence should reject <b>nobody</b> &mdash; a defence that fires on honest clients costs more accuracy than the attack it prevents.'},
+  scaling:    {label:'Scaling',      blurb:'Attackers multiply their update by K/f so it survives averaging (<em>model replacement</em>, Bagdasaryan et al.). It shows up as an abnormally large update <b>norm</b>.'},
+  sign_flip:  {label:'Sign flip',    blurb:'Attackers negate their update. The norm is <b>identical</b> to an honest one, so a size-based detector is blind &mdash; only the <b>direction</b> score catches it.'},
+  gaussian:   {label:'Noise',        blurb:'Attackers replace their update with pure Gaussian noise, carrying no information about their data.'},
+  zero:       {label:'Free-rider',   blurb:'Attackers send a zero update: they take the model without contributing.'},
+  label_flip: {label:'Label flip',   blurb:'Attackers train on deliberately wrong labels. The resulting update is a <em>legitimately trained</em> one on poisoned data, which makes it the hardest to spot statistically.'},
+  backdoor:   {label:'Backdoor',     blurb:'A 3&times;3 trigger patch is stamped on some training images and relabelled to a target class (BadNets). Clean accuracy stays normal, which is what makes backdoors dangerous &mdash; watch <b>ASR</b>, not accuracy.'}
+};
+const FL_AGG_INFO = {
+  fedavg:       'plain averaging — <b>no defence at all</b>',
+  forensics:    'FedVerify-Forensics — robust outlier probes across clients',
+  krum:         'Krum — keeps the single most central client',
+  multikrum:    'Multi-Krum — averages the K−f most central clients',
+  median:       'coordinate-wise median',
+  trimmed_mean: 'β-trimmed mean'
+};
+
+function flToggleHelp(){
+  const h = document.getElementById('flHelp');
+  const open = h.style.display !== 'none';
+  h.style.display = open ? 'none' : 'block';
+  document.getElementById('flHelpBtn').textContent = open ? 'What is this?' : 'Hide';
+}
+
+function flRunLabel(r){
+  const m = r.meta || {};
+  if(!m.dataset) return `${r.runId} — ${r.numRounds} rounds`;
+  const atk = (m.attack && m.attack !== 'none')
+    ? `${(FL_ATTACK_INFO[m.attack]||{}).label || m.attack} ${Math.round((m.attackerFrac||0)*100)}%`
+    : 'clean';
+  const dp = (m.epsilon && m.epsilon !== 'inf') ? ` · ε=${m.epsilon}` : '';
+  return `${m.dataset} K=${m.numClients} · ${atk} · ${m.aggregator}${dp} · ${r.numRounds}r`;
+}
+
+async function loadFederated(){
+  const sel = document.getElementById('flRunSelect');
+  const empty = document.getElementById('flEmpty');
+  let reachable = true, why = '';
+  try{
+    const resp = await fetch(API + '/fl/runs');
+    if(resp.status === 404){ reachable = false; why = 'stale'; }
+    else { const r = await resp.json(); flRuns = (r && r.runs) || []; }
+  }catch(e){ reachable = false; why = 'down'; flRuns = []; }
+
+  // An unreachable API and a server with no runs are completely different problems, and
+  // showing "no runs yet" for both sends you looking in the wrong place.
+  if(!reachable){
+    flRuns = [];
+    empty.innerHTML = why === 'stale'
+      ? `<div style="font-size:1.5rem;margin-bottom:.4rem;">&#9888;</div>
+         <div style="color:#eab308;font-weight:600;margin-bottom:.5rem;">API is running an older build</div>
+         The server answered, but it has no <code>/api/fl/*</code> routes &mdash; it was started before the federated blueprint was added. Restart it:
+         <div style="margin-top:.6rem;display:inline-block;background:#10131f;border:1px solid #2a2f45;border-radius:8px;padding:.55rem .9rem;font-size:.74rem;color:#9aa3bd;">cd backend &amp;&amp; python3 app.py</div>`
+      : `<div style="font-size:1.5rem;margin-bottom:.4rem;">&#128268;</div>
+         <div style="color:var(--danger);font-weight:600;margin-bottom:.5rem;">Cannot reach the API</div>
+         <code>${escapeHtml(API)}</code> did not respond. Start the backend, then hit Refresh.
+         <div style="margin-top:.6rem;display:inline-block;background:#10131f;border:1px solid #2a2f45;border-radius:8px;padding:.55rem .9rem;font-size:.74rem;color:#9aa3bd;">cd backend &amp;&amp; python3 app.py</div>`;
+    empty.style.display = 'block';
+    document.getElementById('flBody').style.display = 'none';
+    sel.innerHTML = '';
+    return;
+  }
+
+  empty.innerHTML = FL_EMPTY_HTML;
+  empty.style.display = flRuns.length ? 'none' : 'block';
+  document.getElementById('flBody').style.display  = flRuns.length ? 'block' : 'none';
+  if(!flRuns.length){ sel.innerHTML = ''; return; }
+
+  // clean runs first, then by attack, so the selector reads as a story
+  const order = ['none','scaling','sign_flip','label_flip','backdoor','gaussian','zero'];
+  const sorted = [...flRuns].sort((a,b)=>{
+    const ai = order.indexOf((a.meta||{}).attack || 'none');
+    const bi = order.indexOf((b.meta||{}).attack || 'none');
+    if(ai !== bi) return (ai<0?99:ai) - (bi<0?99:bi);
+    return String((a.meta||{}).aggregator).localeCompare(String((b.meta||{}).aggregator));
+  });
+  const keep = sel.value;
+  sel.innerHTML = sorted.map(x =>
+    `<option value="${escapeHtml(x.runId)}">${escapeHtml(flRunLabel(x))}</option>`).join('');
+  if(keep && sorted.some(x => x.runId === keep)) sel.value = keep;
+  await loadFlRun();
+}
+
+async function loadFlRun(){
+  const runId = document.getElementById('flRunSelect').value;
+  if(!runId) return;
+  let lin;
+  try{ lin = await (await fetch(API + '/fl/lineage/' + encodeURIComponent(runId))).json(); }
+  catch(e){ return; }
+  if(!lin || !lin.success) return;
+  flCurrent = lin;
+  const meta = lin.meta || {};
+  renderFlScenario(meta, lin.lineage);
+  renderFlStats(meta, lin.lineage);
+  renderFlAccuracy(lin.lineage);
+  renderFlGrid(lin.lineage, meta);
+  renderFlRounds(runId, lin.lineage, meta);
+  document.getElementById('flProofCard').style.display = 'none';
+}
+
+// ── narrative header ────────────────────────────────────────────────────────
+function renderFlScenario(meta, lineage){
+  const box = document.getElementById('flScenario');
+  const atk = meta.attack && meta.attack !== 'none' ? meta.attack : 'none';
+  const info = FL_ATTACK_INFO[atk] || FL_ATTACK_INFO.none;
+  const agg  = FL_AGG_INFO[meta.aggregator] || meta.aggregator || '—';
+  const nAtk = (meta.attackerIds || []).length;
+
+  let head;
+  if(atk === 'none'){
+    head = `<b style="color:var(--success);">Clean run.</b> All ${meta.numClients || '?'} clients are honest, aggregated with ${agg}.`;
+  }else{
+    head = `<b style="color:var(--danger);">${info.label} attack.</b> `
+         + `${nAtk} of ${meta.numClients || '?'} clients are malicious`
+         + (nAtk ? ` (client${nAtk>1?'s':''} ${(meta.attackerIds||[]).join(', ')})` : '')
+         + `, aggregated with ${agg}.`;
+  }
+  const dp = (meta.epsilon && meta.epsilon !== 'inf')
+    ? ` Trained under differential privacy at <b>ε=${meta.epsilon}</b>.` : '';
+  const tau = (meta.tau != null)
+    ? `<div style="margin-top:.45rem;font-size:.76rem;color:#8890a8;">Rejection threshold τ = <b style="color:#b8c0d8;">${(+meta.tau).toFixed(3)}</b>`
+      + (meta.tauSource
+          ? ` &middot; <span style="color:var(--success);">calibrated</span> from a ROC over labelled clean and attacked rounds`
+            + (/fpr5/.test(String(meta.tauSource)) ? ` at the <b>FPR&nbsp;&le;&nbsp;5%</b> operating point` : '')
+            + ` <code style="font-size:.7rem;">${escapeHtml(String(meta.tauSource).split('/').pop())}</code>`
+          : ` &middot; <span style="color:#eab308;">supplied manually &mdash; NOT calibrated, so these detection numbers are not meaningful</span>`) + `</div>`
+    : '';
+  box.innerHTML = head + dp + `<div style="margin-top:.4rem;">${info.blurb}</div>` + tau;
+}
+
+function _statCard(val, label, color, hint){
+  return `<div title="${escapeHtml(hint||'')}" style="background:#10131f;border:1px solid #2a2f45;border-radius:9px;padding:.55rem .6rem;text-align:center;">
+    <div style="font-size:1.15rem;font-weight:700;color:${color};line-height:1.25;">${val}</div>
+    <div style="font-size:.63rem;color:#8890a8;letter-spacing:.05em;text-transform:uppercase;margin-top:.15rem;">${label}</div></div>`;
+}
+
+function renderFlStats(meta, lineage){
+  const last = lineage[lineage.length-1] || {};
+  const acc = last.metrics && last.metrics.test_acc != null ? (100*last.metrics.test_acc).toFixed(1)+'%' : '—';
+  const known = (meta.attackerIds || []).length > 0;
+
+  // detection quality, computed here from the lineage + ground truth
+  let tp=0, fp=0, fn=0, honestSeen=0, fpSeen=0;
+  const atkSet = new Set((meta.attackerIds||[]).map(String));
+  for(const r of lineage){
+    const rej = new Set((r.rejected||[]).map(String));
+    const all = [].concat(r.accepted||[], r.rejected||[]).map(String);
+    for(const c of all){
+      const isAtk = atkSet.has(c);
+      if(isAtk && rej.has(c)) tp++;
+      else if(isAtk) fn++;
+      else { honestSeen++; if(rej.has(c)){ fp++; fpSeen++; } }
+    }
+  }
+  const prec = (tp+fp) ? tp/(tp+fp) : null;
+  const rec  = (tp+fn) ? tp/(tp+fn) : null;
+  const f1   = (prec!=null && rec!=null && (prec+rec)) ? 2*prec*rec/(prec+rec) : null;
+  const fer  = honestSeen ? fpSeen/honestSeen : null;
+
+  const cards = [];
+  cards.push(_statCard(lineage.length, 'rounds', '#dfe4f5', 'Training rounds committed on-chain'));
+  cards.push(_statCard(meta.numClients ?? '—', 'clients', '#dfe4f5', 'Participants per round'));
+  cards.push(_statCard(acc, 'final accuracy', '#22d3ee', 'Global model accuracy after the last round'));
+  if(known && f1 != null){
+    const col = f1 >= 0.8 ? 'var(--success)' : (f1 >= 0.5 ? '#eab308' : 'var(--danger)');
+    cards.push(_statCard((100*f1).toFixed(0)+'%', 'detection F1', col,
+      `Of the malicious updates, how many were caught, balanced against false alarms (TP=${tp} FP=${fp} FN=${fn})`));
+    cards.push(_statCard((100*rec).toFixed(0)+'%', 'attackers caught', col, 'Recall: share of malicious updates rejected'));
+  }
+  if(fer != null){
+    const col = fer <= 0.02 ? 'var(--success)' : (fer <= 0.1 ? '#eab308' : 'var(--danger)');
+    const policy = /fpr5/.test(String(meta.tauSource||'')) ? ' The threshold was calibrated to hold this at or below 5%, so a few percent here is the designed operating point, not a fault.' : '';
+    cards.push(_statCard((100*fer).toFixed(1)+'%', 'honest excluded', col,
+      'False-exclusion rate: honest clients wrongly rejected. This is the price of the defence.' + policy));
+  }
+  const asr = last.metrics && last.metrics.asr;
+  if(asr != null) cards.push(_statCard((100*asr).toFixed(1)+'%', 'attack success', asr<0.1?'var(--success)':'var(--danger)', 'Backdoor ASR: triggered inputs classified as the attacker target'));
+  document.getElementById('flStats').innerHTML = cards.join('');
+}
+
+function renderFlAccuracy(lineage){
+  const pts = lineage.filter(r => r.metrics && r.metrics.test_acc != null);
+  const empty = document.getElementById('flAccEmpty');
+  const cv = document.getElementById('flAccChart');
+  if(flAccChart){ flAccChart.destroy(); flAccChart = null; }
+  if(!pts.length){ empty.style.display='block'; cv.style.display='none'; return; }
+  empty.style.display='none'; cv.style.display='block';
+  const ds = [{label:'accuracy', data: pts.map(r => +(100*r.metrics.test_acc).toFixed(2)),
+               borderColor:'#22d3ee', backgroundColor:'rgba(34,211,238,.14)', fill:true, tension:.3}];
+  if(pts.some(r => r.metrics.macro_f1 != null))
+    ds.push({label:'macro-F1', data: pts.map(r => r.metrics.macro_f1==null?null:+(100*r.metrics.macro_f1).toFixed(2)),
+             borderColor:'#8b7cff', backgroundColor:'rgba(139,124,255,.10)', fill:false, tension:.3});
+  flAccChart = new Chart(cv.getContext('2d'), {
+    type:'line',
+    data:{ labels: pts.map(r => 'R' + r.round), datasets: ds },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:'#9aa3bd', boxWidth:12, font:{size:10} } } },
+      scales:{ x:{ ticks:{color:'#7d879e',font:{size:9}}, grid:{color:'rgba(255,255,255,.05)'} },
+               y:{ ticks:{color:'#7d879e',font:{size:9}}, grid:{color:'rgba(255,255,255,.05)'},
+                   title:{display:true,text:'%',color:'#7d879e',font:{size:9}} } } }
+  });
+}
+
+// ── lineage grid: four states, not two ──────────────────────────────────────
+function renderFlGrid(lineage, meta){
+  const ids = [...new Set(lineage.flatMap(r => [].concat(r.accepted||[], r.rejected||[])))]
+    .sort((a,b) => (isNaN(a)||isNaN(b)) ? String(a).localeCompare(String(b)) : (+a)-(+b));
+  const box = document.getElementById('flGrid');
+  const leg = document.getElementById('flGridLegend');
+  if(!ids.length){ box.innerHTML = '<div style="color:#8890a8;font-size:.8rem;">No client lineage recorded.</div>'; leg.innerHTML=''; return; }
+
+  const atkSet = new Set((meta.attackerIds||[]).map(String));
+  const known = atkSet.size > 0;
+  const C = { caught:'#22c55e', missed:'#ef4444', ok:'#1f6f4a', wrong:'#eab308', absent:'rgba(255,255,255,.06)' };
+  const cell = 'width:15px;height:15px;border-radius:3px;display:inline-block;margin:1px;';
+
+  let html = `<div style="display:grid;grid-template-columns:auto 1fr;gap:.3rem;align-items:center;">`;
+  // round ruler — without it you cannot tell which column is which round
+  html += `<div></div><div style="line-height:0;white-space:nowrap;">` +
+    lineage.map((r,i) => {
+      const show = lineage.length <= 12 || (r.round % 5 === 0) || i === 0;
+      return `<span style="display:inline-block;width:15px;margin:1px;font-size:.52rem;color:#6b7488;text-align:center;line-height:1;">${show ? r.round : ''}</span>`;
+    }).join('') + `</div>`;
+  let nCaught=0, nMissed=0, nWrong=0;
+  for(const cid of ids){
+    const isAtk = atkSet.has(String(cid));
+    const tag = isAtk ? `<span style="color:var(--danger);font-weight:700;">client ${escapeHtml(String(cid))}</span> <span style="font-size:.58rem;color:var(--danger);">MALICIOUS</span>`
+                      : `client ${escapeHtml(String(cid))}`;
+    html += `<div style="font-size:.65rem;color:#8890a8;text-align:right;padding-right:.35rem;white-space:nowrap;">${tag}</div><div style="line-height:0;">`;
+    for(const r of lineage){
+      const rejected = (r.rejected||[]).map(String).includes(String(cid));
+      const present  = rejected || (r.accepted||[]).map(String).includes(String(cid));
+      let bg, t;
+      if(!present){ bg=C.absent; t='not selected this round'; }
+      else if(!known){ bg = rejected ? C.missed : C.caught; t = rejected ? 'rejected' : 'accepted'; }
+      else if(isAtk && rejected){ bg=C.caught; t='malicious — correctly rejected'; nCaught++; }
+      else if(isAtk && !rejected){ bg=C.missed; t='MALICIOUS — slipped through'; nMissed++; }
+      else if(!isAtk && rejected){ bg=C.wrong;  t='honest — wrongly excluded'; nWrong++; }
+      else { bg=C.ok; t='honest — accepted'; }
+      html += `<span title="round ${r.round} · client ${escapeHtml(String(cid))} · ${t}" style="${cell}background:${bg};"></span>`;
+    }
+    html += `</div>`;
+  }
+  html += `</div>`;
+  box.innerHTML = html;
+
+  const sw = c => `<span style="${cell}background:${c};vertical-align:middle;"></span>`;
+  if(known){
+    const tot = nCaught + nMissed;
+    let verdict;
+    if(tot === 0) verdict = 'No malicious updates were submitted in these rounds.';
+    else if(nMissed === 0 && nWrong === 0)
+      verdict = `<b style="color:var(--success);">Every malicious update was caught, and no honest client was excluded.</b>`;
+    else if(nCaught === 0)
+      verdict = `<b style="color:var(--danger);">Nothing was screened out &mdash; all ${nMissed} malicious updates were accepted into the model.</b>`;
+    else
+      verdict = `Caught <b style="color:var(--success);">${nCaught}</b> of ${tot} malicious updates (${Math.round(100*nCaught/tot)}%)`
+              + (nWrong ? `, at the cost of wrongly excluding <b style="color:#eab308;">${nWrong}</b> honest one${nWrong>1?'s':''}.` : `, with no honest client excluded.`);
+    leg.innerHTML = `${sw(C.caught)} attacker caught (${nCaught}) &nbsp; ${sw(C.missed)} attacker missed (${nMissed}) &nbsp; ${sw(C.wrong)} honest wrongly excluded (${nWrong}) &nbsp; ${sw(C.ok)} honest accepted`
+      + `<div style="margin-top:.3rem;color:#b8c0d8;">${verdict}</div>`;
+  }else{
+    leg.innerHTML = `${sw(C.caught)} accepted &nbsp; ${sw(C.missed)} rejected`
+      + `<div style="margin-top:.2rem;">This run has no recorded ground truth, so a rejection cannot be scored as right or wrong.</div>`;
+  }
+}
+
+function renderFlRounds(runId, lineage, meta){
+  const t = document.getElementById('flRoundsTable');
+  const th = 'text-align:left;padding:.45rem .5rem;border-bottom:1px solid #2a2f45;color:#8890a8;font-weight:600;font-size:.7rem;letter-spacing:.05em;text-transform:uppercase;';
+  const td = 'padding:.45rem .5rem;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:middle;';
+  let html = `<thead><tr><th style="${th}">Round</th><th style="${th}">Merkle root</th><th style="${th}">Updates</th><th style="${th}">Screened out</th><th style="${th}">Anchor</th><th style="${th}"></th></tr></thead><tbody>`;
+  for(const r of lineage){
+    const tx = r.txid || '';
+    const anchor = r.indexerUrl
+      ? `<a href="https://lora.algokit.io/testnet/transaction/${encodeURIComponent(tx)}" target="_blank" style="color:var(--primary);">${escapeHtml(tx.slice(0,10))}…</a> <span style="color:var(--success);font-size:.68rem;">public</span>`
+      : `<span style="color:#7d879e;" title="${escapeHtml(r.backend||'')} backend — not a public ledger, so proofs degrade to server-trusted">${escapeHtml((tx||'—').slice(0,10))}${tx?'…':''} <em style="font-size:.68rem;">${escapeHtml(r.backend||'local')}</em></span>`;
+    const rej = (r.rejected||[]);
+    const rejTxt = rej.length
+      ? `<span style="color:var(--danger);">${rej.map(x=>escapeHtml(String(x))).join(', ')}</span>`
+      : `<span style="color:#5b6478;">none</span>`;
+    const first = ((r.accepted||[])[0] ?? (r.rejected||[])[0]);
+    html += `<tr>
+      <td style="${td}"><b>${r.round}</b></td>
+      <td style="${td}"><code class="fl-root" data-root="${escapeHtml(r.root||'')}" title="click to copy the full root" style="color:#22d3ee;font-size:.72rem;cursor:pointer;">${escapeHtml((r.root||'').slice(0,18))}…</code></td>
+      <td style="${td}">${r.leafCount}</td>
+      <td style="${td}">${rejTxt}</td>
+      <td style="${td}">${anchor}</td>
+      <td style="${td}">${first===undefined?'':`<button class="btn btn-sec fl-verify" style="font-size:.67rem;padding:.24rem .6rem;" data-round="${r.round}" data-client="${escapeHtml(String(first))}">Verify proof</button>`}</td>
+    </tr>`;
+  }
+  t.innerHTML = html + '</tbody>';
+  t.querySelectorAll('code.fl-root').forEach(el => {
+    el.addEventListener('click', async () => {
+      try{ await navigator.clipboard.writeText(el.dataset.root); }catch(e){ return; }
+      const was = el.textContent; el.textContent = 'copied ✓';
+      setTimeout(() => { el.textContent = was; }, 900);
+    });
+  });
+  // Event delegation instead of inline onclick: interpolating a run id into an attribute
+  // is unsafe, because escapeHtml's &#39; is HTML-decoded back to a quote before the JS
+  // string is parsed. Values are read from data-* attributes, which are never executed.
+  t.querySelectorAll('button.fl-verify').forEach(b => {
+    b.addEventListener('click', () => flVerifyProof(runId, +b.dataset.round, b.dataset.client));
+  });
+}
+
+// ── stepwise trustless verification ─────────────────────────────────────────
+function _flRoundBackend(round){
+  const r = ((flCurrent && flCurrent.lineage) || []).find(x => x.round === round);
+  return (r && r.backend) || 'local';
+}
+
+function _flStep(state, title, detail){
+  const icon = {ok:'&#10003;', bad:'&#10007;', warn:'&#33;', run:'&#8230;'}[state] || '&#8230;';
+  const col  = {ok:'var(--success)', bad:'var(--danger)', warn:'#eab308', run:'#7d879e'}[state] || '#7d879e';
+  return `<div style="display:flex;gap:.6rem;align-items:flex-start;padding:.5rem .7rem;border:1px solid #2a2f45;border-radius:8px;background:#10131f;">
+    <div style="flex:0 0 18px;height:18px;border-radius:50%;background:${col};color:#0b0e17;font-weight:800;font-size:.72rem;display:flex;align-items:center;justify-content:center;">${icon}</div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:.79rem;color:#dfe4f5;font-weight:600;">${title}</div>
+      <div style="font-size:.72rem;color:#8890a8;margin-top:.12rem;word-break:break-all;">${detail}</div>
+    </div></div>`;
+}
+
+async function flVerifyProof(runId, round, clientId){
+  const card = document.getElementById('flProofCard');
+  const box  = document.getElementById('flProofSteps');
+  const verd = document.getElementById('flProofVerdict');
+  card.style.display = 'block'; verd.innerHTML = '';
+  box.innerHTML = _flStep('run', `Fetching inclusion path`, `client ${escapeHtml(String(clientId))}, round ${round}`);
+  card.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+  let p;
+  try{ p = await (await fetch(`${API}/fl/proof/${encodeURIComponent(runId)}/${round}/${encodeURIComponent(clientId)}`)).json(); }
+  catch(e){ box.innerHTML = _flStep('bad','Request failed', escapeHtml(String(e))); return; }
+  if(!p || !p.success){ box.innerHTML = _flStep('bad','Not found', escapeHtml((p&&p.error)||'unknown')); return; }
+
+  const steps = [];
+  steps.push(_flStep('ok', `1 · Server returned the claimed proof`,
+    `client ${escapeHtml(String(p.clientId))} at position ${p.index} of ${p.leafCount} &middot; sibling path ${(p.proof||[]).length} levels deep. <b>None of this is trusted yet.</b>`));
+  box.innerHTML = steps.join('');
+
+  const leaf = await bvMerkleLeaf(p.index, String(p.clientId), p.digest);
+  const leafOk = leaf === p.leaf;
+  steps.push(_flStep(leafOk?'ok':'bad', `2 · Leaf recomputed from the raw digest`,
+    leafOk ? `SHA-256(JSON([${p.index}, "${escapeHtml(String(p.clientId))}", digest])) = <code>${escapeHtml(leaf.slice(0,24))}…</code> — matches. The server did not simply hand us a leaf to believe.`
+           : `Recomputed <code>${escapeHtml(leaf.slice(0,24))}…</code> but the server claims <code>${escapeHtml((p.leaf||'').slice(0,24))}…</code>. The served leaf is not this digest's leaf.`));
+  box.innerHTML = steps.join('');
+
+  const folded = await bvFoldProof(leaf, p.proof);
+  const foldOk = folded === p.root;
+  steps.push(_flStep(foldOk?'ok':'bad', `3 · Sibling path folded to a root`,
+    foldOk ? `Hashing up ${(p.proof||[]).length} levels gives <code>${escapeHtml(folded.slice(0,24))}…</code>, the round root. This update really was in round ${round}.`
+           : `Folding gives <code>${escapeHtml(folded.slice(0,24))}…</code>, which is not the claimed root. The proof does not hold.`));
+  box.innerHTML = steps.join('');
+
+  let chainRoot=null, chainCount=null, tried=false;
+  if(p.indexerUrl){
+    tried = true;
+    steps.push(_flStep('run', `4 · Reading the anchored root from the public ledger`, `${escapeHtml(p.indexerUrl)}`));
+    box.innerHTML = steps.join('');
+    try{
+      const tx = await (await fetch(p.indexerUrl)).json();
+      const b64 = tx && tx.transaction && tx.transaction.note;
+      if(b64){ const note = JSON.parse(atob(b64)); chainRoot = note.frr || null; chainCount = (note.flc ?? null); }
+    }catch(e){}
+    steps.pop();
+  }
+  const countOk = chainCount == null || chainCount === p.leafCount;
+  if(chainRoot){
+    const match = chainRoot === p.root && countOk;
+    steps.push(_flStep(match?'ok':'bad', `4 · Anchored root read straight from Algorand`,
+      match ? `On-chain root <code>${escapeHtml(chainRoot.slice(0,24))}…</code> and leaf count ${chainCount} agree with what we folded — read from the public indexer, not from this server.`
+            : (chainRoot !== p.root ? `On-chain root <code>${escapeHtml(chainRoot.slice(0,24))}…</code> does <b>not</b> match the served root.`
+                                    : `Anchored leaf count ${chainCount} ≠ served ${p.leafCount}.`)));
+  }else{
+    steps.push(_flStep('warn', `4 · No public ledger to check against`,
+      tried ? `The Algorand indexer was unreachable, so the root could not be independently confirmed.`
+            : `This round was anchored with the <b>${escapeHtml(_flRoundBackend(round))}</b> backend, which is not a public chain. Re-run with <code>--chain-backend algorand</code> to complete this step.`));
+  }
+  box.innerHTML = steps.join('');
+
+  const trustless = chainRoot && chainRoot === p.root && foldOk && leafOk && countOk;
+  const broken = !foldOk || !leafOk || (chainRoot && chainRoot !== p.root) || !countOk;
+  if(trustless){
+    verd.innerHTML = `<div style="padding:.7rem .9rem;border-radius:9px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);color:var(--success);font-weight:700;font-size:.86rem;">TRUSTLESS &#10003; &mdash; this update was provably committed, verified without trusting this server</div>`;
+  }else if(broken){
+    verd.innerHTML = `<div style="padding:.7rem .9rem;border-radius:9px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.4);color:var(--danger);font-weight:700;font-size:.86rem;">VERIFICATION FAILED &mdash; the served data does not match the commitment</div>`;
+  }else{
+    verd.innerHTML = `<div style="padding:.7rem .9rem;border-radius:9px;background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.35);color:#eab308;font-weight:700;font-size:.86rem;">SERVER-TRUSTED &mdash; the proof folds correctly, but no public ledger confirms the root
+      <div style="font-weight:400;color:#9aa3bd;font-size:.76rem;margin-top:.3rem;">Steps 1&ndash;3 passed. Only step 4 is missing, and it is what makes the claim independent of this server.</div></div>`;
+  }
 }
 
 async function runDeepInspection(storedLayers, storedOrder, modelId){
@@ -5623,7 +6180,11 @@ const TOUR_STEPS = [
   { target: '#tab-explorer', tab: 'explorer', title: '🔗 Step 3 — Algorand Testnet Explorer', body: 'Every registration and verification is broadcast as an immutable transaction on the live Algorand Testnet. Visit the explorer to inspect your permanent on-chain proofs.', position: 'bottom' },
   { target: '#validateBtn', tab: 'explorer', title: '🛡 Validate Chain Integrity', body: 'Click this to confirm Algorand Testnet is live and your transactions are globally secured. Algorand\'s Pure Proof-of-Stake (PPoS) ensures 100% Byzantine fault tolerance — always ✅ Valid.', position: 'top' },
   { target: '#tab-models', tab: 'models', title: '📦 Step 4 — My Models', body: 'All your registered models appear here. You can verify, add new versions, download a PDF integrity report, toggle privacy, or deactivate a model.', position: 'bottom' },
-  { target: '#tab-help', tab: 'help', title: '🎉 Tour Complete!', body: 'You now know the full BlockVerify workflow. Register a model → get a Model ID → verify it anytime → all history is permanently on the blockchain. Ready to try it yourself?', position: 'bottom' }
+  { target: '#tab-federated', delay: 300, tab: 'federated', title: '🌐 Step 5 — Federated Learning', body: 'Everything so far protects a <b>finished</b> model. This tab protects one that is still being <b>built by many parties at once</b> — say ten hospitals training a shared AI without any of them sending patient data. Each contributes an update; nobody shares raw data.', position: 'bottom' },
+  { target: '#flStats', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '📊 Reading a Training Run', body: 'Pick any run from the dropdown at the top. These cards summarise it: how accurate the shared model got, how many malicious participants were caught, and how many honest ones were wrongly excluded — the price of the defence.', position: 'bottom' },
+  { target: '#flGridWrap', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '🛡 Who Was Trusted, Round by Round', body: 'One square per participant per round. <b style="color:#22c55e;">Bright green</b> = a malicious participant correctly caught. <b style="color:#ef4444;">Red</b> = one that slipped through. <b style="color:#eab308;">Amber</b> = an honest participant wrongly excluded. Malicious rows are labelled, so you can see at a glance whether the defence worked.', position: 'top' },
+  { target: '#flRoundsTable', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '🔗 Proving It Without Trusting Us', body: 'Each round is fingerprinted and written to the blockchain, so nobody — including this server — can rewrite history afterwards. Click <b>Verify proof</b> and your browser re-derives that fingerprint itself and checks it against the public ledger. If we lied, the check fails.', position: 'top' },
+  { target: '#tab-help', tab: 'help', title: '🎉 Tour Complete!', body: 'You now know the full BlockVerify workflow. Register a model → get a Model ID → verify it anytime → all history is permanently on the blockchain. And with <b>Federated</b>, you can prove who helped build a model in the first place. Ready to try it yourself?', position: 'bottom' }
 ];
 
 let _tourCurrent = 0;
@@ -5663,8 +6224,20 @@ function renderTourStep() {
   if (tabBtn) switchTab(step.tab, tabBtn);
   
   setTimeout(() => {
-    const target = document.querySelector(step.target);
-    if (!target) return endGuidedTour(); // Fail-safe
+    // A hidden element still matches querySelector but measures 0x0, which would collapse
+    // the spotlight into a tiny box pointing at nothing. Prefer a declared fallback, and
+    // if neither is visible, move on rather than showing a broken highlight.
+    const visible = (el) => {
+      if (!el) return false;
+      const r = el.getBoundingClientRect();
+      return r.width > 1 && r.height > 1;
+    };
+    let target = document.querySelector(step.target);
+    if (!visible(target) && step.fallback) target = document.querySelector(step.fallback);
+    if (!visible(target)) {
+      if (_tourCurrent < TOUR_STEPS.length - 1) { _tourCurrent++; return renderTourStep(); }
+      return endGuidedTour();
+    }
     
     // Scroll into view
     target.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -5738,7 +6311,7 @@ function renderTourStep() {
     tt.style.left = ttLeft + 'px';
     tt.style.top = ttTop + 'px';
     
-  }, 100);
+  }, step.delay || 100);
 }
 
 function nextTourStep() {

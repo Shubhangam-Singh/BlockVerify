@@ -385,3 +385,69 @@ def get_transaction_ledger(limit: int = 50) -> dict:
         return {"success": False, "error": "Indexer timed out (>12s)"}
     except Exception as e:
         return {"success": False, "error": _friendly_algo_error(e)}
+
+
+# ── 7. FedVerify: anchor a federated round root (additive, Phase 3) ────
+#
+# Additive only: this does not touch broadcast_hash_to_algorand or any existing
+# path. A federated round commits a Merkle root over that round's client-update
+# digests. The leaf COUNT is anchored beside the root because duplicate-last
+# Merkle trees are ambiguous without it (CVE-2012-2459-style), exactly as the
+# layer-manifest anchor does with "lmr"/"lc".
+
+def broadcast_fl_round(run_id: str, round_num: int, round_root: str,
+                       leaf_count: int, wait: bool = True) -> dict:
+    """
+    Send a 0-ALGO self-transaction whose note commits one federated round.
+
+    Note keys:  "frr" federated round root · "flc" leaf count ·
+                "rnd" round number · "run" run id
+
+    Returns {"success", "txid", "round", "fee", "bytes_written"} or
+            {"success": False, "error": ...} — same envelope as the rest of this module.
+    """
+    try:
+        if not round_root or len(round_root) != 64:
+            return {"success": False, "error": "Invalid round root — expected 64-char hex."}
+
+        info = client.account_info(ADDRESS)
+        if info.get("amount", 0) < 1000:
+            return {
+                "success": False,
+                "error": (f"Wallet empty! Fund {ADDRESS} at "
+                          "https://bank.testnet.algorand.network/"),
+            }
+
+        params = client.suggested_params()
+        note = json.dumps({
+            "frr": round_root,
+            "flc": int(leaf_count),
+            "rnd": int(round_num),
+            "run": str(run_id),
+        }, separators=(",", ":")).encode()
+
+        txn = PaymentTxn(sender=ADDRESS, sp=params, receiver=ADDRESS, amt=0, note=note)
+        signed = txn.sign(PRIVATE_KEY)
+        txid = client.send_transaction(signed)
+
+        confirmed_round = None
+        if wait:
+            for _ in range(15):
+                txinfo = client.pending_transaction_info(txid)
+                if txinfo.get("confirmed-round", 0) > 0:
+                    confirmed_round = txinfo["confirmed-round"]
+                    break
+                time.sleep(1)
+            if not confirmed_round:
+                return {"success": False, "error": "Tx sent but confirmation timed out."}
+
+        return {
+            "success": True,
+            "txid": txid,
+            "round": confirmed_round,
+            "fee": int(getattr(params, "min_fee", 1000)),
+            "bytes_written": len(note),
+        }
+
+    except Exception as e:
+        return {"success": False, "error": _friendly_algo_error(e)}

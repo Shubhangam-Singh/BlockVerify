@@ -72,3 +72,40 @@ The blockchain engine (`backend/blockchain.py`) implements two classes. The `Blo
 ## Security Model
 
 All security stems from the blockchain properties: SHA-256 hashing makes tampering detectable, proof-of-work makes re-mining expensive, chain linking propagates any break forward through the chain, and validation walks the entire chain to verify integrity. Input validation on every API endpoint prevents malformed requests.
+
+---
+
+## FedVerify — Federated Learning Extension
+
+Additive layer on top of everything above. Nothing in the single-artefact path changed;
+`backend/app.py` gained exactly two lines (a Blueprint import and its registration).
+
+```
+fedverify/
+  core/        data · models · client · server · privacy · runner   (FL training loop)
+  chain/       commitment · anchor                                   (round commitments)
+  aggregators/ fedavg · krum · trimmed_mean · median · forensics      (robust aggregation)
+  attacks/     byzantine · backdoor                                   (threat simulation)
+  datasets/    mitbih                                                 (PhysioNet MIT-BIH)
+  analysis/    make_tables · calibrate · plots                        (results → tables/figures)
+  experiments/ exp1…exp5                                              (the grids)
+backend/fl_routes.py   Blueprint `fl_bp`, six /api/fl/* routes
+frontend/index.html    "Federated" tab (additive)
+```
+
+**Reuse, not duplication.** Two existing components are imported rather than
+reimplemented, and tests pin both:
+
+- the canonical Merkle (`compute_layer_merkle`, `merkle_inclusion_proof` in `app.py`) —
+  an FL round root is produced by the same code path as a layer-manifest root;
+- the forensic probes (`evaluation/eval_lib.py`) — the byte-identical port of the deployed
+  in-browser detector, applied across *clients* instead of across *weights*.
+
+**Data flow per round:** local training → delta → (attack, if simulated) → digest → leaf →
+Merkle root → anchor → screening → FedAvg over survivors → accept/reject lineage stored.
+The commitment sits *before* screening on purpose: the chain binds what a client actually
+sent, so the accept/reject decision is auditable against the real payload.
+
+Plain-language overview: [`fedverify/docs/WHAT_IS_FEDVERIFY.md`](../fedverify/docs/WHAT_IS_FEDVERIFY.md).
+Full threat model, guarantees and non-guarantees:
+[`fedverify/docs/FEDERATED.md`](../fedverify/docs/FEDERATED.md).

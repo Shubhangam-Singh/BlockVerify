@@ -1,62 +1,21 @@
-"""Aggregation interface, FedAvg, and evaluation metrics.
+"""Evaluation metrics, and the aggregator surface Phase 1/2 imported from here.
 
-Every aggregator returns (delta, diag) where diag ALWAYS carries accepted / rejected /
-scores, so Phase 3 can commit an accept-reject lineage on-chain and Phase 4 can score
-Byzantine screening without changing this interface.
+The aggregators themselves moved to fedverify/aggregators/ in Phase 4 (FedAvg is now
+aggregators/fedavg.py). They are re-exported here so every existing import keeps working
+and exp1 results are unaffected — there is exactly ONE implementation, not a copy.
 """
 from __future__ import annotations
-
-from abc import ABC, abstractmethod
-from typing import List, Sequence, Tuple
 
 import numpy as np
 import torch
 import torch.nn as nn
 
+from ..aggregators import (AGGREGATORS, Aggregator, CoordinateMedian, FedAvg, Forensics,
+                           Krum, MultiKrum, TrimmedMean, build_aggregator)
 from .client import ClientUpdate
 
-
-class Aggregator(ABC):
-    name = "base"
-
-    @abstractmethod
-    def aggregate(self, updates: Sequence[ClientUpdate], cfg, round_num: int
-                  ) -> Tuple[torch.Tensor, dict]:
-        """Return (aggregated_delta, diag). diag has accepted/rejected/scores."""
-
-    @staticmethod
-    def _empty_diag() -> dict:
-        return {"accepted": [], "rejected": [], "scores": {}}
-
-
-class FedAvg(Aggregator):
-    """Sample-count-weighted mean of client deltas (McMahan et al., 2017)."""
-    name = "fedavg"
-
-    def aggregate(self, updates, cfg, round_num):
-        if not updates:
-            raise ValueError("no client updates to aggregate")
-        w = torch.tensor([float(u.num_samples) for u in updates], dtype=torch.float64)
-        if float(w.sum()) <= 0:
-            raise ValueError("total num_samples across updates is zero")
-        w = w / w.sum()
-        stacked = torch.stack([u.delta.to(torch.float64) for u in updates])
-        delta = (stacked * w.unsqueeze(1)).sum(dim=0).to(updates[0].delta.dtype)
-
-        diag = self._empty_diag()
-        diag["accepted"] = [int(u.client_id) for u in updates]
-        diag["scores"] = {str(int(u.client_id)): {"weight": float(wi)}
-                          for u, wi in zip(updates, w.tolist())}
-        return delta, diag
-
-
-AGGREGATORS = {"fedavg": FedAvg}
-
-
-def build_aggregator(name: str) -> Aggregator:
-    if name not in AGGREGATORS:
-        raise ValueError(f"unknown aggregator {name!r}; have {sorted(AGGREGATORS)}")
-    return AGGREGATORS[name]()
+__all__ = ["Aggregator", "FedAvg", "Krum", "MultiKrum", "TrimmedMean", "CoordinateMedian",
+           "Forensics", "AGGREGATORS", "build_aggregator", "evaluate"]
 
 
 @torch.no_grad()

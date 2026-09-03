@@ -36,10 +36,47 @@ class SmallCNN(nn.Module):
         return self.classifier(self.features(x))
 
 
+class ECGCNN1D(nn.Module):
+    """256-sample single-lead beat -> num_classes. Three 1-D conv blocks, GroupNorm.
+
+    Sized to be comparable with SmallCNN (~100k params) so Table 4 compares datasets
+    rather than model capacity. Global average pooling instead of a wide flatten keeps the
+    parameter count — and therefore the per-round commitment payload — modest.
+    """
+
+    def __init__(self, num_classes: int = 5, in_channels: int = 1):
+        super().__init__()
+        self.features = nn.Sequential(
+            nn.Conv1d(in_channels, 16, 7, padding=3),   # 256
+            nn.GroupNorm(4, 16),
+            nn.ReLU(),
+            nn.MaxPool1d(2),                             # 128
+            nn.Conv1d(16, 32, 5, padding=2),
+            nn.GroupNorm(4, 32),
+            nn.ReLU(),
+            nn.MaxPool1d(2),                             # 64
+            nn.Conv1d(32, 64, 3, padding=1),
+            nn.GroupNorm(8, 64),
+            nn.ReLU(),
+            nn.AdaptiveAvgPool1d(8),                     # 8
+        )
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(64 * 8, 128),
+            nn.ReLU(),
+            nn.Linear(128, num_classes),
+        )
+
+    def forward(self, x):
+        return self.classifier(self.features(x))
+
+
 def build_model(name: str, num_classes: int = 10, in_shape=(1, 28, 28)) -> nn.Module:
     if name in ("smallcnn", "mnist", "fmnist"):
         return SmallCNN(num_classes=num_classes, in_channels=in_shape[0])
-    raise ValueError(f"unknown model {name!r} (mitbih 1-D CNN arrives in Phase 5)")
+    if name in ("ecgcnn1d", "mitbih"):
+        return ECGCNN1D(num_classes=num_classes, in_channels=in_shape[0])
+    raise ValueError(f"unknown model {name!r}; have smallcnn/mnist/fmnist, ecgcnn1d/mitbih")
 
 
 def assert_no_batchnorm(model: nn.Module) -> None:
