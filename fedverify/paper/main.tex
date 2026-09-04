@@ -1,0 +1,155 @@
+% FedVerify — paper scaffold.
+%
+% NO NUMBER IS TYPED IN THIS FILE. Every quantity is a macro defined in
+% generated/numbers.tex, which fedverify/analysis/make_paper.py emits from results files.
+% A macro with no backing run renders as [??] — if you see one in the PDF, that
+% experiment has not been run and the claim is not yet supported.
+%
+%   python3 -m fedverify.analysis.make_tables
+%   python3 -m fedverify.analysis.plots
+%   python3 -m fedverify.analysis.make_paper
+%   python3 -m fedverify.analysis.make_paper --check   # non-zero while any [??] remains
+%   pdflatex main && bibtex main && pdflatex main && pdflatex main
+
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+\usepackage{cite,amsmath,amssymb,graphicx,booktabs,url,xcolor}
+\usepackage[hidelinks]{hyperref}
+\graphicspath{{../results/figures/}}
+\input{generated/numbers}
+
+\begin{document}
+
+\title{FedVerify: Verifiable Byzantine Screening and\\
+       Differentially Private Federated Learning with\\
+       Public-Ledger Round Commitments}
+
+\author{\IEEEauthorblockN{Shubhangam Singh, Aditya Kumar, Mihir Dixit}
+\IEEEauthorblockA{School of Computer Science and Engineering\\
+Vellore Institute of Technology\\
+Email: \{...\}@vitstudent.ac.in}
+\and
+\IEEEauthorblockN{Dr.\ Kankana Roy}
+\IEEEauthorblockA{School of Computer Science and Engineering\\
+Vellore Institute of Technology}}
+
+\maketitle
+
+\begin{abstract}
+% Write LAST, once the numbers exist. Structure: problem, gap, contribution, evidence,
+% honest limitation. Do not overclaim accuracy — the defensible claim is verifiability.
+\end{abstract}
+
+\begin{IEEEkeywords}
+federated learning, differential privacy, Byzantine robustness, blockchain,
+Merkle commitment, model integrity, verifiable machine learning
+\end{IEEEkeywords}
+
+\section{Introduction}
+% 1. Federated learning removes the need to pool data, and creates three new problems:
+%    a curious server, malicious participants, and an unaccountable coordinator.
+% 2. Existing work addresses these SEPARATELY. Robust aggregation discards a bad update
+%    but produces no auditable account of which client was excluded or why.
+% 3. Blockchain-FL work anchors artefacts, but almost always on a permissioned ledger,
+%    and the participant cannot independently verify its own contribution was counted.
+% 4. Contribution:
+%    (a) client-level forensic screening that REUSES a deployed layer-level tamper
+%        detector one level up (population = K client deltas, not D weights);
+%    (b) per-round Merkle commitment of update digests anchored on a public
+%        permissionless L1, with client-verifiable inclusion proofs;
+%    (c) the accept/reject decision itself committed, making screening auditable;
+%    (d) an end-to-end open implementation, evaluated under DP and Byzantine attack
+%        on MNIST/Fashion-MNIST and on patient-partitioned MIT-BIH.
+% 5. State the negative result up front: we do NOT beat Krum/median on accuracy.
+
+\section{Related Work}
+% Draw from docs/RELATED_WORK.md §5. Four threads:
+%  5.1 FL and its failure modes (FedAvg; Krum/Multi-Krum; median/trimmed-mean;
+%      model replacement; ADAPTIVE attacks — Fang et al., Baruch et al.)
+%  5.2 DP in FL (DP-SGD; NbAFL as the closest comparison for Table I)
+%  5.3 Blockchain-based FL (DeepChain, LearningChain, BlockDFL, B-FL, FLchain)
+%  5.4 The gap: client-verifiable inclusion proofs + permissionless settlement.
+% Table~\ref{tab:comparison} is generated from analysis/comparison.yaml; cells the cited
+% paper does not state clearly are "?" rather than a guess.
+
+\section{Threat Model}
+% Verbatim structure from fedverify/docs/FEDERATED.md §1.
+% A1 curious server -> DP.   A2 <=f Byzantine clients -> robust aggregation.
+% A3 equivocating aggregator -> public commitment.
+% Assumed, not defended: clients authenticated out of band; the aggregator is
+% semi-honest w.r.t. the arithmetic (we prove WHICH updates entered a round, not that
+% FedAvg was computed faithfully); network is not the adversary; f < K/2 and f known.
+
+\section{System Design}
+\subsection{Round Commitment}
+% delta -> canon (float32 LE, C-order) -> digest = SHA-256(header || bytes)
+% -> leaf_i = SHA-256(JSON([i, client_id, digest])) -> root, with leaf COUNT anchored
+% beside it (duplicate-last trees are ambiguous without it, CVE-2012-2459 shape).
+% Note the digest header binds client, round and sample count, so an update cannot be
+% replayed as another client or into another round; position is bound into the leaf.
+
+\subsection{FedVerify-Forensics}
+% Four per-client scores, each a robust z ACROSS clients so one tau decides all:
+%   s_norm  ||delta_k||       two-sided
+%   s_dir   cos(delta_k, med) one-sided low
+%   s_coord share of coords beyond tau_coord
+%   s_health NaN/Inf/extremes/entropy/constant-run -> hard flag
+% combined = max(...). Emphasise: sign-flip leaves the NORM untouched, so a norm-only
+% detector is blind to it — this is why the probe family, not a single statistic.
+% tau comes from calibration (AUC \FVaucEpsInfKten, tau=\FVtauEpsInfKten at FPR<=5\%);
+% a hand-set threshold is the documented failure one level down.
+
+\subsection{Verification Protocol}
+% Client recomputes the leaf, folds the sibling path, and compares against a root read
+% DIRECTLY from the public indexer. Browser code is cross-validated against the backend
+% (test_browser_leaf_encoding_matches_the_backend extracts the shipped JS verbatim).
+
+\section{Experimental Setup}
+% Datasets: MNIST, Fashion-MNIST (Dirichlet alpha), MIT-BIH (\FVmitbihBeats beats,
+% \FVmitbihPatients patients, de Chazal DS1/DS2 inter-patient split).
+% MIT-BIH class imbalance: majority class \FVmitbihMajority\%, so an always-majority
+% classifier scores \FVmitbihNaiveF1\% macro-F1 — hence macro-F1 is primary.
+% Determinism: fixed seeds, pinned intra-op thread count, config.json records every
+% parameter including the tau and its provenance.
+
+\section{Results}
+\subsection{Privacy--Utility Trade-off}
+% Table~\ref{tab:t1}, Fig.~\ref{fig:f1}. \FVexpOneCells cells.
+% Realized epsilon never exceeds target: \FVepsBreaches breaches, max ratio \FVepsMaxRatio.
+\begin{figure}[t]\centering
+  \includegraphics[width=\columnwidth]{fig1_accuracy_vs_epsilon.pdf}
+  \caption{Privacy--utility trade-off.}\label{fig:f1}
+\end{figure}
+
+\subsection{Byzantine Robustness}
+% Table~\ref{tab:t2}. Report BOTH that forensics is competitive AND that it does not
+% dominate Krum/median on accuracy. State the backdoor result plainly: detection is poor
+% because a backdoored update is a legitimately-trained update on poisoned data.
+
+\subsection{Commitment Overhead}
+% Table~\ref{tab:t3}. Digest \FVovDigestmsKtenLocal ms, Merkle \FVovMerklemsKtenLocal ms,
+% anchor \FVovAnchormsKtenLocal ms per round at K=10.
+
+\subsection{Heterogeneity and Healthcare Data}
+% Table~\ref{tab:t4}. Report macro-F1 first; accuracy in parentheses.
+
+\subsection{Interaction of DP with Byzantine Screening}
+% Table~\ref{tab:t6}. Report honestly whichever way it goes. Preliminary observation:
+% DP clipping narrows the honest norm band, which may make a fixed multiplicative attack
+% MORE detectable, not less. Confirm on the full grid before claiming it.
+
+\section{Limitations}
+% From fedverify/docs/FEDERATED.md §6-7. Be explicit and lead with the strongest:
+%  - Attacks are NON-ADAPTIVE. An attacker constrained to the honest band evades
+%    screening by construction. This bounds every detection number reported here.
+%  - We prove which updates entered a round, NOT that aggregation was computed correctly.
+%  - An accepted update is not certified benign.
+%  - No recovery: the lineage identifies a bad round; nothing rolls it back.
+%  - DP unit is a training example, not a patient.
+%  - Scale: K <= 20, far below production FL.
+
+\section{Conclusion}
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+\end{document}

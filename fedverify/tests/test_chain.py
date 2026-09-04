@@ -294,7 +294,7 @@ def test_browser_leaf_encoding_matches_the_backend():
     """
     import json as _json
     import subprocess as _sp
-    js = _extract_js("bvSha256Hex", "bvMerkleLeaf", "bvFoldProof")
+    js = _extract_js("sha256Fallback", "bvSha256Hex", "bvMerkleLeaf", "bvFoldProof")
     ent = _entries(5)
     lh = C.leaf_hashes(ent)
     root, _ = C.round_merkle_root(ent)
@@ -304,8 +304,11 @@ def test_browser_leaf_encoding_matches_the_backend():
     # digest]) and the frontend calls bvMerkleLeaf(p.index, String(p.clientId), ...).
     harness = """
 const crypto = require('crypto');
-global.crypto = { subtle: { digest: async (_a, buf) =>
-  crypto.createHash('sha256').update(Buffer.from(buf)).digest().buffer } };
+// bvSha256Hex checks window.crypto.subtle and falls back to sha256Fallback when the page
+// is not in a secure context. Provide `window` so the native path is exercised here.
+global.window = { crypto: { subtle: { digest: async (_a, buf) =>
+  crypto.createHash('sha256').update(Buffer.from(buf)).digest().buffer } } };
+global.crypto = global.window.crypto;
 global.TextEncoder = require('util').TextEncoder;
 %s
 (async () => {
@@ -329,15 +332,18 @@ def test_browser_rejects_a_tampered_digest():
     """The browser fold must FAIL on a forged digest, or the tab is decorative."""
     import json as _json
     import subprocess as _sp
-    js = _extract_js("bvSha256Hex", "bvMerkleLeaf", "bvFoldProof")
+    js = _extract_js("sha256Fallback", "bvSha256Hex", "bvMerkleLeaf", "bvFoldProof")
     ent = _entries(5)
     root, _ = C.round_merkle_root(ent)
     proof = C.inclusion_proof(ent, 2)
 
     harness = """
 const crypto = require('crypto');
-global.crypto = { subtle: { digest: async (_a, buf) =>
-  crypto.createHash('sha256').update(Buffer.from(buf)).digest().buffer } };
+// bvSha256Hex checks window.crypto.subtle and falls back to sha256Fallback when the page
+// is not in a secure context. Provide `window` so the native path is exercised here.
+global.window = { crypto: { subtle: { digest: async (_a, buf) =>
+  crypto.createHash('sha256').update(Buffer.from(buf)).digest().buffer } } };
+global.crypto = global.window.crypto;
 global.TextEncoder = require('util').TextEncoder;
 %s
 (async () => {
@@ -351,3 +357,40 @@ global.TextEncoder = require('util').TextEncoder;
     r = _sp.run(["node", "-e", harness], capture_output=True, text=True, cwd=REPO)
     assert r.returncode == 0, r.stderr
     assert _json.loads(r.stdout.strip())["folded"] != root
+
+
+@pytest.mark.skipif(not __import__("shutil").which("node"), reason="node not installed")
+def test_browser_leaf_encoding_matches_without_web_crypto():
+    """The browser must still verify when crypto.subtle is unavailable.
+
+    crypto.subtle exists only in a SECURE CONTEXT — https, http://localhost or
+    http://127.0.0.1. Serving the UI from http://0.0.0.0:8080 leaves it undefined, which
+    threw "Cannot read properties of undefined (reading 'digest')" and made every
+    inclusion proof fail. This pins the pure-JS fallback against the Python backend.
+    """
+    import json as _json
+    import subprocess as _sp
+    js = _extract_js("sha256Fallback", "bvSha256Hex", "bvMerkleLeaf", "bvFoldProof")
+    ent = _entries(5)
+    lh = C.leaf_hashes(ent)
+    root, _ = C.round_merkle_root(ent)
+    proof = C.inclusion_proof(ent, 2)
+
+    harness = """
+// deliberately NO window.crypto — this is exactly the http://0.0.0.0 case
+global.window = {};
+global.TextEncoder = require('util').TextEncoder;
+%s
+(async () => {
+  const i = %s;
+  const leaf = await bvMerkleLeaf(i.index, i.client_id, i.digest);
+  console.log(JSON.stringify({leaf, folded: await bvFoldProof(leaf, i.proof)}));
+})();
+""" % (js, _json.dumps({"index": 2, "client_id": str(ent[2][0]), "digest": ent[2][1],
+                        "proof": proof}))
+
+    r = _sp.run(["node", "-e", harness], capture_output=True, text=True, cwd=REPO)
+    assert r.returncode == 0, r.stderr
+    got = _json.loads(r.stdout.strip())
+    assert got["leaf"] == lh[2], "fallback SHA-256 diverges from the backend"
+    assert got["folded"] == root, "fallback fold does not reach the anchored root"

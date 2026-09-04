@@ -837,40 +837,198 @@
     }
     
     /* ── Guided Tour System ── */
-    .tour-blocker { position: fixed; inset: 0; z-index: 8999; }
+    /* ── Federated protocol animation ──────────────────────────────────────
+       Phase-driven: JS sets .ph0….ph6 on the SVG root and CSS does every transition,
+       so there is no per-frame JavaScript. */
+    .flviz-wrap { position: relative; width: 100%; overflow: hidden; border-radius: 12px;
+                  background: radial-gradient(130% 150% at 45% 0%, rgba(139,124,255,.08), transparent 62%); }
+    #flViz { width: 100%; height: auto; display: block; }
+    #flViz text { font-family: var(--font); fill: var(--text-muted); }
+    .fv-label { font-size: 10px; font-weight: 600; }
+    .fv-cap   { font-size: 10.5px; }
+    .fv-hash  { font-size: 7px; opacity: .75; letter-spacing: .04em; }
+    .fv-zonehdr { font-size: 8.5px; font-weight: 800; letter-spacing: .14em; }
+
+    /* zones dim when they are not the subject of the current phase */
+    .fv-zone { transition: opacity .5s ease; opacity: .28; }
+    #flViz.ph0 .z1, #flViz.ph1 .z1, #flViz.ph2 .z1, #flViz.ph2 .z2,
+    #flViz.ph3 .z2, #flViz.ph4 .z2, #flViz.ph5 .z3, #flViz.ph6 .z3 { opacity: 1; }
+    #flViz.ph3 .z1, #flViz.ph4 .z1 { opacity: .62; }
+    #flViz.ph5 .z2, #flViz.ph6 .z2 { opacity: .45; }
+
+    .fv-ring { fill: none; stroke-width: 2; opacity: 0; transform-origin: center; }
+    #flViz.ph1 .fv-client:not(.bad) .fv-ring { animation: fvBreathe 1.5s ease-in-out infinite; }
+    #flViz.ph1 .fv-client.bad .fv-ring { animation: fvBreathe 1.5s ease-in-out infinite .3s; }
+    @keyframes fvBreathe { 0%,100% { transform: scale(1); opacity:.2; } 50% { transform: scale(1.28); opacity:.7; } }
+
+    /* the little record stack each hospital holds — its private data, which never moves */
+    .fv-data { transition: opacity .5s ease; opacity: 0; }
+    #flViz.ph0 .fv-data, #flViz.ph1 .fv-data { opacity: .9; }
+
+    .fv-client circle.body { transition: fill .45s ease, stroke .45s ease; }
+    /* ONLY the compromised hospital is marked — scoping this to .bad is the whole point */
+    .fv-x, .fv-tick { opacity: 0; transition: opacity .35s ease; }
+    #flViz.ph3 .fv-client.bad .fv-x, #flViz.ph4 .fv-client.bad .fv-x,
+    #flViz.ph5 .fv-client.bad .fv-x, #flViz.ph6 .fv-client.bad .fv-x { opacity: 1; }
+    #flViz.ph4 .fv-client:not(.bad) .fv-tick, #flViz.ph5 .fv-client:not(.bad) .fv-tick,
+    #flViz.ph6 .fv-client:not(.bad) .fv-tick { opacity: .9; }
+    #flViz.ph3 .fv-client.bad circle.body, #flViz.ph4 .fv-client.bad circle.body,
+    #flViz.ph5 .fv-client.bad circle.body, #flViz.ph6 .fv-client.bad circle.body {
+      fill: rgba(239,68,68,.20); stroke: #ef4444; }
+
+    /* packets: honest ones reach the aggregator, the poisoned one is stopped mid-flight */
+    .fv-pkt { opacity: 0; transition: opacity .35s ease, transform 1.2s cubic-bezier(.42,.02,.3,1); }
+    #flViz.ph2 .fv-pkt, #flViz.ph3 .fv-pkt { opacity: 1; }
+    #flViz.ph2 .fv-pkt, #flViz.ph3 .fv-pkt:not(.bad), #flViz.ph4 .fv-pkt:not(.bad) { transform: translate(var(--dx), var(--dy)); }
+    #flViz.ph3 .fv-pkt.bad { transform: translate(calc(var(--dx) * .58), calc(var(--dy) * .58)); }
+    #flViz.ph4 .fv-pkt.bad { transform: translate(calc(var(--dx) * .58), calc(var(--dy) * .58)); opacity: 0; }
+    #flViz.ph4 .fv-pkt:not(.bad) { opacity: 0; transition-delay: .35s; }
+
+    .fv-scan { opacity: 0; transition: opacity .3s ease; }
+    #flViz.ph3 .fv-scan { opacity: 1; }
+    #flViz.ph3 .fv-scan circle { animation: fvScan 1.6s ease-out infinite; }
+    @keyframes fvScan { 0% { r: 30px; opacity: .8; stroke-width: 2.5; } 100% { r: 140px; opacity: 0; stroke-width: .5; } }
+
+    .fv-agg-fill { opacity: 0; transition: opacity .45s ease; transform-origin: 372px 168px; }
+    #flViz.ph4 .fv-agg-fill, #flViz.ph5 .fv-agg-fill, #flViz.ph6 .fv-agg-fill { opacity: 1; animation: fvPop .55s ease-out; }
+    @keyframes fvPop { 0% { transform: scale(.5); } 62% { transform: scale(1.14); } 100% { transform: scale(1); } }
+
+    /* merkle tree assembles bottom-up, one level at a time */
+    .fv-leaf, .fv-lvl1, .fv-root { opacity: 0; transition: opacity .4s ease; }
+    #flViz.ph5 .fv-leaf, #flViz.ph6 .fv-leaf { opacity: 1; }
+    #flViz.ph5 .fv-lvl1, #flViz.ph6 .fv-lvl1 { opacity: 1; transition-delay: .45s; }
+    #flViz.ph5 .fv-root, #flViz.ph6 .fv-root { opacity: 1; transition-delay: .9s; }
+    #flViz.ph6 .fv-root rect { animation: fvGlow 1.8s ease-in-out infinite; }
+    @keyframes fvGlow { 0%,100% { filter: none; } 50% { filter: drop-shadow(0 0 6px #c4b5fd); } }
+
+    .fv-lock { opacity: 0; transition: opacity .4s ease; transform-origin: 812px 168px; }
+    #flViz.ph6 .fv-lock { opacity: 1; animation: fvPop .5s ease-out .5s both; }
+    .fv-blk-live { transition: fill .5s ease, stroke .5s ease; }
+    #flViz.ph6 .fv-blk-live { fill: rgba(196,181,253,.22); stroke: #c4b5fd; }
+
+    .fv-flow { stroke-dasharray: 5 7; opacity: 0; transition: opacity .4s ease; }
+    #flViz.ph2 .fv-flow.toAgg, #flViz.ph3 .fv-flow.toAgg { opacity: .4; animation: fvDash 1.1s linear infinite; }
+    #flViz.ph5 .fv-flow.toTree, #flViz.ph6 .fv-flow.toTree { opacity: .45; animation: fvDash 1.1s linear infinite; }
+    #flViz.ph6 .fv-flow.toChain { opacity: .6; animation: fvDash 1.1s linear infinite; }
+    @keyframes fvDash { to { stroke-dashoffset: -24; } }
+
+    .flviz-cap { display:flex; gap:.7rem; align-items:flex-start; padding:.7rem .85rem; margin-top:.5rem;
+                 background: rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; min-height:56px; }
+    .flviz-step { flex:0 0 auto; width:22px; height:22px; border-radius:50%; background:linear-gradient(135deg,#8b7cff,#22d3ee);
+                  color:#0b0e17; font-weight:800; font-size:.68rem; display:flex; align-items:center; justify-content:center; }
+    .flviz-cap-t { font-weight:700; color:var(--text); font-size:.83rem; }
+    .flviz-cap-b { color:var(--text-muted); font-size:.78rem; line-height:1.5; margin-top:.12rem; }
+    .flviz-ctl { display:flex; gap:.4rem; align-items:center; margin-top:.55rem; flex-wrap:wrap; }
+    .flviz-btn { background:rgba(255,255,255,.06); border:1px solid var(--border); color:var(--text); border-radius:7px;
+                 padding:.28rem .6rem; font-size:.72rem; font-weight:600; cursor:pointer; font-family:var(--font); transition:background .15s; }
+    .flviz-btn:hover { background:rgba(255,255,255,.12); }
+    .flviz-pips { display:flex; gap:4px; margin-left:auto; }
+    .flviz-pip { width:20px; height:4px; border-radius:2px; background:rgba(255,255,255,.14); cursor:pointer; transition:background .25s; }
+    .flviz-pip.on { background:linear-gradient(90deg,#8b7cff,#22d3ee); }
+    body.light-theme .flviz-pip { background: rgba(15,23,42,.14); }
+    body.light-theme .flviz-btn { background: rgba(15,23,42,.05); }
+    body.light-theme #flViz text { fill: #475569; }
+    @media (prefers-reduced-motion: reduce) {
+      #flViz * { animation: none !important; transition: opacity .2s ease !important; }
+    }
+
+    /* ── Guided tour ───────────────────────────────────────────────────────
+       Everything is position:fixed and measured against the viewport, so a scroll
+       or resize is a cheap reposition rather than a stale absolute coordinate. */
+    .tour-blocker {
+      position: fixed; inset: 0; z-index: 8999; cursor: default;
+      opacity: 0; transition: opacity .28s ease;
+      background: transparent;
+    }
+    .tour-blocker.in { opacity: 1; }
+
     .tour-spotlight {
-      position: absolute; border-radius: 8px; z-index: 9000; pointer-events: none;
-      box-shadow: 0 0 0 9999px rgba(0,0,0,0.65);
-      transition: all 0.3s ease;
+      position: fixed; border-radius: 10px; z-index: 9000; pointer-events: none;
+      box-shadow: 0 0 0 9999px rgba(4,7,15,.72);
+      outline: 2px solid var(--primary); outline-offset: 3px;
+      opacity: 0;
+      /* Only the geometry animates. Transitioning `all` would also animate the
+         9999px box-shadow every frame, which is what made the old one stutter. */
+      transition: left .38s cubic-bezier(.4,0,.2,1), top .38s cubic-bezier(.4,0,.2,1),
+                  width .38s cubic-bezier(.4,0,.2,1), height .38s cubic-bezier(.4,0,.2,1),
+                  opacity .25s ease;
     }
+    .tour-spotlight.in { opacity: 1; }
+    .tour-spotlight::after {
+      content: ''; position: absolute; inset: -3px; border-radius: 12px;
+      border: 2px solid var(--primary); opacity: 0;
+      animation: tourPulse 2s ease-out infinite;
+    }
+    @keyframes tourPulse {
+      0%   { transform: scale(1);    opacity: .55; }
+      70%  { transform: scale(1.06); opacity: 0; }
+      100% { transform: scale(1.06); opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tour-spotlight, .tour-tooltip { transition: opacity .15s ease !important; }
+      .tour-spotlight::after { animation: none; }
+    }
+
     .tour-tooltip {
-      position: absolute; z-index: 9001; background: var(--surface); border: 1px solid var(--border);
-      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-      padding: 1.5rem; border-radius: 12px; width: 320px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-      animation: slideUpFade 0.3s ease; transition: left 0.3s ease, top 0.3s ease;
-      color: var(--text); font-family: var(--font); font-size: .9rem;
+      position: fixed; z-index: 9001; background: var(--surface);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      padding: 1.15rem 1.25rem 1rem; border-radius: 14px; width: 340px; max-width: calc(100vw - 24px);
+      box-shadow: 0 18px 48px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.35);
+      color: var(--text); font-family: var(--font); font-size: .88rem;
+      opacity: 0; transform: translateY(6px);
+      transition: left .38s cubic-bezier(.4,0,.2,1), top .38s cubic-bezier(.4,0,.2,1),
+                  opacity .25s ease, transform .25s ease;
     }
-    .tour-tooltip-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: .8rem; font-size: .75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-    .tour-tooltip-title { font-weight: 800; font-size: 1.1rem; color: var(--primary); margin-bottom: .6rem; }
-    .tour-tooltip-body { line-height: 1.5; color: var(--text); margin-bottom: 1.2rem; }
-    .tour-tooltip-footer { display: flex; justify-content: space-between; align-items: center; }
-    .tour-dots { display: flex; gap: 4px; }
-    .tour-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2); transition: background 0.2s; }
-    .tour-dot.active { background: var(--primary); }
-    .tour-btn { padding: .4rem .8rem; border-radius: 6px; cursor: pointer; font-size: .8rem; font-weight: 600; border: none; font-family: var(--font); }
-    .tour-btn-skip { background: transparent; color: var(--text-muted); }
+    .tour-tooltip.in { opacity: 1; transform: translateY(0); }
+    .tour-tooltip:focus { outline: none; }
+
+    .tour-progress { height: 3px; border-radius: 3px; background: rgba(255,255,255,.09); overflow: hidden; margin-bottom: .85rem; }
+    .tour-progress-bar { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--primary), #22d3ee); transition: width .38s cubic-bezier(.4,0,.2,1); }
+
+    .tour-tooltip-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: .45rem; font-size: .66rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: .09em; }
+    .tour-chapter { color: var(--primary); }
+    .tour-tooltip-title { font-weight: 800; font-size: 1.02rem; color: var(--text); margin-bottom: .45rem; line-height: 1.3; }
+    .tour-tooltip-body { line-height: 1.6; color: var(--text-muted); margin-bottom: 1rem; font-size: .84rem; }
+    .tour-tooltip-body b { color: var(--text); }
+    .tour-tooltip-footer { display: flex; justify-content: space-between; align-items: center; gap: .6rem; }
+
+    .tour-dots { display: flex; gap: 5px; flex-wrap: wrap; max-width: 130px; }
+    .tour-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.18); transition: background .25s, transform .25s; cursor: pointer; }
+    .tour-dot:hover { background: rgba(255,255,255,.4); }
+    .tour-dot.done { background: var(--primary); opacity: .55; }
+    .tour-dot.active { background: var(--primary); transform: scale(1.5); opacity: 1; }
+
+    .tour-btn { padding: .42rem .85rem; border-radius: 8px; cursor: pointer; font-size: .78rem; font-weight: 700; border: none; font-family: var(--font); transition: transform .12s ease, filter .18s ease, opacity .18s ease; }
+    .tour-btn:active { transform: scale(.96); }
+    .tour-btn-skip { background: transparent; color: var(--text-muted); padding-left: .35rem; padding-right: .35rem; }
     .tour-btn-skip:hover { color: var(--text); }
+    .tour-btn-back { background: rgba(255,255,255,.07); color: var(--text); }
+    .tour-btn-back:hover { background: rgba(255,255,255,.13); }
+    .tour-btn-back[disabled] { opacity: .3; cursor: not-allowed; }
     .tour-btn-next { background: linear-gradient(135deg, var(--primary), var(--primary-h)); color: #fff; }
-    .tour-arrow { position: absolute; width: 0; height: 0; border-style: solid; transition: left 0.3s ease, top 0.3s ease; }
-    .tour-arrow-bottom { border-width: 0 10px 10px 10px; border-color: transparent transparent var(--border) transparent; top: -11px; left: 20px; }
-    .tour-arrow-bottom::after { content:''; position:absolute; left:-9px; top:1px; border-style:solid; border-width: 0 9px 9px 9px; border-color:transparent transparent var(--surface) transparent; }
-    .tour-arrow-top { border-width: 10px 10px 0 10px; border-color: var(--border) transparent transparent transparent; bottom: -11px; left: 20px; }
-    .tour-arrow-top::after { content:''; position:absolute; left:-9px; top:-10px; border-style:solid; border-width: 9px 9px 0 9px; border-color:var(--surface) transparent transparent transparent; }
-    .tour-arrow-right { border-width: 10px 0 10px 10px; border-color: transparent transparent transparent var(--border); right: -11px; top: 20px; }
-    .tour-arrow-right::after { content:''; position:absolute; left:-10px; top:-9px; border-style:solid; border-width: 9px 0 9px 9px; border-color:transparent transparent transparent var(--surface); }
-    .tour-arrow-left { border-width: 10px 10px 10px 0; border-color: transparent var(--border) transparent transparent; left: -11px; top: 20px; }
-    .tour-arrow-left::after { content:''; position:absolute; left:1px; top:-9px; border-style:solid; border-width: 9px 9px 9px 0; border-color:transparent var(--surface) transparent transparent; }
+    .tour-btn-next:hover { filter: brightness(1.1); }
+    .tour-kbd { font-size: .6rem; color: var(--text-muted); opacity: .7; letter-spacing: .03em; margin-top: .55rem; text-align: center; }
+    .tour-kbd kbd { background: rgba(255,255,255,.08); border-radius: 3px; padding: 0 .25rem; font-family: var(--font); }
+
+    .tour-arrow { position: absolute; width: 0; height: 0; border-style: solid; transition: left .25s ease, top .25s ease; }
+    .tour-arrow-bottom { border-width: 0 9px 9px 9px; border-color: transparent transparent var(--border) transparent; top: -10px; left: 24px; }
+    .tour-arrow-bottom::after { content:''; position:absolute; left:-8px; top:1px; border-style:solid; border-width: 0 8px 8px 8px; border-color:transparent transparent var(--surface) transparent; }
+    .tour-arrow-top { border-width: 9px 9px 0 9px; border-color: var(--border) transparent transparent transparent; bottom: -10px; left: 24px; }
+    .tour-arrow-top::after { content:''; position:absolute; left:-8px; top:-9px; border-style:solid; border-width: 8px 8px 0 8px; border-color:var(--surface) transparent transparent transparent; }
+    .tour-arrow-right { border-width: 9px 0 9px 9px; border-color: transparent transparent transparent var(--border); right: -10px; top: 24px; }
+    .tour-arrow-right::after { content:''; position:absolute; left:-9px; top:-8px; border-style:solid; border-width: 8px 0 8px 8px; border-color:transparent transparent transparent var(--surface); }
+    .tour-arrow-left { border-width: 9px 9px 9px 0; border-color: transparent var(--border) transparent transparent; left: -10px; top: 24px; }
+    .tour-arrow-left::after { content:''; position:absolute; left:1px; top:-8px; border-style:solid; border-width: 8px 8px 8px 0; border-color:transparent var(--surface) transparent transparent; }
+
+    body.tour-open { overflow: hidden; }
+    body.light-theme .tour-spotlight { box-shadow: 0 0 0 9999px rgba(15,23,42,.55); }
+    body.light-theme .tour-dot { background: rgba(15,23,42,0.18); }
+    body.light-theme .tour-btn-back { background: rgba(15,23,42,.06); }
+    @media (max-width: 640px) {
+      .tour-tooltip { width: calc(100vw - 24px); }
+      .tour-dots { max-width: 90px; }
+    }
 
     /* ══════════════════════════════════════════════════════════════
        DESIGN SYSTEM v2 — "Verification Signal" component restyle
@@ -2064,6 +2222,30 @@
         <div id="flStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:.55rem;"></div>
       </div>
 
+      <!-- Animated walkthrough of one federated round -->
+      <div class="card" id="flHowCard" style="margin-bottom:.9rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
+          <div>
+            <div class="an-title"><svg class="ico" style="color:#8b7cff;width:1em;height:1em;"><use href="#i-compass"/></svg> How One Round Works</div>
+            <div class="an-sub">Watch a single training round end to end &mdash; local training, screening, averaging, and the on-chain commitment.</div>
+          </div>
+          <button class="flviz-btn" onclick="flVizToggleCard()" id="flVizCollapse">Hide</button>
+        </div>
+        <div id="flVizBody" style="margin-top:.7rem;">
+          <div class="flviz-wrap"><svg id="flViz" viewBox="0 0 900 330" role="img" aria-label="Animated diagram of one federated learning round"></svg></div>
+          <div class="flviz-cap">
+            <div class="flviz-step" id="flVizNum">1</div>
+            <div><div class="flviz-cap-t" id="flVizTitle">—</div><div class="flviz-cap-b" id="flVizBody2">—</div></div>
+          </div>
+          <div class="flviz-ctl">
+            <button class="flviz-btn" onclick="flVizPlay()" id="flVizPlayBtn">Pause</button>
+            <button class="flviz-btn" onclick="flVizStep(-1)">&larr; Back</button>
+            <button class="flviz-btn" onclick="flVizStep(1)">Next &rarr;</button>
+            <div class="flviz-pips" id="flVizPips"></div>
+          </div>
+        </div>
+      </div>
+
       <div class="analytics-grid" style="margin-bottom:.9rem;">
         <div class="card an-card">
           <div class="an-title"><svg class="ico" style="color:#22d3ee;width:1em;height:1em;"><use href="#i-chart"/></svg> Model Accuracy per Round</div>
@@ -2389,8 +2571,15 @@ const BLOCKS_PER_PAGE = 5;
 let _currentPage = 0;
 
 // ── Auth state ──
-let _authToken = localStorage.getItem('bv_token') || null;
-let _authUser  = localStorage.getItem('bv_user')  || null;
+// localStorage throws (not returns null) when site data is blocked — private windows,
+// "block all cookies", some embedded webviews. The first use below runs at module scope,
+// so an unguarded throw there takes the WHOLE page down, not just the feature.
+function bvLSGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function bvLSSet(k, v){ try { localStorage.setItem(k, v); } catch(e){ /* non-persistent session */ } }
+function bvLSDel(k){ try { localStorage.removeItem(k); } catch(e){} }
+
+let _authToken = bvLSGet('bv_token') || null;
+let _authUser  = bvLSGet('bv_user')  || null;
 
 function getToken() { return _authToken; }
 function getUser()  {
@@ -2400,13 +2589,13 @@ function getUser()  {
 
 function _saveAuth(token, username) {
   _authToken = token; _authUser = username;
-  localStorage.setItem('bv_token', token);
-  localStorage.setItem('bv_user', username);
+  bvLSSet('bv_token', token);
+  bvLSSet('bv_user', username);
 }
 function _clearAuth() {
   _authToken = null; _authUser = null;
-  localStorage.removeItem('bv_token');
-  localStorage.removeItem('bv_user');
+  bvLSDel('bv_token');
+  bvLSDel('bv_user');
 }
 
 // apiFetch — drop-in fetch() with auto Bearer + 401 handling
@@ -2596,7 +2785,7 @@ function switchTab(name, btn) {
   if (name === 'ledger')   loadLedger();
   if (name === 'alerts' && typeof markAlertsRead === 'function') markAlertsRead();
   if (name === 'analytics' && typeof loadAnalytics === 'function') loadAnalytics();
-  if (name === 'federated' && typeof loadFederated === 'function') loadFederated();
+  if (name === 'federated' && typeof loadFederated === 'function') { loadFederated(); flVizInit(); }
   if (name === 'compare' && typeof initCmpOrbit === 'function') {
     initCmpOrbit();
     if (document.getElementById('cmp3dCard').style.display !== 'none') startCmpAuto();
@@ -3205,8 +3394,17 @@ function _flatSample(v, cap=240){
 // leaf, folds each sibling path, and only accepts a root it independently read from
 // the public Algorand indexer. Forging a passing manifest requires a SHA-256 preimage.
 async function bvSha256Hex(str){
-  const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('');
+  const encoded = new TextEncoder().encode(str);
+  // crypto.subtle exists only in a SECURE CONTEXT — https, http://localhost or
+  // http://127.0.0.1. Serving the page from http://0.0.0.0:8080 leaves it undefined,
+  // which threw "Cannot read properties of undefined (reading 'digest')" and broke both
+  // the layer-manifest check and the FL inclusion proof. Same fallback the rest of this
+  // file already uses (sha256Str, computeHash); verified byte-identical to the backend.
+  if (window.crypto && window.crypto.subtle) {
+    const h = await crypto.subtle.digest('SHA-256', encoded);
+    return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('');
+  }
+  return sha256Fallback(encoded.buffer);
 }
 // leaf_i = SHA-256(JSON([i, name, layerHash])) — byte-identical to the backend encoding
 function bvMerkleLeaf(i, name, hash){ return bvSha256Hex(JSON.stringify([i, name, hash])); }
@@ -3247,6 +3445,232 @@ function escapeHtml(v){
   return String(v == null ? '' : v)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// ── Federated protocol animation ───────────────────────────────────────────
+// The SVG is generated rather than hand-written so the six client positions, the
+// packet vectors and the Merkle tree geometry are all derived from one layout.
+const FLVIZ_PHASES = [
+  { t: 'Six hospitals, six private datasets',
+    b: 'Each holds patient records that legally cannot leave the building. None of this raw data will ever be transmitted.' },
+  { t: 'Everyone trains locally',
+    b: 'Each hospital trains the shared model on its own patients and produces an <b>update</b> — just a list of numbers describing the change it wants, never the records themselves.' },
+  { t: 'Updates travel to the aggregator',
+    b: 'Only the updates are sent. One of these six hospitals has been compromised and is sending a poisoned update, but nothing yet reveals which.' },
+  { t: 'Screening: every update is compared to its peers',
+    b: 'FedVerify-Forensics checks each update against all the others — is it abnormally large? Does it point the wrong way? The outlier is caught and <b>rejected before it reaches the model</b>.' },
+  { t: 'The survivors are averaged',
+    b: 'The five trusted updates are combined into one improved model, which is sent back to every hospital for the next round.' },
+  { t: 'Every update is fingerprinted',
+    b: 'Each update gets a SHA-256 fingerprint. The fingerprints are hashed together in pairs, up a <b>Merkle tree</b>, until a single root represents the whole round.' },
+  { t: 'The root is anchored on the blockchain',
+    b: 'That one root is written to a public ledger. Change any update, reorder them, or drop one and the root no longer matches — so nobody, <b>including this server</b>, can rewrite what happened in this round.' },
+];
+
+let _flVizPhase = 0, _flVizTimer = null, _flVizBuilt = false, _flVizPlaying = true;
+
+function flVizBuild(){
+  const svg = document.getElementById('flViz');
+  if(!svg || _flVizBuilt) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (n, a) => { const e = document.createElementNS(NS, n); for(const k in a) e.setAttribute(k, a[k]); return e; };
+  const txt = (x, y, str, cls, anchor) => {
+    const t = el('text', { x, y, class: cls || 'fv-cap', 'text-anchor': anchor || 'middle' });
+    t.textContent = str; return t;
+  };
+
+  // one layout definition; every position below is derived from it
+  const CX = 108, AX = 372, AY = 168, TX = 618, BX = 812;
+  const N = 6, BAD = 4;
+  const ys = Array.from({length: N}, (_, i) => 78 + i * 36);   // centred on AY
+
+  const z1 = el('g', { class: 'fv-zone z1' });
+  const z2 = el('g', { class: 'fv-zone z2' });
+  const z3 = el('g', { class: 'fv-zone z3' });
+
+  // ── zone headings, so the three stages read as a sequence ────────────────
+  z1.appendChild(txt(CX, 32, 'LOCAL TRAINING', 'fv-zonehdr'));
+  z2.appendChild(txt(AX, 32, 'SCREEN & AVERAGE', 'fv-zonehdr'));
+  z3.appendChild(txt((TX + BX) / 2, 32, 'COMMIT ON-CHAIN', 'fv-zonehdr'));
+
+  // ── zone 1: hospitals ────────────────────────────────────────────────────
+  ys.forEach((y, i) => {
+    const g = el('g', { class: 'fv-client' + (i === BAD ? ' bad' : '') });
+    g.appendChild(el('circle', { class: 'fv-ring', cx: CX, cy: y, r: 17, stroke: '#22d3ee' }));
+    g.appendChild(el('circle', { class: 'body', cx: CX, cy: y, r: 14,
+      fill: 'rgba(34,211,238,.14)', stroke: '#22d3ee', 'stroke-width': 1.6 }));
+    g.appendChild(txt(CX, y + 3.5, 'H' + (i + 1), 'fv-label'));
+
+    // the private records that never leave
+    const d = el('g', { class: 'fv-data' });
+    [0, 3.5, 7].forEach((o, k) => d.appendChild(el('rect', {
+      x: CX - 30, y: y - 5 + o, width: 11, height: 2.4, rx: 1,
+      fill: '#22d3ee', opacity: 0.85 - k * 0.22 })));
+    g.appendChild(d);
+
+    // verdict markers, revealed only after screening
+    const x = el('g', { class: 'fv-x' });
+    x.appendChild(el('circle', { cx: CX + 15, cy: y - 11, r: 7, fill: '#0b0e17' }));
+    x.appendChild(el('line', { x1: CX+11.5, y1: y-14.5, x2: CX+18.5, y2: y-7.5, stroke: '#ef4444', 'stroke-width': 2.2, 'stroke-linecap': 'round' }));
+    x.appendChild(el('line', { x1: CX+18.5, y1: y-14.5, x2: CX+11.5, y2: y-7.5, stroke: '#ef4444', 'stroke-width': 2.2, 'stroke-linecap': 'round' }));
+    g.appendChild(x);
+    const tk = el('g', { class: 'fv-tick' });
+    tk.appendChild(el('circle', { cx: CX + 15, cy: y - 11, r: 7, fill: '#0b0e17' }));
+    tk.appendChild(el('path', { d: `M ${CX+11.5} ${y-11} l 2.6 2.8 l 5.2 -6`, fill: 'none',
+      stroke: '#22c55e', 'stroke-width': 2.2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
+    g.appendChild(tk);
+    z1.appendChild(g);
+  });
+  z1.appendChild(txt(CX, 316, 'hospitals · private data stays here'));
+
+  // ── flows and packets ────────────────────────────────────────────────────
+  ys.forEach(y => z2.appendChild(el('path', {
+    class: 'fv-flow toAgg', d: `M ${CX+26} ${y} Q ${(CX+AX)/2} ${y} ${AX-40} ${AY}`,
+    fill: 'none', stroke: '#8b7cff', 'stroke-width': 1.4 })));
+
+  ys.forEach((y, i) => {
+    const bad = i === BAD;
+    const g = el('g', { class: 'fv-pkt' + (bad ? ' bad' : '') });
+    g.appendChild(el('circle', { cx: CX + 26, cy: y, r: 5.5, fill: bad ? '#ef4444' : '#22d3ee' }));
+    g.appendChild(el('circle', { cx: CX + 26, cy: y, r: 9, fill: 'none',
+      stroke: bad ? '#ef4444' : '#22d3ee', 'stroke-width': 1, opacity: .35 }));
+    // Fan the arrival points slightly. Sending every packet to one coordinate made the
+    // five honest updates stack into a single dot, which read as "one update arrived".
+    const spread = (i - (N - 1) / 2) * 8;   // > packet diameter, so they stay distinct
+    g.style.setProperty('--dx', (AX - 44 - (CX + 26)) + 'px');
+    g.style.setProperty('--dy', (AY + spread - y) + 'px');
+    g.style.transitionDelay = (i * 0.06) + 's';
+    z2.appendChild(g);
+  });
+
+  // ── zone 2: aggregator + screening sweep ─────────────────────────────────
+  const scan = el('g', { class: 'fv-scan' });
+  scan.appendChild(el('circle', { cx: AX, cy: AY, r: 30, fill: 'none', stroke: '#8b7cff', 'stroke-width': 2 }));
+  z2.appendChild(scan);
+
+  z2.appendChild(el('rect', { x: AX-36, y: AY-36, width: 72, height: 72, rx: 17,
+    fill: 'rgba(139,124,255,.10)', stroke: '#8b7cff', 'stroke-width': 1.8 }));
+  const af = el('g', { class: 'fv-agg-fill' });
+  af.appendChild(el('rect', { x: AX-21, y: AY-21, width: 42, height: 42, rx: 11, fill: 'rgba(34,211,238,.55)' }));
+  z2.appendChild(af);
+  z2.appendChild(txt(AX, AY + 56, 'aggregator'));
+  z2.appendChild(txt(AX, 316, 'compares every update against its peers'));
+
+  // ── zone 3: merkle tree ──────────────────────────────────────────────────
+  z3.appendChild(el('path', { class: 'fv-flow toTree', d: `M ${AX+42} ${AY} L ${TX-64} ${AY}`,
+    fill: 'none', stroke: '#22d3ee', 'stroke-width': 1.4 }));
+
+  const LEAF_Y = 236, L1_Y = 186, ROOT_Y = 136;
+  const leafX = [TX-45, TX-15, TX+15, TX+45];
+  const hashes = ['a3f1', '7c0e', 'd92b', '4e8a'];
+  leafX.forEach((x, i) => {
+    const g = el('g', { class: 'fv-leaf' });
+    g.appendChild(el('rect', { x: x-9, y: LEAF_Y-9, width: 18, height: 18, rx: 4,
+      fill: 'rgba(34,211,238,.30)', stroke: '#22d3ee', 'stroke-width': 1.2 }));
+    g.appendChild(txt(x, LEAF_Y + 20, hashes[i], 'fv-hash'));
+    z3.appendChild(g);
+  });
+  [[TX-30, leafX[0], leafX[1], 'b6d4', -1], [TX+30, leafX[2], leafX[3], '1f7c', 1]].forEach(([bx, l, r, h, side]) => {
+    const g = el('g', { class: 'fv-lvl1' });
+    g.appendChild(el('path', { d: `M ${l} ${LEAF_Y-11} L ${bx} ${L1_Y+10} M ${r} ${LEAF_Y-11} L ${bx} ${L1_Y+10}`,
+      fill: 'none', stroke: '#8b7cff', 'stroke-width': 1.3 }));
+    g.appendChild(el('rect', { x: bx-9, y: L1_Y-9, width: 18, height: 18, rx: 4,
+      fill: 'rgba(139,124,255,.32)', stroke: '#8b7cff', 'stroke-width': 1.2 }));
+    // placed to the OUTER side: directly above the node it would sit on the two
+    // connector lines running up to the root.
+    g.appendChild(txt(bx + side * 14, L1_Y + 3, h, 'fv-hash', side < 0 ? 'end' : 'start'));
+    z3.appendChild(g);
+  });
+  const rootG = el('g', { class: 'fv-root' });
+  rootG.appendChild(el('path', { d: `M ${TX-30} ${L1_Y-11} L ${TX} ${ROOT_Y+12} M ${TX+30} ${L1_Y-11} L ${TX} ${ROOT_Y+12}`,
+    fill: 'none', stroke: '#c4b5fd', 'stroke-width': 1.4 }));
+  rootG.appendChild(el('rect', { x: TX-12, y: ROOT_Y-12, width: 24, height: 24, rx: 6,
+    fill: 'rgba(196,181,253,.55)', stroke: '#c4b5fd', 'stroke-width': 1.6 }));
+  rootG.appendChild(txt(TX, ROOT_Y - 19, 'ROUND ROOT', 'fv-hash'));
+  z3.appendChild(rootG);
+  z3.appendChild(txt(TX, 280, 'merkle tree of update fingerprints'));
+
+  // ── zone 3: blockchain ───────────────────────────────────────────────────
+  z3.appendChild(el('path', { class: 'fv-flow toChain', d: `M ${TX+14} ${ROOT_Y} L ${BX-30} ${AY-4}`,
+    fill: 'none', stroke: '#c4b5fd', 'stroke-width': 1.5 }));
+  [-48, 0, 48].forEach((dy, i) => {
+    const live = i === 1;
+    z3.appendChild(el('rect', {
+      class: live ? 'fv-blk-live' : '', x: BX-27, y: AY-17+dy, width: 54, height: 34, rx: 8,
+      fill: 'rgba(255,255,255,.045)', stroke: 'rgba(196,181,253,.35)', 'stroke-width': 1.3 }));
+    if(i < 2) z3.appendChild(el('line', { x1: BX, y1: AY+17+dy, x2: BX, y2: AY-17+dy+48,
+      stroke: 'rgba(196,181,253,.35)', 'stroke-width': 1.3 }));
+  });
+  const lk = el('g', { class: 'fv-lock' });
+  lk.appendChild(el('rect', { x: BX-7, y: AY-2, width: 14, height: 11, rx: 2.5, fill: '#c4b5fd' }));
+  lk.appendChild(el('path', { d: `M ${BX-4} ${AY-2} v -4.5 a 4 4 0 0 1 8 0 v 4.5`, fill: 'none', stroke: '#c4b5fd', 'stroke-width': 2 }));
+  z3.appendChild(lk);
+  z3.appendChild(txt(BX, 280, 'public ledger'));
+  z3.appendChild(txt((TX + BX) / 2, 316, 'anyone can re-check this round themselves'));
+
+  svg.appendChild(z1); svg.appendChild(z2); svg.appendChild(z3);
+
+  document.getElementById('flVizPips').innerHTML =
+    FLVIZ_PHASES.map((_, i) => `<div class="flviz-pip" data-i="${i}"></div>`).join('');
+  document.getElementById('flVizPips').querySelectorAll('.flviz-pip').forEach(pip => {
+    pip.addEventListener('click', () => { flVizPause(); flVizSet(+pip.dataset.i); });
+  });
+  _flVizBuilt = true;
+}
+
+function flVizSet(i){
+  _flVizPhase = ((i % FLVIZ_PHASES.length) + FLVIZ_PHASES.length) % FLVIZ_PHASES.length;
+  const svg = document.getElementById('flViz');
+  if(!svg) return;
+  svg.setAttribute('class', 'ph' + _flVizPhase);
+  const ph = FLVIZ_PHASES[_flVizPhase];
+  document.getElementById('flVizNum').textContent = _flVizPhase + 1;
+  document.getElementById('flVizTitle').textContent = ph.t;
+  document.getElementById('flVizBody2').innerHTML = ph.b;
+  document.querySelectorAll('#flVizPips .flviz-pip').forEach((p, k) =>
+    p.classList.toggle('on', k <= _flVizPhase));
+}
+
+function flVizPause(){
+  _flVizPlaying = false;
+  if(_flVizTimer){ clearInterval(_flVizTimer); _flVizTimer = null; }
+  const b = document.getElementById('flVizPlayBtn'); if(b) b.textContent = 'Play';
+}
+
+function flVizPlay(){
+  if(_flVizPlaying){ return flVizPause(); }
+  _flVizPlaying = true;
+  const b = document.getElementById('flVizPlayBtn'); if(b) b.textContent = 'Pause';
+  flVizStart();
+}
+
+function flVizStart(){
+  if(_flVizTimer) clearInterval(_flVizTimer);
+  // Paused while the tab is hidden: a background timer driving CSS animations is pure
+  // wasted battery, and this machine is already busy.
+  _flVizTimer = setInterval(() => {
+    if(document.hidden) return;
+    const tab = document.getElementById('tab-federated');
+    if(!tab || !tab.classList.contains('active')) return;
+    flVizSet(_flVizPhase + 1);
+  }, 3400);
+}
+
+function flVizStep(d){ flVizPause(); flVizSet(_flVizPhase + d); }
+
+function flVizToggleCard(){
+  const body = document.getElementById('flVizBody');
+  const btn = document.getElementById('flVizCollapse');
+  const hidden = body.style.display === 'none';
+  body.style.display = hidden ? '' : 'none';
+  btn.textContent = hidden ? 'Hide' : 'Show';
+  if(hidden){ flVizSet(_flVizPhase); } else { flVizPause(); }
+}
+
+function flVizInit(){
+  flVizBuild();
+  flVizSet(0);
+  if(_flVizPlaying) flVizStart();
 }
 
 // ── Federated tab ───────────────────────────────────────────────────────────
@@ -3457,6 +3881,11 @@ function renderFlAccuracy(lineage){
   if(pts.some(r => r.metrics.macro_f1 != null))
     ds.push({label:'macro-F1', data: pts.map(r => r.metrics.macro_f1==null?null:+(100*r.metrics.macro_f1).toFixed(2)),
              borderColor:'#8b7cff', backgroundColor:'rgba(139,124,255,.10)', fill:false, tension:.3});
+  if (typeof Chart === 'undefined') {
+    empty.textContent = 'Chart library unavailable (CDN blocked) — the numbers below are unaffected.';
+    empty.style.display = 'block'; cv.style.display = 'none';
+    return;
+  }
   flAccChart = new Chart(cv.getContext('2d'), {
     type:'line',
     data:{ labels: pts.map(r => 'R' + r.round), datasets: ds },
@@ -3557,10 +3986,16 @@ function renderFlRounds(runId, lineage, meta){
   }
   t.innerHTML = html + '</tbody>';
   t.querySelectorAll('code.fl-root').forEach(el => {
-    el.addEventListener('click', async () => {
-      try{ await navigator.clipboard.writeText(el.dataset.root); }catch(e){ return; }
-      const was = el.textContent; el.textContent = 'copied ✓';
-      setTimeout(() => { el.textContent = was; }, 900);
+    el.addEventListener('click', () => {
+      const was = el.textContent;
+      const done = () => { el.textContent = 'copied ✓'; setTimeout(() => { el.textContent = was; }, 900); };
+      // navigator.clipboard is secure-context-only, exactly like crypto.subtle: on
+      // http://0.0.0.0 it is undefined. fallbackCopy() already exists for this.
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(el.dataset.root).then(done).catch(() => fallbackCopy(el.dataset.root, done));
+      } else {
+        fallbackCopy(el.dataset.root, done);
+      }
     });
   });
   // Event delegation instead of inline onclick: interpolating a run id into an attribute
@@ -3606,14 +4041,23 @@ async function flVerifyProof(runId, round, clientId){
     `client ${escapeHtml(String(p.clientId))} at position ${p.index} of ${p.leafCount} &middot; sibling path ${(p.proof||[]).length} levels deep. <b>None of this is trusted yet.</b>`));
   box.innerHTML = steps.join('');
 
-  const leaf = await bvMerkleLeaf(p.index, String(p.clientId), p.digest);
+  let leaf, folded;
+  try {
+    leaf = await bvMerkleLeaf(p.index, String(p.clientId), p.digest);
+  } catch (err) {
+    steps.push(_flStep('bad', '2 · Could not hash in this browser', escapeHtml(String(err && err.message || err))
+      + ' — try opening the app at <code>http://localhost:8080</code> instead.'));
+    box.innerHTML = steps.join('');
+    verd.innerHTML = `<div style="padding:.7rem .9rem;border-radius:9px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.4);color:var(--danger);font-weight:700;font-size:.86rem;">VERIFICATION UNAVAILABLE — the browser could not compute SHA-256</div>`;
+    return;
+  }
   const leafOk = leaf === p.leaf;
   steps.push(_flStep(leafOk?'ok':'bad', `2 · Leaf recomputed from the raw digest`,
     leafOk ? `SHA-256(JSON([${p.index}, "${escapeHtml(String(p.clientId))}", digest])) = <code>${escapeHtml(leaf.slice(0,24))}…</code> — matches. The server did not simply hand us a leaf to believe.`
            : `Recomputed <code>${escapeHtml(leaf.slice(0,24))}…</code> but the server claims <code>${escapeHtml((p.leaf||'').slice(0,24))}…</code>. The served leaf is not this digest's leaf.`));
   box.innerHTML = steps.join('');
 
-  const folded = await bvFoldProof(leaf, p.proof);
+  folded = await bvFoldProof(leaf, p.proof);
   const foldOk = folded === p.root;
   steps.push(_flStep(foldOk?'ok':'bad', `3 · Sibling path folded to a root`,
     foldOk ? `Hashing up ${(p.proof||[]).length} levels gives <code>${escapeHtml(folded.slice(0,24))}…</code>, the round root. This update really was in round ${round}.`
@@ -4677,6 +5121,14 @@ function closeMerkleModal(e) {
 }
 
 function _drawMerkleTree(tree, leaves) {
+  // d3 is a CDN script like Chart.js and socket.io; without it this renderer throws
+  // "d3 is not defined" and takes the whole Merkle panel down with it.
+  if (typeof d3 === 'undefined') {
+    const c = document.getElementById('merkleSvg');
+    if (c) c.innerHTML = '<div style="padding:1rem;color:var(--text-muted);font-size:.82rem;">'
+      + 'Tree renderer unavailable (d3 CDN blocked). The root and proofs above are unaffected.</div>';
+    return;
+  }
   // Build txType lookup: hash → txType using the leaves array from backend
   const txTypeByHash = {};
   (leaves || []).forEach(lf => { txTypeByHash[lf.hash] = lf.txType; });
@@ -4832,7 +5284,7 @@ function _setThemeIcon(isLight) {
   if (btn) btn.innerHTML = '<svg class="ico"><use href="#i-' + (isLight ? 'moon' : 'sun') + '"/></svg>';
 }
 function initTheme() {
-  if (localStorage.getItem('blockverify_theme') === 'light') {
+  if (bvLSGet('blockverify_theme') === 'light') {
     document.body.classList.add('light-theme');
     _setThemeIcon(true);
   }
@@ -4841,10 +5293,10 @@ function toggleTheme() {
   const body = document.body;
   if (body.classList.contains('light-theme')) {
     body.classList.remove('light-theme'); _setThemeIcon(false);
-    localStorage.setItem('blockverify_theme', 'dark');
+    bvLSSet('blockverify_theme', 'dark');
   } else {
     body.classList.add('light-theme'); _setThemeIcon(true);
-    localStorage.setItem('blockverify_theme', 'light');
+    bvLSSet('blockverify_theme', 'light');
   }
 }
 
@@ -4861,7 +5313,7 @@ function closeWelcome() {
 function startFromWelcome() {
   const val = document.getElementById('welcomeUsername').value.trim();
   // With JWT auth, username is set via login/register — just close the welcome modal
-  localStorage.setItem('blockverify_visited', '1');
+  bvLSSet('blockverify_visited', '1');
   closeWelcome();
   toast('ok', `Welcome${val ? ', ' + val : ''}! Start by registering a model. 👆`);
 }
@@ -4916,6 +5368,10 @@ let _chartInstance = null;
 let _activeDays = 14;
 
 async function loadActivityChart(days = 14) {
+  if (typeof Chart === 'undefined') {
+    console.warn('Chart.js failed to load (CDN blocked?) — activity chart skipped');
+    return;
+  }
   _activeDays = days;
   // Update active button style
   [7,14,30].forEach(d => {
@@ -5385,6 +5841,16 @@ function _anDestroy() { Object.values(_anCharts).forEach(c => { try { c.destroy(
 function _dayKey(ts) { const d = new Date((ts || 0) * 1000); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
 
 async function loadAnalytics() {
+  // Chart.js is a CDN script. If it is blocked, every chart below throws
+  // "Chart is not defined"; say so once instead of failing five times.
+  if (typeof Chart === 'undefined') {
+    console.warn('Chart.js failed to load (CDN blocked?) — analytics charts skipped');
+    ['anPieEmpty','anBarEmpty'].forEach(id => {
+      const e = document.getElementById(id);
+      if (e) { e.textContent = 'Chart library unavailable (CDN blocked).'; e.style.display = 'flex'; }
+    });
+    return;
+  }
   if (typeof Chart === 'undefined') return;
   const isDark = !document.body.classList.contains('light-theme');
   const grid = isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.07)';
@@ -6174,166 +6640,254 @@ document.addEventListener('mousedown', function(e) {
 <script>
 /* ── Guided Tour System ── */
 const TOUR_STEPS = [
-  { target: '#tab-register', tab: 'register', title: '📝 Step 1 — Register a Model', body: 'This is where you register an AI model. Upload any file — your browser computes its SHA-256 hash. The hash is stored on the blockchain. The actual file never leaves your machine.', position: 'bottom' },
-  { target: '#regDrop', tab: 'register', title: '📂 Upload Your Model File', body: 'Drag and drop or click to select any file (.pt, .h5, .pkl, .onnx, PDF, ZIP — anything). The SHA-256 fingerprint is computed instantly in your browser.', position: 'bottom' },
-  { target: '#tab-verify', tab: 'verify', title: '✅ Step 2 — Verify Integrity', body: 'Re-upload the same file later. BlockVerify re-hashes it and compares against the blockchain record. Match = untampered. Mismatch = model was modified.', position: 'bottom' },
-  { target: '#tab-explorer', tab: 'explorer', title: '🔗 Step 3 — Algorand Testnet Explorer', body: 'Every registration and verification is broadcast as an immutable transaction on the live Algorand Testnet. Visit the explorer to inspect your permanent on-chain proofs.', position: 'bottom' },
-  { target: '#validateBtn', tab: 'explorer', title: '🛡 Validate Chain Integrity', body: 'Click this to confirm Algorand Testnet is live and your transactions are globally secured. Algorand\'s Pure Proof-of-Stake (PPoS) ensures 100% Byzantine fault tolerance — always ✅ Valid.', position: 'top' },
-  { target: '#tab-models', tab: 'models', title: '📦 Step 4 — My Models', body: 'All your registered models appear here. You can verify, add new versions, download a PDF integrity report, toggle privacy, or deactivate a model.', position: 'bottom' },
-  { target: '#tab-federated', delay: 300, tab: 'federated', title: '🌐 Step 5 — Federated Learning', body: 'Everything so far protects a <b>finished</b> model. This tab protects one that is still being <b>built by many parties at once</b> — say ten hospitals training a shared AI without any of them sending patient data. Each contributes an update; nobody shares raw data.', position: 'bottom' },
-  { target: '#flStats', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '📊 Reading a Training Run', body: 'Pick any run from the dropdown at the top. These cards summarise it: how accurate the shared model got, how many malicious participants were caught, and how many honest ones were wrongly excluded — the price of the defence.', position: 'bottom' },
-  { target: '#flGridWrap', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '🛡 Who Was Trusted, Round by Round', body: 'One square per participant per round. <b style="color:#22c55e;">Bright green</b> = a malicious participant correctly caught. <b style="color:#ef4444;">Red</b> = one that slipped through. <b style="color:#eab308;">Amber</b> = an honest participant wrongly excluded. Malicious rows are labelled, so you can see at a glance whether the defence worked.', position: 'top' },
-  { target: '#flRoundsTable', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '🔗 Proving It Without Trusting Us', body: 'Each round is fingerprinted and written to the blockchain, so nobody — including this server — can rewrite history afterwards. Click <b>Verify proof</b> and your browser re-derives that fingerprint itself and checks it against the public ledger. If we lied, the check fails.', position: 'top' },
-  { target: '#tab-help', tab: 'help', title: '🎉 Tour Complete!', body: 'You now know the full BlockVerify workflow. Register a model → get a Model ID → verify it anytime → all history is permanently on the blockchain. And with <b>Federated</b>, you can prove who helped build a model in the first place. Ready to try it yourself?', position: 'bottom' }
+  { target: '#tab-register', chapter: 'Getting started', tab: 'register', title: '📝 Step 1 — Register a Model', body: 'This is where you register an AI model. Upload any file — your browser computes its SHA-256 hash. The hash is stored on the blockchain. The actual file never leaves your machine.', position: 'bottom' },
+  { target: '#regDrop', chapter: 'Getting started', tab: 'register', title: '📂 Upload Your Model File', body: 'Drag and drop or click to select any file (.pt, .h5, .pkl, .onnx, PDF, ZIP — anything). The SHA-256 fingerprint is computed instantly in your browser.', position: 'bottom' },
+  { target: '#tab-verify', chapter: 'Getting started', tab: 'verify', title: '✅ Step 2 — Verify Integrity', body: 'Re-upload the same file later. BlockVerify re-hashes it and compares against the blockchain record. Match = untampered. Mismatch = model was modified.', position: 'bottom' },
+  { target: '#tab-explorer', chapter: 'On-chain proof', tab: 'explorer', title: '🔗 Step 3 — Algorand Testnet Explorer', body: 'Every registration and verification is broadcast as an immutable transaction on the live Algorand Testnet. Visit the explorer to inspect your permanent on-chain proofs.', position: 'bottom' },
+  { target: '#validateBtn', chapter: 'On-chain proof', tab: 'explorer', title: '🛡 Validate Chain Integrity', body: 'Click this to confirm Algorand Testnet is live and your transactions are globally secured. Algorand\'s Pure Proof-of-Stake (PPoS) ensures 100% Byzantine fault tolerance — always ✅ Valid.', position: 'top' },
+  { target: '#tab-models', chapter: 'Managing models', tab: 'models', title: '📦 Step 4 — My Models', body: 'All your registered models appear here. You can verify, add new versions, download a PDF integrity report, toggle privacy, or deactivate a model.', position: 'bottom' },
+  { target: '#tab-federated', chapter: 'Federated learning', delay: 300, tab: 'federated', title: '🌐 Step 5 — Federated Learning', body: 'Everything so far protects a <b>finished</b> model. This tab protects one that is still being <b>built by many parties at once</b> — say ten hospitals training a shared AI without any of them sending patient data. Each contributes an update; nobody shares raw data.', position: 'bottom' },
+  { target: '#flHowCard', chapter: 'Federated learning', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '🎞 Watch a Round Happen', body: 'Before the numbers, watch the mechanism. This animation walks through one full round — six hospitals training privately, a poisoned update being caught and thrown out, the survivors averaged, and the whole round fingerprinted onto the blockchain. Use <b>Back</b> and <b>Next</b> under it to move at your own pace.', position: 'bottom' },
+  { target: '#flStats', chapter: 'Federated learning', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '📊 Reading a Training Run', body: 'Pick any run from the dropdown at the top. These cards summarise it: how accurate the shared model got, how many malicious participants were caught, and how many honest ones were wrongly excluded — the price of the defence.', position: 'bottom' },
+  { target: '#flGridWrap', chapter: 'Federated learning', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '🛡 Who Was Trusted, Round by Round', body: 'One square per participant per round. <b style="color:#22c55e;">Bright green</b> = a malicious participant correctly caught. <b style="color:#ef4444;">Red</b> = one that slipped through. <b style="color:#eab308;">Amber</b> = an honest participant wrongly excluded. Malicious rows are labelled, so you can see at a glance whether the defence worked.', position: 'top' },
+  { target: '#flRoundsTable', chapter: 'Federated learning', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '🔗 Proving It Without Trusting Us', body: 'Each round is fingerprinted and written to the blockchain, so nobody — including this server — can rewrite history afterwards. Click <b>Verify proof</b> and your browser re-derives that fingerprint itself and checks it against the public ledger. If we lied, the check fails.', position: 'top' },
+  { target: '#tab-help', chapter: 'Done', tab: 'help', title: '🎉 Tour Complete!', body: 'You now know the full BlockVerify workflow. Register a model → get a Model ID → verify it anytime → all history is permanently on the blockchain. And with <b>Federated</b>, you can prove who helped build a model in the first place. Ready to try it yourself?', position: 'bottom' }
 ];
 
 let _tourCurrent = 0;
 let _tourActive = false;
+let _tourTarget = null;          // element currently spotlighted
+let _tourKeyHandler = null;
+let _tourReflow = null;
 
 function startGuidedTour() {
   if (_tourActive) return;
   _tourActive = true;
   _tourCurrent = 0;
-  
+
   if (!document.getElementById('tourBlocker')) {
     document.body.insertAdjacentHTML('beforeend', `
       <div id="tourBlocker" class="tour-blocker"></div>
       <div id="tourSpotlight" class="tour-spotlight"></div>
-      <div id="tourTooltip" class="tour-tooltip"></div>
+      <div id="tourTooltip" class="tour-tooltip" role="dialog" aria-modal="true"
+           aria-label="Product tour" tabindex="-1"></div>
     `);
+    // Clicking the dimmed area leaves the tour, the way every other modal here behaves.
+    document.getElementById('tourBlocker').addEventListener('click', endGuidedTour);
   }
-  
-  document.getElementById('tourBlocker').style.display = 'block';
-  document.getElementById('tourSpotlight').style.display = 'block';
-  document.getElementById('tourTooltip').style.display = 'block';
-  
-  // Close welcome modal if open
+
+  ['tourBlocker','tourSpotlight','tourTooltip'].forEach(id => {
+    const el = document.getElementById(id);
+    el.style.display = 'block';
+    requestAnimationFrame(() => el.classList.add('in'));
+  });
+
+  // Lock the page: the highlight is meaningless if the user can scroll away from it.
+  document.body.classList.add('tour-open');
+
+  // Keyboard control — expected of any tour, and the only way to drive it without a mouse.
+  _tourKeyHandler = (e) => {
+    if (!_tourActive) return;
+    if (e.key === 'Escape')      { e.preventDefault(); endGuidedTour(); }
+    else if (e.key === 'ArrowRight' || e.key === 'Enter') { e.preventDefault(); nextTourStep(); }
+    else if (e.key === 'ArrowLeft')  { e.preventDefault(); prevTourStep(); }
+  };
+  document.addEventListener('keydown', _tourKeyHandler);
+
+  // Keep the spotlight glued to its target if the layout shifts underneath it.
+  _tourReflow = () => { if (_tourActive && _tourTarget) positionTour(_tourTarget); };
+  window.addEventListener('resize', _tourReflow);
+  window.addEventListener('scroll', _tourReflow, true);
+
   document.getElementById('welcomeModal').classList.remove('open');
-  
   renderTourStep();
 }
 
-function renderTourStep() {
+/** Scroll an element into view and resolve only once scrolling has actually stopped.
+ *  Measuring immediately after scrollIntoView({behavior:'smooth'}) reads the PRE-scroll
+ *  rectangle, which is why the old spotlight landed next to its target and drifted. */
+function _scrollSettled(el) {
+  return new Promise(resolve => {
+    const r = el.getBoundingClientRect();
+    const needsScroll = r.top < 80 || r.bottom > window.innerHeight - 80;
+    if (!needsScroll) return resolve();
+
+    // The page itself is locked, so scroll the nearest scrollable ancestor / window.
+    document.body.classList.remove('tour-open');
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    let last = null, still = 0;
+    const tick = () => {
+      const y = el.getBoundingClientRect().top;
+      if (last !== null && Math.abs(y - last) < 0.5) { still++; } else { still = 0; }
+      last = y;
+      if (still >= 3) { document.body.classList.add('tour-open'); return resolve(); }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    // Never hang the tour on a browser that does not animate the scroll.
+    setTimeout(() => { document.body.classList.add('tour-open'); resolve(); }, 700);
+  });
+}
+
+function positionTour(target) {
   const step = TOUR_STEPS[_tourCurrent];
-  
-  // Switch to correct tab
+  const rect = target.getBoundingClientRect();
+  const sl = document.getElementById('tourSpotlight');
+  const tt = document.getElementById('tourTooltip');
+
+  sl.style.left   = (rect.left - 5) + 'px';
+  sl.style.top    = (rect.top - 5) + 'px';
+  sl.style.width  = (rect.width + 10) + 'px';
+  sl.style.height = (rect.height + 10) + 'px';
+
+  const GAP = 14, PAD = 12;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  // Clamp the measured size to the viewport rather than trusting CSS max-width to have
+  // applied: on a narrow phone an unclamped width pushes the box off the right edge.
+  const tw = Math.min(tt.offsetWidth, vw - 2 * PAD);
+  const th = Math.min(tt.offsetHeight, vh - 2 * PAD);
+
+  // Try the requested side, then flip to whichever side actually has room. A tooltip
+  // half off-screen is worse than one on the "wrong" side.
+  const room = {
+    bottom: vh - rect.bottom - GAP, top: rect.top - GAP,
+    right: vw - rect.right - GAP,   left: rect.left - GAP,
+  };
+  const need = { bottom: th, top: th, right: tw, left: tw };
+  let pos = step.position || 'bottom';
+  if (room[pos] < need[pos]) {
+    pos = ['bottom','top','right','left'].find(p => room[p] >= need[p]) || pos;
+  }
+
+  let left, top, arrowCls, along;
+  if (pos === 'bottom' || pos === 'top') {
+    top  = pos === 'bottom' ? rect.bottom + GAP : rect.top - th - GAP;
+    left = rect.left + rect.width / 2 - tw / 2;          // centred on the target
+    arrowCls = pos === 'bottom' ? 'tour-arrow-bottom' : 'tour-arrow-top';
+  } else {
+    left = pos === 'right' ? rect.right + GAP : rect.left - tw - GAP;
+    top  = rect.top + rect.height / 2 - th / 2;
+    arrowCls = pos === 'right' ? 'tour-arrow-right' : 'tour-arrow-left';
+  }
+
+  // Clamp to the viewport on BOTH axes (the old version clamped only horizontally,
+  // so a 'top' step near the header vanished above the fold).
+  const clampedL = Math.max(PAD, Math.min(left, vw - tw - PAD));
+  const clampedT = Math.max(PAD, Math.min(top,  vh - th - PAD));
+  tt.style.left = clampedL + 'px';
+  tt.style.top  = clampedT + 'px';
+
+  // Point the arrow back at the target after clamping moved the box.
+  const arrow = document.getElementById('tourArrow');
+  if (arrow) {
+    arrow.className = 'tour-arrow ' + arrowCls;
+    if (pos === 'bottom' || pos === 'top') {
+      along = rect.left + rect.width / 2 - clampedL;
+      arrow.style.left = Math.max(14, Math.min(along - 9, tw - 32)) + 'px';
+      arrow.style.top = '';
+    } else {
+      along = rect.top + rect.height / 2 - clampedT;
+      arrow.style.top = Math.max(14, Math.min(along - 9, th - 32)) + 'px';
+      arrow.style.left = '';
+    }
+  }
+}
+
+async function renderTourStep() {
+  const step = TOUR_STEPS[_tourCurrent];
+
   const tabBtn = Array.from(document.querySelectorAll('.tab')).find(t => {
     const attr = t.getAttribute('onclick');
     return attr && attr.includes(`'${step.tab}'`);
   });
   if (tabBtn) switchTab(step.tab, tabBtn);
-  
-  setTimeout(() => {
-    // A hidden element still matches querySelector but measures 0x0, which would collapse
-    // the spotlight into a tiny box pointing at nothing. Prefer a declared fallback, and
-    // if neither is visible, move on rather than showing a broken highlight.
-    const visible = (el) => {
-      if (!el) return false;
-      const r = el.getBoundingClientRect();
-      return r.width > 1 && r.height > 1;
-    };
-    let target = document.querySelector(step.target);
-    if (!visible(target) && step.fallback) target = document.querySelector(step.fallback);
-    if (!visible(target)) {
-      if (_tourCurrent < TOUR_STEPS.length - 1) { _tourCurrent++; return renderTourStep(); }
-      return endGuidedTour();
-    }
-    
-    // Scroll into view
-    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    
-    // Spotlight setup
-    const rect = target.getBoundingClientRect();
-    const sl = document.getElementById('tourSpotlight');
-    sl.style.left = (rect.left + window.scrollX - 6) + 'px';
-    sl.style.top = (rect.top + window.scrollY - 6) + 'px';
-    sl.style.width = (rect.width + 12) + 'px';
-    sl.style.height = (rect.height + 12) + 'px';
-    
-    // Tooltip HTML
-    const tt = document.getElementById('tourTooltip');
-    const isLast = _tourCurrent === TOUR_STEPS.length - 1;
-    let dots = '';
-    for(let i=0; i<TOUR_STEPS.length; i++) {
-       dots += `<div class="tour-dot ${i <= _tourCurrent ? 'active' : ''}"></div>`;
-    }
-    
-    tt.innerHTML = `
-      <div id="tourArrow" class="tour-arrow"></div>
-      <div class="tour-tooltip-hdr">
-        <span>Step ${_tourCurrent + 1} of ${TOUR_STEPS.length}</span>
+
+  await new Promise(r => setTimeout(r, step.delay || 100));
+  if (!_tourActive) return;
+
+  // A hidden element still matches querySelector but measures 0x0, which would collapse
+  // the spotlight onto nothing. Prefer a declared fallback; skip the step if neither is up.
+  const visible = (el) => { if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 1 && r.height > 1; };
+  let target = document.querySelector(step.target);
+  if (!visible(target) && step.fallback) target = document.querySelector(step.fallback);
+  if (!visible(target)) {
+    if (_tourCurrent < TOUR_STEPS.length - 1) { _tourCurrent++; return renderTourStep(); }
+    return endGuidedTour();
+  }
+  _tourTarget = target;
+
+  const tt = document.getElementById('tourTooltip');
+  const isLast  = _tourCurrent === TOUR_STEPS.length - 1;
+  const isFirst = _tourCurrent === 0;
+  const pct = Math.round(((_tourCurrent + 1) / TOUR_STEPS.length) * 100);
+  let dots = '';
+  for (let i = 0; i < TOUR_STEPS.length; i++) {
+    const cls = i === _tourCurrent ? 'active' : (i < _tourCurrent ? 'done' : '');
+    dots += `<div class="tour-dot ${cls}" data-i="${i}" title="Step ${i+1}"></div>`;
+  }
+
+  tt.innerHTML = `
+    <div id="tourArrow" class="tour-arrow"></div>
+    <div class="tour-progress"><div class="tour-progress-bar" style="width:${pct}%"></div></div>
+    <div class="tour-tooltip-hdr">
+      <span>Step ${_tourCurrent + 1} of ${TOUR_STEPS.length}</span>
+      <span class="tour-chapter">${escapeHtml(step.chapter || '')}</span>
+    </div>
+    <div class="tour-tooltip-title">${step.title}</div>
+    <div class="tour-tooltip-body">${step.body}</div>
+    <div class="tour-tooltip-footer">
+      <div class="tour-dots">${dots}</div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <button class="tour-btn tour-btn-skip" onclick="endGuidedTour()">Skip</button>
+        <button class="tour-btn tour-btn-back" onclick="prevTourStep()" ${isFirst ? 'disabled' : ''}>Back</button>
+        <button class="tour-btn tour-btn-next" id="tourNextBtn" onclick="nextTourStep()">${isLast ? 'Finish 🎉' : 'Next →'}</button>
       </div>
-      <div class="tour-tooltip-title">${step.title}</div>
-      <div class="tour-tooltip-body">${step.body}</div>
-      <div class="tour-tooltip-footer">
-        <div class="tour-dots">${dots}</div>
-        <div style="display:flex; gap:8px;">
-          <button class="tour-btn tour-btn-skip" onclick="endGuidedTour()">Skip</button>
-          <button class="tour-btn tour-btn-next" onclick="nextTourStep()">${isLast ? 'Finish 🎉' : 'Next →'}</button>
-        </div>
-      </div>
-    `;
-    
-    // Tooltip position
-    const pos = step.position || 'bottom';
-    const ttRect = tt.getBoundingClientRect();
-    let ttLeft, ttTop;
-    const arrow = document.getElementById('tourArrow');
-    
-    arrow.className = 'tour-arrow'; 
-    if (pos === 'bottom') {
-      ttTop = rect.bottom + window.scrollY + 15;
-      ttLeft = rect.left + window.scrollX;
-      arrow.classList.add('tour-arrow-bottom');
-      arrow.style.left = '20px';
-    } else if (pos === 'top') {
-      ttTop = rect.top + window.scrollY - ttRect.height - 15;
-      ttLeft = rect.left + window.scrollX;
-      arrow.classList.add('tour-arrow-top');
-    } else if (pos === 'right') {
-      ttTop = rect.top + window.scrollY;
-      ttLeft = rect.right + window.scrollX + 15;
-      arrow.classList.add('tour-arrow-left');
-    } else {
-      ttTop = rect.bottom + window.scrollY + 15;
-      ttLeft = rect.left + window.scrollX;
-      arrow.classList.add('tour-arrow-bottom');
-    }
-    
-    // Clamp to viewport bounds
-    const maxW = window.innerWidth;
-    if (ttLeft + 320 > maxW) {
-      ttLeft = maxW - 340;
-      arrow.style.left = Math.min((rect.left + window.scrollX - ttLeft + rect.width/2), 300) + 'px';
-    }
-    if (ttLeft < 10) ttLeft = 10;
-    
-    tt.style.left = ttLeft + 'px';
-    tt.style.top = ttTop + 'px';
-    
-  }, step.delay || 100);
+    </div>
+    <div class="tour-kbd"><kbd>←</kbd> <kbd>→</kbd> to navigate · <kbd>Esc</kbd> to exit</div>`;
+
+  tt.querySelectorAll('.tour-dot').forEach(d => {
+    d.addEventListener('click', () => { _tourCurrent = +d.dataset.i; renderTourStep(); });
+  });
+
+  await _scrollSettled(target);
+  if (!_tourActive) return;
+  positionTour(target);
+  const nb = document.getElementById('tourNextBtn');
+  if (nb) nb.focus({ preventScroll: true });
 }
 
 function nextTourStep() {
-  if (_tourCurrent < TOUR_STEPS.length - 1) {
-    _tourCurrent++;
-    renderTourStep();
-  } else {
-    endGuidedTour();
-  }
+  if (_tourCurrent < TOUR_STEPS.length - 1) { _tourCurrent++; renderTourStep(); }
+  else endGuidedTour();
+}
+
+function prevTourStep() {
+  if (_tourCurrent > 0) { _tourCurrent--; renderTourStep(); }
 }
 
 function endGuidedTour() {
+  if (!_tourActive) return;
   _tourActive = false;
-  localStorage.setItem('bv_tour_done', '1');
-  const b = document.getElementById('tourBlocker');
-  const s = document.getElementById('tourSpotlight');
-  const t = document.getElementById('tourTooltip');
-  if (b) { b.style.display = 'none'; s.style.display = 'none'; t.style.display = 'none'; }
+  _tourTarget = null;
+  document.body.classList.remove('tour-open');
+  if (_tourKeyHandler) { document.removeEventListener('keydown', _tourKeyHandler); _tourKeyHandler = null; }
+  if (_tourReflow) {
+    window.removeEventListener('resize', _tourReflow);
+    window.removeEventListener('scroll', _tourReflow, true);
+    _tourReflow = null;
+  }
+  ['tourBlocker','tourSpotlight','tourTooltip'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('in');
+    setTimeout(() => { if (!_tourActive) el.style.display = 'none'; }, 280);
+  });
 }
 
+
 window.addEventListener('DOMContentLoaded', () => {
-  if (!localStorage.getItem('bv_tour_done')) {
+  if (!bvLSGet('bv_tour_done')) {
     setTimeout(() => {
       toast('info', `New to BlockVerify? <br><a href="#" onclick="startGuidedTour();return false;" style="color:var(--primary-h);font-weight:700;">Take the guided tour 🧭</a>`, 12000);
     }, 2000);
@@ -6852,6 +7406,12 @@ async function anchorToBitcoin() {
 }
 
 function _drawAlgoMerkle(tree, leaves, container) {
+  // second d3 renderer — same CDN dependency as _drawMerkleTree
+  if (typeof d3 === 'undefined') {
+    if (container) container.innerHTML = '<div style="padding:1rem;color:var(--text-muted);font-size:.82rem;">'
+      + 'Tree renderer unavailable (d3 CDN blocked). The on-chain root and proofs are unaffected.</div>';
+    return;
+  }
   container.innerHTML = '';
 
   const isDark = !document.body.classList.contains('light-theme');
