@@ -1781,75 +1781,212 @@ def bitcoin_anchor():
 #  AI Chat Assistant Endpoint                                          #
 # ------------------------------------------------------------------ #
 
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+# ── Gemini assistant ────────────────────────────────────────────────────────
+# Keys come from the environment only, as a POOL so one exhausted key does not take the
+# assistant down. See backend/gemini_keys.py; nothing here ever logs or returns a raw key.
+from gemini_keys import KeyPool, mask
 
-# Comprehensive System Persona detailing the entire project
+GEMINI_KEYS = KeyPool()
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+# When every key is quota-limited on the primary model, fall back to a cheaper one rather
+# than going dark. flash-lite has a much larger free-tier allowance.
+GEMINI_FALLBACK = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.5-flash-lite")
+GEMINI_TIMEOUT = float(os.environ.get("GEMINI_TIMEOUT", "25"))
+
+MAX_MESSAGE_CHARS = 4000
+MAX_HISTORY_TURNS = 12          # keeps the prompt bounded and the cost predictable
+
+# Per-IP rate limit: this endpoint spends real quota, so it cannot be left open.
+_chat_rate = {}
+CHAT_RATE_MAX = 20              # requests
+CHAT_RATE_WINDOW = 60.0         # seconds
+
+
+def _chat_rate_ok(ip: str) -> bool:
+    now = time()
+    hits = [t for t in _chat_rate.get(ip, []) if now - t < CHAT_RATE_WINDOW]
+    if len(hits) >= CHAT_RATE_MAX:
+        _chat_rate[ip] = hits
+        return False
+    hits.append(now)
+    _chat_rate[ip] = hits
+    if len(_chat_rate) > 2000:                      # crude cap so this cannot grow forever
+        for k in list(_chat_rate)[:500]:
+            _chat_rate.pop(k, None)
+    return True
+
+
 BLOCKVERIFY_PERSONA = """
-You are the official BlockVerify AI Assistant. You are friendly, highly intelligent, and expert at explaining complex topics simply. 
-BlockVerify is a blockchain-powered AI Model Integrity Verification Platform created by three students: Shubhangam, Mihir, and Aditya.
-It solves the problem of "AI Supply Chain Attacks" (like backdoor weight poisoning) by cryptographically proving a model has not been tampered with.
+You are the BlockVerify assistant. BlockVerify is an AI-model integrity platform built by
+Shubhangam Singh, Aditya Kumar and Mihir Dixit (VIT, guide Dr. Kankana Roy).
 
-BlockVerify's 7-Layer Architecture:
-1. Custom PoW Blockchain: A from-scratch python blockchain to prove foundational understanding.
-2. Algorand Testnet: A fast L2 sidechain. We use a hand-written TEAL v8 smart contract to permanently store the mapping of 'model_id -> sha256_hash. We use 0-ALGO note transactions.
-3. Bitcoin Testnet (Rollup): An L1 settlement layer. We batch all model hashes into a Merkle Root and anchor it fully on-chain using an OP_RETURN transaction.
-4. Client-side Hashing: WebCrypto API extracts hashes without the model ever leaving the user's device.
-5. Deep Layer Forensics: A revolutionary inspector that extracts layer-by-layer neural network architecture. It detects two attacks: 'Weight Tampering' (modified deep learning parameters) and 'Topology Poisoning' (rogue layers injected by hackers).
-6. zkML (Zero-Knowledge): A simulated cryptographic prover demonstrating that we can verify ML execution without exposing private dataset weights.
-7. IPFS Self-Healing: A simulated remediation protocol that fetches uncorrupted genesis blocks from the InterPlanetary File System to replace compromised neural network hidden layers.
+WHAT IT DOES — two layers:
+1. Registration & verification of a FINISHED model. A model's file hash and an ordered
+   per-layer hash manifest are committed as a Merkle root, anchored on Algorand Testnet
+   (App ID 764828342) with Bitcoin Testnet OP_RETURN checkpoints. Re-uploading the file
+   later re-hashes it: any change flips a SHA-256 digest, so detection is sound and
+   complete. The browser verifies inclusion proofs against a root it reads directly from
+   the public Algorand indexer, so the server is not trusted at verification time.
+2. FedVerify — federated learning. Many parties train one model without sharing data.
+   Each round commits a Merkle root over the client update digests, and FedVerify-Forensics
+   screens Byzantine clients by applying BlockVerify's layer-level outlier probes ACROSS
+   clients instead of across weights. Differential privacy (Opacus, RDP accountant, sigma
+   solved over TOTAL steps) protects the data.
 
-Your goal: Educate users. If they ask what a tab does, explain it. If they ask about blockchain concepts (like what a Merkle tree is, what Algorand is, what OP_RETURN means), explain it clearly using analogies. Be concise, use emojis naturally, and format responses neatly.
-"""
+TABS: Register, Verify, Compare, Versions, Audit Trail, Live Alerts, My Models, Analytics,
+Registry, Explorer, Chain Proof, Ledger, Federated, Help & FAQ.
+
+HOW TO ANSWER:
+- Be concise and concrete. Two or three short paragraphs at most unless asked for detail.
+- Plain language first; name the mechanism second.
+- When a question maps to a tab or a command, say exactly which one.
+- Use markdown: **bold** for key terms, `code` for commands, - for lists.
+
+HONESTY RULES — these matter more than being helpful:
+- Never invent numbers, accuracy figures or results. If asked for results you do not have,
+  say the experiments are still running and point to the Federated tab or the tables.
+- State limitations when they are relevant: the statistical probes localize tampering but
+  can be evaded (the hash cannot); Byzantine screening is best-effort and the attacks
+  evaluated are non-adaptive; backdoor detection is weak; there is no automatic rollback;
+  differential privacy protects a training example, not a whole patient.
+- If you do not know, say so. Do not guess about this codebase.
+- You are a guide to this application. Decline unrelated requests briefly and redirect.
+""".strip()
+
+
+def _gemini_call(contents, temperature=0.7, max_tokens=900):
+    """POST to Gemini, rotating keys past quota errors. Returns (text, error, http_status)."""
+    import requests
+
+    if not GEMINI_KEYS.configured:
+        return None, ("The assistant is not configured on this server. Set GEMINI_API_KEYS "
+                      "in backend/.env (a comma-separated pool) and restart."), 503
+
+    payload = {
+        "contents": contents,
+        "systemInstruction": {"parts": [{"text": BLOCKVERIFY_PERSONA}]},
+        "generationConfig": {
+            "temperature": temperature,
+            "maxOutputTokens": max_tokens,
+            "topP": 0.95,
+        },
+        # Let the model discuss attacks and poisoning: this is a security tool, and the
+        # default thresholds otherwise refuse legitimate questions about its own subject.
+        "safetySettings": [
+            {"category": c, "threshold": "BLOCK_ONLY_HIGH"} for c in (
+                "HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH",
+                "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT")
+        ],
+    }
+
+    last_err, last_status = "", 502
+    models = [GEMINI_MODEL] + ([GEMINI_FALLBACK] if GEMINI_FALLBACK and
+                               GEMINI_FALLBACK != GEMINI_MODEL else [])
+    # Try every key on the primary model, then every key on the fallback. A free-tier key
+    # exhausts quickly, so degrading the model beats returning nothing.
+    attempts = [(m, i) for m in models for i in range(max(1, len(GEMINI_KEYS)))]
+    quota_hit = False
+    for model, _ in attempts:
+        key = GEMINI_KEYS.acquire()
+        if key is None:
+            if model != models[-1]:
+                GEMINI_KEYS.revive()          # give the pool a chance on the cheaper model
+                key = GEMINI_KEYS.acquire()
+            if key is None:
+                wait = GEMINI_KEYS.cooldown_remaining()
+                return None, (f"All API keys are rate-limited right now. Try again in about "
+                              f"{int(wait) + 1}s, or add more keys to GEMINI_API_KEYS."), 429
+        try:
+            r = requests.post(
+                f"https://generativelanguage.googleapis.com/v1beta/models/"
+                f"{model}:generateContent?key={key.value}",
+                json=payload, headers={"Content-Type": "application/json"},
+                timeout=GEMINI_TIMEOUT)
+        except Exception as e:                       # network/timeout: bench briefly, rotate
+            GEMINI_KEYS.report(key, 503, str(e))
+            last_err, last_status = "The AI service did not respond in time.", 504
+            continue
+
+        if r.status_code == 200:
+            GEMINI_KEYS.report(key, 200)
+            data = r.json()
+            cand = (data.get("candidates") or [{}])[0]
+            parts = (cand.get("content") or {}).get("parts") or []
+            text = "".join(p.get("text", "") for p in parts).strip()
+            if text:
+                return text, None, 200
+            reason = cand.get("finishReason", "")
+            if reason == "SAFETY":
+                return None, "That question was blocked by the model's safety filter. Try rephrasing it.", 200
+            if reason == "MAX_TOKENS":
+                return None, "The answer was too long to finish. Ask something narrower.", 200
+            last_err, last_status = "The AI returned an empty response.", 502
+            continue
+
+        try:
+            msg = (r.json().get("error") or {}).get("message", "")
+        except Exception:
+            msg = r.text[:200]
+        GEMINI_KEYS.report(key, r.status_code, msg)
+        # Never surface the upstream message verbatim: it can echo the key in the URL.
+        if r.status_code == 429:
+            quota_hit = True
+            last_err, last_status = "Rate limited — rotating to another key.", 429
+        elif r.status_code in (401, 403):
+            last_err, last_status = "An API key was rejected (invalid or revoked).", 502
+        else:
+            last_err, last_status = f"The AI service returned an error ({r.status_code}).", 502
+
+    if quota_hit:
+        wait = GEMINI_KEYS.cooldown_remaining()
+        return None, (f"Every API key has hit its quota, on both {GEMINI_MODEL} and "
+                      f"{GEMINI_FALLBACK}. Try again in about {int(wait) + 1}s, or add "
+                      f"another key to GEMINI_API_KEYS in backend/.env."), 429
+    return None, (last_err or "The assistant is unavailable right now."), last_status
+
 
 @app.route("/api/chat", methods=["POST"])
 def chat_assistant():
-    """Gemini-powered chatbot endpoint for user assistance."""
-    try:
-        import requests
-        data = request.get_json() or {}
-        user_message = data.get("message", "").strip()
-        history = data.get("history", []) # List of {"role": "user"|"model", "text": "..."}
+    """Gemini-backed assistant with key rotation, rate limiting and bounded context."""
+    data = request.get_json(silent=True) or {}
+    user_message = str(data.get("message", "") or "").strip()
+    history = data.get("history", [])
 
-        if not user_message:
-            return jsonify({"success": False, "error": "Message is empty"}), 400
+    if not user_message:
+        return jsonify({"success": False, "error": "Message is empty."}), 400
+    if len(user_message) > MAX_MESSAGE_CHARS:
+        return jsonify({"success": False,
+                        "error": f"Message too long (limit {MAX_MESSAGE_CHARS} characters)."}), 400
+    if not isinstance(history, list):
+        return jsonify({"success": False, "error": "history must be a list."}), 400
 
-        # Build Gemini standard completion payload
-        contents = []
-        for msg in history:
-            role = "model" if msg.get("role") == "model" else "user"
-            contents.append({"role": role, "parts": [{"text": msg.get("text", "")}]})
-            
-        contents.append({"role": "user", "parts": [{"text": user_message}]})
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr or "?").split(",")[0].strip()
+    if not _chat_rate_ok(ip):
+        return jsonify({"success": False,
+                        "error": "Too many messages. Please wait a minute."}), 429
 
-        payload = {
-            "contents": contents,
-            "systemInstruction": {
-                "role": "system",
-                "parts": [{"text": BLOCKVERIFY_PERSONA.strip()}]
-            },
-            "generationConfig": {"temperature": 0.7, "maxOutputTokens": 800}
-        }
+    contents = []
+    for msg in history[-MAX_HISTORY_TURNS:]:
+        if not isinstance(msg, dict):
+            continue
+        text = str(msg.get("text", "") or "")[:MAX_MESSAGE_CHARS]
+        if not text.strip():
+            continue
+        contents.append({"role": "model" if msg.get("role") == "model" else "user",
+                         "parts": [{"text": text}]})
+    contents.append({"role": "user", "parts": [{"text": user_message}]})
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
-        resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
-        
-        if resp.status_code != 200:
-            error_data = resp.json()
-            ext_err = error_data.get("error", {}).get("message", "AI service temporarily unavailable")
-            return jsonify({"success": False, "error": f"Gemini API Error: {ext_err}"}), 500
-
-        resp_json = resp.json()
-        reply_text = resp_json.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-        
-        if not reply_text:
-            return jsonify({"success": False, "error": "AI returned an empty response"}), 500
-
-        return jsonify({"success": True, "reply": reply_text}), 200
-
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+    reply, err, status = _gemini_call(contents)
+    if err:
+        return jsonify({"success": False, "error": err}), status
+    return jsonify({"success": True, "reply": reply}), 200
 
 
+@app.route("/api/chat/health", methods=["GET"])
+def chat_health():
+    """Key-pool health. Values are MASKED — this route must never expose a raw key."""
+    st = GEMINI_KEYS.status()
+    return jsonify({"success": True, "model": GEMINI_MODEL, **st}), 200
 
 
 # ------------------------------------------------------------------ #

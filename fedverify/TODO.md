@@ -114,3 +114,21 @@ See `INVENTORY.md` §13 for detail. Listed here so they are not mistaken for Fed
 - `/api/fl/run/<id>` did not return `meta`, unlike the other read routes.
 - An unreachable or stale API rendered as "no runs committed yet", sending the reader
   looking in the wrong place. Down / stale / genuinely-empty are now distinct states.
+
+## Added in the comparison pass
+- `meta.detector` is now sent by `chain/push.py`, read from the aggregator registry rather
+  than duplicated in the UI. The comparison view needs to distinguish "made no per-client
+  decision" (Krum top-1, median, trimmed-mean, FedAvg) from "decided and caught nothing";
+  hardcoding that list in JavaScript would have been a second source of truth.
+- `flDetection()` is the single implementation of the TP/FP/FN maths, shared by the
+  single-run stat cards and the comparison table so the two views cannot disagree.
+- F1 follows the sklearn zero-division convention: 0 when a detector caught nothing,
+  null (rendered "—") only when the rule never decides. Reporting "—" for a detector that
+  simply failed would understate the failure.
+
+## Still deferred
+- The comparison assumes both runs share a client count and round count. Mismatched runs
+  render, but the accuracy chart pads the shorter series rather than aligning on round
+  number. Fine for the committed demos; worth a guard before anyone compares arbitrary runs.
+- Per-client `diag.scores` are still not exposed by the API, so the animation's z-scores
+  remain illustrative and the comparison cannot show WHY a client was rejected.

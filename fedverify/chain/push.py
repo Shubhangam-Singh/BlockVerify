@@ -24,6 +24,16 @@ import urllib.request
 DEFAULT_API = "http://localhost:5000/api"
 
 
+def _is_detector(name):
+    """Authoritative answer from the aggregator registry, or None if unknown."""
+    try:
+        from ..aggregators import AGGREGATORS
+        cls = AGGREGATORS.get(name)
+        return bool(cls.detects) if cls else None
+    except Exception:
+        return None
+
+
 def _post(url: str, payload: dict, timeout: float = 20.0):
     req = urllib.request.Request(
         url, data=json.dumps(payload).encode(),
@@ -78,6 +88,11 @@ def load_run(run_dir: str):
             "tauSource": c.get("tau_source"), "seed": c.get("seed"),
             "attackerIds": [str(x) for x in full.get("attacker_ids", [])],
             "numParams": full.get("num_params"),
+            # Whether this rule makes a per-client accept/reject DECISION, read from the
+            # registry rather than hardcoded in the UI. Krum's top-1 selection and the
+            # coordinate-wise rules discard clients without judging them, so a comparison
+            # must not score them as detectors.
+            "detector": _is_detector(c.get("aggregator")),
         }
 
     run_id = commits[0].get("run_id") if commits else None
