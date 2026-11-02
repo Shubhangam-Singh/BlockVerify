@@ -1,0 +1,8 @@
+ref,model_and_performance,security_measures,resilience_towards_cyberattacks
+[48],"ResNet 50, AUC 97%",Not implemented,Not tested
+[49],"VGG16 transfer learning, Accuracy 91%",Not implemented,Not tested
+[50],"SVM, Accuracy 92%",BC with 1024-bit RSA key,Not tested
+[51],"A-PSPNet (CNN), Accuracy 91%",InterPlanetary File System protocol,Not tested
+[52],"SVM, Accuracy 81%","BC with Asynchronous Privacy-Preserving Aggregation Module, BC's Latency 71s",Not tested
+[53],"Xception, Accuracy 90%",Privacy-Preserving based Aggregation,Not tested
+Our paper (Myrzashova et al.),"Customized ResNet, Accuracy 92.86%","Ethereum BC combined with SHA-256 (PoW), Latency 43s","Double Spending 91%, Transaction Malleability 88%, Endpoint Compromise 81%"

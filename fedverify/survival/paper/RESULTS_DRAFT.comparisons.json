@@ -1,0 +1,4736 @@
+[
+  {
+    "section": "methods_heart/lr",
+    "a": "vanilla FL",
+    "b": "centralized",
+    "metric": "roc_auc",
+    "a_mean": 0.8594510389012001,
+    "a_std": 0.0014278690436656573,
+    "b_mean": 0.8657700155780328,
+    "b_std": 0.0016498486848219064,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "fedavg_lr",
+      "central_lr"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": -0.00631897667683261,
+    "diff_std": 0.0009626249136639487,
+    "ci": [
+      -0.011551645095650927,
+      -0.0009547732430444674
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/lr",
+    "a": "vanilla FL",
+    "b": "local",
+    "metric": "roc_auc",
+    "a_mean": 0.8594510389012001,
+    "a_std": 0.0014278690436656573,
+    "b_mean": 0.8370021940030583,
+    "b_std": 0.002271038030072946,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedavg_lr",
+      "local_lr"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.02244884489814185,
+    "diff_std": 0.0019782909937514897,
+    "ci": [
+      0.01059449637079025,
+      0.03600803576816089
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/lr",
+    "a": "ours",
+    "b": "vanilla FL",
+    "metric": "roc_auc",
+    "a_mean": 0.8558585836423342,
+    "a_std": 0.0028411952796887096,
+    "b_mean": 0.8594510389012001,
+    "b_std": 0.0014278690436656573,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "ours_lr_eps4",
+      "fedavg_lr"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": -0.0035924552588659565,
+    "diff_std": 0.0022397591632831735,
+    "ci": [
+      -0.00760754220673395,
+      0.0002306783395413246
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/rf",
+    "a": "vanilla FL",
+    "b": "centralized",
+    "metric": "roc_auc",
+    "a_mean": 0.8635934791671238,
+    "a_std": 0.00219139361427092,
+    "b_mean": 0.879268051868267,
+    "b_std": 0.00026305696126034217,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "fed_rf",
+      "central_rf"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": -0.01567457270114314,
+    "diff_std": 0.0021072674861407855,
+    "ci": [
+      -0.02305116920767723,
+      -0.00836337087790839
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/rf",
+    "a": "vanilla FL",
+    "b": "local",
+    "metric": "roc_auc",
+    "a_mean": 0.8635934791671238,
+    "a_std": 0.00219139361427092,
+    "b_mean": 0.8685526228309287,
+    "b_std": 0.003752326235769242,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "fed_rf",
+      "local_rf"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": -0.004959143663805033,
+    "diff_std": 0.005551044498552737,
+    "ci": [
+      -0.01567537295698858,
+      0.005772854371038921
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/rf",
+    "a": "ours",
+    "b": "vanilla FL",
+    "metric": "roc_auc",
+    "a_mean": 0.8664428695760288,
+    "a_std": 0.0021919158993883997,
+    "b_mean": 0.8635934791671238,
+    "b_std": 0.00219139361427092,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "ours_rf",
+      "fed_rf"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.0028493904089050615,
+    "diff_std": 0.0018323570862773583,
+    "ci": [
+      1.878006352591871e-05,
+      0.005725370118673185
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000,
+    "written_as": "not ranked: screening a clean run excludes 13.3% of honest hospital-rounds (above 5.0%), so any gain may come from dropping a skewed hospital's updates rather than from catching attackers"
+  },
+  {
+    "section": "methods_heart/xgb",
+    "a": "vanilla FL",
+    "b": "centralized",
+    "metric": "roc_auc",
+    "a_mean": 0.8433727538012594,
+    "a_std": 0.004558267900073816,
+    "b_mean": 0.8458008790983756,
+    "b_std": 0.003130893341056007,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "fedxgb_bagging",
+      "central_xgb"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": -0.002428125297116246,
+    "diff_std": 0.004059091234554743,
+    "ci": [
+      -0.01602038139198522,
+      0.010537219179617538
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/xgb",
+    "a": "vanilla FL",
+    "b": "local",
+    "metric": "roc_auc",
+    "a_mean": 0.8433727538012594,
+    "a_std": 0.004558267900073816,
+    "b_mean": 0.8386593311614918,
+    "b_std": 0.009386879235051007,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is not distinguishable at this sample size from",
+    "cells": [
+      "fedxgb_bagging",
+      "local_xgb"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.004713422639767506,
+    "diff_std": 0.008497030888298987,
+    "ci": [
+      -0.010913333495251011,
+      0.020416361561080683
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/xgb",
+    "a": "ours",
+    "b": "vanilla FL",
+    "metric": "roc_auc",
+    "a_mean": 0.8383453642553628,
+    "a_std": 0.005078544619911343,
+    "b_mean": 0.8433727538012594,
+    "b_std": 0.004558267900073816,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is not distinguishable at this sample size from",
+    "cells": [
+      "ours_xgb",
+      "fedxgb_bagging"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": -0.005027389545896677,
+    "diff_std": 0.0026643185192642485,
+    "ci": [
+      -0.00912045058537647,
+      -0.0009792894817058694
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/lr",
+    "a": "vanilla FL",
+    "b": "centralized",
+    "metric": "c_index",
+    "a_mean": 0.5741645828597408,
+    "a_std": 0.018724488479478902,
+    "b_mean": 0.5756194589679472,
+    "b_std": 0.020189666486294465,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "fedavg_lr",
+      "central_lr"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.0014548761082064043,
+    "diff_std": 0.015266296998251659,
+    "ci": [
+      -0.04564026441389569,
+      0.040506457103388065
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/lr",
+    "a": "vanilla FL",
+    "b": "local",
+    "metric": "c_index",
+    "a_mean": 0.5741645828597408,
+    "a_std": 0.018724488479478902,
+    "b_mean": 0.5387019777222096,
+    "b_std": 0.017352666410910038,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedavg_lr",
+      "local_lr"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.03546260513753126,
+    "diff_std": 0.015196714235693293,
+    "ci": [
+      -0.03524433701858408,
+      0.10606427971548735
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/lr",
+    "a": "ours",
+    "b": "vanilla FL",
+    "metric": "c_index",
+    "a_mean": 0.5168106387815412,
+    "a_std": 0.037545261756012416,
+    "b_mean": 0.5741645828597408,
+    "b_std": 0.018724488479478902,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "ours_lr_eps4",
+      "fedavg_lr"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.05735394407819959,
+    "diff_std": 0.04344936103031138,
+    "ci": [
+      -0.1147916794987486,
+      0.0006342100636944603
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/rf",
+    "a": "vanilla FL",
+    "b": "centralized",
+    "metric": "c_index",
+    "a_mean": 0.6740281882245964,
+    "a_std": 0.012072455592925203,
+    "b_mean": 0.616350306887929,
+    "b_std": 0.009037029170030441,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fed_rf",
+      "central_rf"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.057677881336667444,
+    "diff_std": 0.017521318756295225,
+    "ci": [
+      0.012681020727014608,
+      0.10357496387123379
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000,
+    "clause": "but this gap was not diagnosed: Phase 8 diagnosed XGBoost only, and the random forest has no step-matched row; the centralized random forest's pooled held-out C-index is 0.615 after round 1 and 0.616 after round 30"
+  },
+  {
+    "section": "methods_tcga_survival/rf",
+    "a": "vanilla FL",
+    "b": "local",
+    "metric": "c_index",
+    "a_mean": 0.6740281882245964,
+    "a_std": 0.012072455592925203,
+    "b_mean": 0.6346612866560581,
+    "b_std": 0.013103389140330754,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fed_rf",
+      "local_rf"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.03936690156853832,
+    "diff_std": 0.01730844714179455,
+    "ci": [
+      -0.034202979521752004,
+      0.11101695789748328
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/rf",
+    "a": "ours",
+    "b": "vanilla FL",
+    "metric": "c_index",
+    "a_mean": 0.6692316435553535,
+    "a_std": 0.014540178386670042,
+    "b_mean": 0.6740281882245964,
+    "b_std": 0.012072455592925203,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "ours_rf",
+      "fed_rf"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.004796544669243019,
+    "diff_std": 0.002876181386972439,
+    "ci": [
+      -0.008599419924291281,
+      -0.001053997135539547
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/xgb",
+    "a": "vanilla FL",
+    "b": "centralized",
+    "metric": "c_index",
+    "a_mean": 0.6370481927710843,
+    "a_std": 0.01038457113698952,
+    "b_mean": 0.5646340077290294,
+    "b_std": 0.015772314051881738,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedxgb_bagging_aft",
+      "central_xgb_aft"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.07241418504205496,
+    "diff_std": 0.023133002270056244,
+    "ci": [
+      0.02349560486931002,
+      0.1218136845278796
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000,
+    "clause": "but centralized XGBoost over-fits (Phase 8: over the 30 rounds its training C-index rises from 0.830 to 0.993 while its held-out C-index falls from 0.666 to 0.565), and federated training is not distinguishable at this sample size from the step-matched centralized row (+0.037, 95% CI -0.002 to +0.075)"
+  },
+  {
+    "section": "methods_tcga_survival/xgb",
+    "a": "vanilla FL",
+    "b": "local",
+    "metric": "c_index",
+    "a_mean": 0.6370481927710843,
+    "a_std": 0.01038457113698952,
+    "b_mean": 0.6500738804273698,
+    "b_std": 0.020453566640050845,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is not distinguishable at this sample size from",
+    "cells": [
+      "fedxgb_bagging_aft",
+      "local_xgb_aft"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.013025687656285511,
+    "diff_std": 0.023424364314851308,
+    "ci": [
+      -0.07943491523307311,
+      0.04899792655000765
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/xgb",
+    "a": "ours",
+    "b": "vanilla FL",
+    "metric": "c_index",
+    "a_mean": 0.6258695157990453,
+    "a_std": 0.009417484829618284,
+    "b_mean": 0.6370481927710843,
+    "b_std": 0.01038457113698952,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "ours_xgb_aft",
+      "fedxgb_bagging_aft"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.011178676972039114,
+    "diff_std": 0.00998198236616001,
+    "ci": [
+      -0.022967589728543732,
+      0.0012071666781120417
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/site_rate",
+    "a": "Logistic regression: Local",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.8370021940030583,
+    "a_std": 0.002271038030072946,
+    "b_mean": 0.6740644038294169,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "local_lr",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.1629377901736414,
+    "diff_std": 0.0022710380300729276,
+    "ci": [
+      0.11980050515387193,
+      0.20780469765728798
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/site_rate",
+    "a": "Random forest: Local",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.8685526228309287,
+    "a_std": 0.003752326235769242,
+    "b_mean": 0.6740644038294169,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "local_rf",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.1944882190015119,
+    "diff_std": 0.0037523262357692182,
+    "ci": [
+      0.15604249925771724,
+      0.2332714214603586
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/site_rate",
+    "a": "XGBoost: Local",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.8386593311614918,
+    "a_std": 0.009386879235051007,
+    "b_mean": 0.6740644038294169,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "local_xgb",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.164594927332075,
+    "diff_std": 0.00938687923505099,
+    "ci": [
+      0.12720297102127756,
+      0.2014504528095484
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/site_rate",
+    "a": "Logistic regression: Centralized",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.8657700155780328,
+    "a_std": 0.0016498486848219064,
+    "b_mean": 0.6740644038294169,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "central_lr",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.19170561174861586,
+    "diff_std": 0.0016498486848219452,
+    "ci": [
+      0.15523038442640585,
+      0.2294595676264611
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/site_rate",
+    "a": "Random forest: Centralized",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.879268051868267,
+    "a_std": 0.00026305696126034217,
+    "b_mean": 0.6740644038294169,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "central_rf",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.20520364803885,
+    "diff_std": 0.00026305696126031875,
+    "ci": [
+      0.16954717822757598,
+      0.24111399928640023
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/site_rate",
+    "a": "XGBoost: Centralized",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.8458008790983756,
+    "a_std": 0.003130893341056007,
+    "b_mean": 0.6740644038294169,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "central_xgb",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.17173647526895877,
+    "diff_std": 0.003130893341056012,
+    "ci": [
+      0.13549529072799535,
+      0.20908328945920493
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/site_rate",
+    "a": "XGBoost: Centralized, step-matched (diagnostic)",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.8620151977239982,
+    "a_std": 0.004639212814403412,
+    "b_mean": 0.6740644038294169,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "central_xgb_steps",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.1879507938945813,
+    "diff_std": 0.004639212814403385,
+    "ci": [
+      0.1517139522097174,
+      0.2238376481480335
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/site_rate",
+    "a": "Logistic regression: Vanilla FL",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.8594510389012001,
+    "a_std": 0.0014278690436656573,
+    "b_mean": 0.6740644038294169,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedavg_lr",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.18538663507178327,
+    "diff_std": 0.001427869043665633,
+    "ci": [
+      0.14768120247935032,
+      0.22451971309528146
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/site_rate",
+    "a": "Random forest: Vanilla FL",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.8635934791671238,
+    "a_std": 0.00219139361427092,
+    "b_mean": 0.6740644038294169,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fed_rf",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.18952907533770685,
+    "diff_std": 0.0021913936142709434,
+    "ci": [
+      0.15195550674566227,
+      0.22845893795570535
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/site_rate",
+    "a": "XGBoost: Vanilla FL",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.8433727538012594,
+    "a_std": 0.004558267900073816,
+    "b_mean": 0.6740644038294169,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedxgb_bagging",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.16930834997184252,
+    "diff_std": 0.004558267900073794,
+    "ci": [
+      0.1304651132560336,
+      0.20728439446084276
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/site_rate",
+    "a": "Logistic regression: DP-FL",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.855848344559756,
+    "a_std": 0.002238980485474283,
+    "b_mean": 0.6740644038294169,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "dp_fedavg_lr_eps4",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.18178394073033913,
+    "diff_std": 0.00223898048547437,
+    "ci": [
+      0.14304983134701604,
+      0.22134604103270636
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/site_rate",
+    "a": "Logistic regression: Blockchain-FL (commit only)",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.8594510389012001,
+    "a_std": 0.0014278690436656573,
+    "b_mean": 0.6740644038294169,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "chain_fedavg_lr",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.18538663507178327,
+    "diff_std": 0.001427869043665633,
+    "ci": [
+      0.14768120247935032,
+      0.22451971309528146
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/site_rate",
+    "a": "Random forest: Blockchain-FL (commit only)",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.8635934791671238,
+    "a_std": 0.00219139361427092,
+    "b_mean": 0.6740644038294169,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "chain_fed_rf",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.18952907533770685,
+    "diff_std": 0.0021913936142709434,
+    "ci": [
+      0.15195550674566227,
+      0.22845893795570535
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/site_rate",
+    "a": "XGBoost: Blockchain-FL (commit only)",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.8433727538012594,
+    "a_std": 0.004558267900073816,
+    "b_mean": 0.6740644038294169,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "chain_fedxgb_bagging",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.16930834997184252,
+    "diff_std": 0.004558267900073794,
+    "ci": [
+      0.1304651132560336,
+      0.20728439446084276
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/site_rate",
+    "a": "Logistic regression: Ours",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.8558585836423342,
+    "a_std": 0.0028411952796887096,
+    "b_mean": 0.6740644038294169,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "ours_lr_eps4",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.1817941798129173,
+    "diff_std": 0.0028411952796887196,
+    "ci": [
+      0.14298696417188322,
+      0.22154818735643775
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/site_rate",
+    "a": "Random forest: Ours",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.8664428695760288,
+    "a_std": 0.0021919158993883997,
+    "b_mean": 0.6740644038294169,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "ours_rf",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.19237846574661194,
+    "diff_std": 0.0021919158993884,
+    "ci": [
+      0.1539529647139492,
+      0.23096460850827133
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/site_rate",
+    "a": "XGBoost: Ours",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.8383453642553628,
+    "a_std": 0.005078544619911343,
+    "b_mean": 0.6740644038294169,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "ours_xgb",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.16428096042594584,
+    "diff_std": 0.0050785446199113704,
+    "ci": [
+      0.12453906120089021,
+      0.20340245034640164
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Logistic regression: Local",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.5819690558053425,
+    "a_std": 0.016975268290749357,
+    "b_mean": 0.7004595345146787,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "local_lr",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.11849047870933618,
+    "diff_std": 0.016975268290749402,
+    "ci": [
+      -0.19106405053993894,
+      -0.04356862987474278
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Random forest: Local",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.6913581063210791,
+    "a_std": 0.015583120326876686,
+    "b_mean": 0.7004595345146787,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is not distinguishable at this sample size from",
+    "cells": [
+      "local_rf",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.00910142819359958,
+    "diff_std": 0.015583120326876695,
+    "ci": [
+      -0.07273054701144205,
+      0.05100625056000573
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "XGBoost: Local",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.6905448294102089,
+    "a_std": 0.013665254431698488,
+    "b_mean": 0.7004595345146787,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is not distinguishable at this sample size from",
+    "cells": [
+      "local_xgb",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.009914705104469745,
+    "diff_std": 0.01366525443169855,
+    "ci": [
+      -0.07229077551540551,
+      0.051308152463027785
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Logistic regression: Centralized",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.5777043110288284,
+    "a_std": 0.020248950172582394,
+    "b_mean": 0.7004595345146787,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "central_lr",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.12275522348585036,
+    "diff_std": 0.020248950172582464,
+    "ci": [
+      -0.20970853546610616,
+      -0.03623071560845915
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Random forest: Centralized",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.5920688971171647,
+    "a_std": 0.009280706725329211,
+    "b_mean": 0.7004595345146787,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "central_rf",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.10839063739751394,
+    "diff_std": 0.009280706725329218,
+    "ci": [
+      -0.19567684494997356,
+      -0.01936931670759575
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "XGBoost: Centralized",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.539668738428987,
+    "a_std": 0.008992720523848067,
+    "b_mean": 0.7004595345146787,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "central_xgb",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.16079079608569163,
+    "diff_std": 0.008992720523848067,
+    "ci": [
+      -0.24567490205580056,
+      -0.07837111098356578
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "XGBoost: Centralized, step-matched (diagnostic)",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.563303358899762,
+    "a_std": 0.012354762973459072,
+    "b_mean": 0.7004595345146787,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "central_xgb_steps",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.13715617561491672,
+    "diff_std": 0.012354762973459115,
+    "ci": [
+      -0.22135685608209094,
+      -0.05227162152868044
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Logistic regression: Vanilla FL",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.5408688177730759,
+    "a_std": 0.021111149270803764,
+    "b_mean": 0.7004595345146787,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "fedavg_lr",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.15959071674160277,
+    "diff_std": 0.02111114927080376,
+    "ci": [
+      -0.25010630156164365,
+      -0.06148911611013439
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Random forest: Vanilla FL",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.6127942343295425,
+    "a_std": 0.012916200433722963,
+    "b_mean": 0.7004595345146787,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "fed_rf",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.08766530018513623,
+    "diff_std": 0.012916200433722947,
+    "ci": [
+      -0.18023078400304612,
+      0.009519736371676414
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "XGBoost: Vanilla FL",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.6001388521555144,
+    "a_std": 0.007253975964177101,
+    "b_mean": 0.7004595345146787,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "fedxgb_bagging",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.10032068235916429,
+    "diff_std": 0.007253975964177059,
+    "ci": [
+      -0.19076982837937315,
+      -0.010299229945373528
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Logistic regression: DP-FL",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.5245702195186459,
+    "a_std": 0.031142110917400982,
+    "b_mean": 0.7004595345146787,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "dp_fedavg_lr_eps4",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.17588931499603283,
+    "diff_std": 0.031142110917400982,
+    "ci": [
+      -0.25724397261879006,
+      -0.09505544656331463
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Logistic regression: Blockchain-FL (commit only)",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.5408688177730759,
+    "a_std": 0.021111149270803764,
+    "b_mean": 0.7004595345146787,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "chain_fedavg_lr",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.15959071674160277,
+    "diff_std": 0.02111114927080376,
+    "ci": [
+      -0.25010630156164365,
+      -0.06148911611013439
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Random forest: Blockchain-FL (commit only)",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.6127942343295425,
+    "a_std": 0.012916200433722963,
+    "b_mean": 0.7004595345146787,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "chain_fed_rf",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.08766530018513623,
+    "diff_std": 0.012916200433722947,
+    "ci": [
+      -0.18023078400304612,
+      0.009519736371676414
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "XGBoost: Blockchain-FL (commit only)",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.6001388521555144,
+    "a_std": 0.007253975964177101,
+    "b_mean": 0.7004595345146787,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "chain_fedxgb_bagging",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.10032068235916429,
+    "diff_std": 0.007253975964177059,
+    "ci": [
+      -0.19076982837937315,
+      -0.010299229945373528
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Logistic regression: Ours",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.5223882570748479,
+    "a_std": 0.03689039010703448,
+    "b_mean": 0.7004595345146787,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "ours_lr_eps4",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.17807127743983078,
+    "diff_std": 0.03689039010703451,
+    "ci": [
+      -0.2575072802133381,
+      -0.09880128375750322
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Random forest: Ours",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.6085625495900555,
+    "a_std": 0.01596167638199401,
+    "b_mean": 0.7004595345146787,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "ours_rf",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.09189698492462314,
+    "diff_std": 0.01596167638199392,
+    "ci": [
+      -0.18458754046866424,
+      0.005701512698297938
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "XGBoost: Ours",
+    "b": "Site base rate only (reference)",
+    "metric": "roc_auc",
+    "a_mean": 0.5896224543771489,
+    "a_std": 0.013963015344381087,
+    "b_mean": 0.7004595345146787,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "ours_xgb",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.11083708013752977,
+    "diff_std": 0.013963015344381085,
+    "ci": [
+      -0.20109880530395835,
+      -0.021327909274663125
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Logistic regression: Local",
+    "b": "Site base rate only (reference)",
+    "metric": "f1",
+    "a_mean": 0.3166930397141411,
+    "a_std": 0.02564273609675442,
+    "b_mean": 0.4072398190045249,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "local_lr",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.09054677929038377,
+    "diff_std": 0.025642736096754416,
+    "ci": [
+      -0.16247672479093336,
+      -0.01743795102925516
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Random forest: Local",
+    "b": "Site base rate only (reference)",
+    "metric": "f1",
+    "a_mean": 0.3632090878544459,
+    "a_std": 0.01853044220730999,
+    "b_mean": 0.4072398190045249,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "local_rf",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.044030731150078994,
+    "diff_std": 0.01853044220730999,
+    "ci": [
+      -0.13268731089575428,
+      0.039946614720803894
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "XGBoost: Local",
+    "b": "Site base rate only (reference)",
+    "metric": "f1",
+    "a_mean": 0.36987534465555416,
+    "a_std": 0.024335614504711386,
+    "b_mean": 0.4072398190045249,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "local_xgb",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.03736447434897069,
+    "diff_std": 0.024335614504711386,
+    "ci": [
+      -0.12704235407385847,
+      0.052408376727240455
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Logistic regression: Centralized",
+    "b": "Site base rate only (reference)",
+    "metric": "f1",
+    "a_mean": 0.2547857913139798,
+    "a_std": 0.02367572627083996,
+    "b_mean": 0.4072398190045249,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "central_lr",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.1524540276905451,
+    "diff_std": 0.02367572627083996,
+    "ci": [
+      -0.2345124903724677,
+      -0.0695871198226239
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Random forest: Centralized",
+    "b": "Site base rate only (reference)",
+    "metric": "f1",
+    "a_mean": 0.22076034978022646,
+    "a_std": 0.03951482739720035,
+    "b_mean": 0.4072398190045249,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "central_rf",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.18647946922429845,
+    "diff_std": 0.03951482739720035,
+    "ci": [
+      -0.27901561199488095,
+      -0.0892126067757545
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "XGBoost: Centralized",
+    "b": "Site base rate only (reference)",
+    "metric": "f1",
+    "a_mean": 0.18947320711370094,
+    "a_std": 0.03830760572120014,
+    "b_mean": 0.4072398190045249,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "central_xgb",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.2177666118908239,
+    "diff_std": 0.038307605721200136,
+    "ci": [
+      -0.3088402119065614,
+      -0.1282042002106267
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "XGBoost: Centralized, step-matched (diagnostic)",
+    "b": "Site base rate only (reference)",
+    "metric": "f1",
+    "a_mean": 0.20405292600351785,
+    "a_std": 0.012501412506142817,
+    "b_mean": 0.4072398190045249,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "central_xgb_steps",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.203186893001007,
+    "diff_std": 0.012501412506142817,
+    "ci": [
+      -0.2941918137867564,
+      -0.11229673035093991
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Logistic regression: Vanilla FL",
+    "b": "Site base rate only (reference)",
+    "metric": "f1",
+    "a_mean": 0.26074773091141645,
+    "a_std": 0.019613154244161626,
+    "b_mean": 0.4072398190045249,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "fedavg_lr",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.1464920880931084,
+    "diff_std": 0.019613154244161626,
+    "ci": [
+      -0.2347365723440043,
+      -0.05269792845155041
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Random forest: Vanilla FL",
+    "b": "Site base rate only (reference)",
+    "metric": "f1",
+    "a_mean": 0.3061105358825887,
+    "a_std": 0.02361979158868786,
+    "b_mean": 0.4072398190045249,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "fed_rf",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.10112928312193618,
+    "diff_std": 0.02361979158868786,
+    "ci": [
+      -0.19622138758658653,
+      -0.0018124978145550544
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "XGBoost: Vanilla FL",
+    "b": "Site base rate only (reference)",
+    "metric": "f1",
+    "a_mean": 0.2749539103439033,
+    "a_std": 0.038989139235234505,
+    "b_mean": 0.4072398190045249,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "fedxgb_bagging",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.13228590866062154,
+    "diff_std": 0.038989139235234505,
+    "ci": [
+      -0.22140901350622183,
+      -0.042973950806446184
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Logistic regression: DP-FL",
+    "b": "Site base rate only (reference)",
+    "metric": "f1",
+    "a_mean": 0.2604042316290174,
+    "a_std": 0.01859414876480466,
+    "b_mean": 0.4072398190045249,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "dp_fedavg_lr_eps4",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.14683558737550753,
+    "diff_std": 0.01859414876480466,
+    "ci": [
+      -0.22499675820562648,
+      -0.06777390772775486
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Logistic regression: Blockchain-FL (commit only)",
+    "b": "Site base rate only (reference)",
+    "metric": "f1",
+    "a_mean": 0.26074773091141645,
+    "a_std": 0.019613154244161626,
+    "b_mean": 0.4072398190045249,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "chain_fedavg_lr",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.1464920880931084,
+    "diff_std": 0.019613154244161626,
+    "ci": [
+      -0.2347365723440043,
+      -0.05269792845155041
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Random forest: Blockchain-FL (commit only)",
+    "b": "Site base rate only (reference)",
+    "metric": "f1",
+    "a_mean": 0.3061105358825887,
+    "a_std": 0.02361979158868786,
+    "b_mean": 0.4072398190045249,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "chain_fed_rf",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.10112928312193618,
+    "diff_std": 0.02361979158868786,
+    "ci": [
+      -0.19622138758658653,
+      -0.0018124978145550544
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "XGBoost: Blockchain-FL (commit only)",
+    "b": "Site base rate only (reference)",
+    "metric": "f1",
+    "a_mean": 0.2749539103439033,
+    "a_std": 0.038989139235234505,
+    "b_mean": 0.4072398190045249,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "chain_fedxgb_bagging",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.13228590866062154,
+    "diff_std": 0.038989139235234505,
+    "ci": [
+      -0.22140901350622183,
+      -0.042973950806446184
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Logistic regression: Ours",
+    "b": "Site base rate only (reference)",
+    "metric": "f1",
+    "a_mean": 0.2520818649769683,
+    "a_std": 0.01456209567426944,
+    "b_mean": 0.4072398190045249,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "ours_lr_eps4",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.1551579540275566,
+    "diff_std": 0.014562095674269438,
+    "ci": [
+      -0.2317297177210725,
+      -0.07792175645204226
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "Random forest: Ours",
+    "b": "Site base rate only (reference)",
+    "metric": "f1",
+    "a_mean": 0.3063429540249808,
+    "a_std": 0.019206733928404593,
+    "b_mean": 0.4072398190045249,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "ours_rf",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.10089686497954413,
+    "diff_std": 0.019206733928404593,
+    "ci": [
+      -0.19772593901342,
+      -0.0001829103747435894
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/site_rate",
+    "a": "XGBoost: Ours",
+    "b": "Site base rate only (reference)",
+    "metric": "f1",
+    "a_mean": 0.28226526194569607,
+    "a_std": 0.012429652820969783,
+    "b_mean": 0.4072398190045249,
+    "b_std": 0.0,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "ours_xgb",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.1249745570588288,
+    "diff_std": 0.012429652820969783,
+    "ci": [
+      -0.213267751817479,
+      -0.03651806058481053
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/site_rate",
+    "a": "Logistic regression: Local",
+    "b": "Site base rate only (reference)",
+    "metric": "c_index",
+    "a_mean": 0.5387019777222096,
+    "a_std": 0.017352666410910038,
+    "b_mean": 0.5848545123891793,
+    "b_std": 0.0016705346339148093,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "local_lr",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.04615253466696976,
+    "diff_std": 0.01815140252328426,
+    "ci": [
+      -0.12557560856064123,
+      0.03629569476078145
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/site_rate",
+    "a": "Random forest: Local",
+    "b": "Site base rate only (reference)",
+    "metric": "c_index",
+    "a_mean": 0.6346612866560581,
+    "a_std": 0.013103389140330754,
+    "b_mean": 0.5848545123891793,
+    "b_std": 0.0016705346339148093,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "local_rf",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.04980677426687883,
+    "diff_std": 0.014067883715438843,
+    "ci": [
+      -0.015919145975356715,
+      0.11526138167189695
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/site_rate",
+    "a": "XGBoost AFT: Local",
+    "b": "Site base rate only (reference)",
+    "metric": "c_index",
+    "a_mean": 0.6500738804273698,
+    "a_std": 0.020453566640050845,
+    "b_mean": 0.5848545123891793,
+    "b_std": 0.0016705346339148093,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "local_xgb_aft",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.06521936803819048,
+    "diff_std": 0.019379991878081534,
+    "ci": [
+      -0.024487327923849053,
+      0.15033639972759025
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/site_rate",
+    "a": "Logistic regression: Centralized",
+    "b": "Site base rate only (reference)",
+    "metric": "c_index",
+    "a_mean": 0.5756194589679472,
+    "a_std": 0.020189666486294465,
+    "b_mean": 0.5848545123891793,
+    "b_std": 0.0016705346339148093,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is not distinguishable at this sample size from",
+    "cells": [
+      "central_lr",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.009235053421232098,
+    "diff_std": 0.021474749177783296,
+    "ci": [
+      -0.10152697031086536,
+      0.07655122157241251
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/site_rate",
+    "a": "Random forest: Centralized",
+    "b": "Site base rate only (reference)",
+    "metric": "c_index",
+    "a_mean": 0.616350306887929,
+    "a_std": 0.009037029170030441,
+    "b_mean": 0.5848545123891793,
+    "b_std": 0.0016705346339148093,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "central_rf",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.03149579449874971,
+    "diff_std": 0.010201589711221107,
+    "ci": [
+      -0.06287456609151106,
+      0.1232525478491609
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/site_rate",
+    "a": "XGBoost AFT: Centralized",
+    "b": "Site base rate only (reference)",
+    "metric": "c_index",
+    "a_mean": 0.5646340077290294,
+    "a_std": 0.015772314051881738,
+    "b_mean": 0.5848545123891793,
+    "b_std": 0.0016705346339148093,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "central_xgb_aft",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.020220504660149997,
+    "diff_std": 0.015699669247956956,
+    "ci": [
+      -0.12743497624266498,
+      0.08474583395984303
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/site_rate",
+    "a": "XGBoost AFT: Centralized, step-matched (diagnostic)",
+    "b": "Site base rate only (reference)",
+    "metric": "c_index",
+    "a_mean": 0.5998124573766765,
+    "a_std": 0.019695435855362268,
+    "b_mean": 0.5848545123891793,
+    "b_std": 0.0016705346339148093,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is not distinguishable at this sample size from",
+    "cells": [
+      "central_xgb_steps_aft",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.014957944987497163,
+    "diff_std": 0.019128019194597317,
+    "ci": [
+      -0.08985639271505028,
+      0.1215249335451295
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/site_rate",
+    "a": "Logistic regression: Vanilla FL",
+    "b": "Site base rate only (reference)",
+    "metric": "c_index",
+    "a_mean": 0.5741645828597408,
+    "a_std": 0.018724488479478902,
+    "b_mean": 0.5848545123891793,
+    "b_std": 0.0016705346339148093,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is not distinguishable at this sample size from",
+    "cells": [
+      "fedavg_lr",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.010689929529438503,
+    "diff_std": 0.02026957415188465,
+    "ci": [
+      -0.11077246571610506,
+      0.08882074175528555
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/site_rate",
+    "a": "Random forest: Vanilla FL",
+    "b": "Site base rate only (reference)",
+    "metric": "c_index",
+    "a_mean": 0.6740281882245964,
+    "a_std": 0.012072455592925203,
+    "b_mean": 0.5848545123891793,
+    "b_std": 0.0016705346339148093,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fed_rf",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.08917367583541716,
+    "diff_std": 0.012098224907012841,
+    "ci": [
+      -0.018906435845989153,
+      0.19491343019296675
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/site_rate",
+    "a": "XGBoost AFT: Vanilla FL",
+    "b": "Site base rate only (reference)",
+    "metric": "c_index",
+    "a_mean": 0.6370481927710843,
+    "a_std": 0.01038457113698952,
+    "b_mean": 0.5848545123891793,
+    "b_std": 0.0016705346339148093,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedxgb_bagging_aft",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.05219368038190497,
+    "diff_std": 0.011119821608328789,
+    "ci": [
+      -0.05912673404197579,
+      0.1608275991115391
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/site_rate",
+    "a": "Logistic regression: DP-FL",
+    "b": "Site base rate only (reference)",
+    "metric": "c_index",
+    "a_mean": 0.516549215730848,
+    "a_std": 0.03432785083793883,
+    "b_mean": 0.5848545123891793,
+    "b_std": 0.0016705346339148093,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "dp_fedavg_lr_eps4",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.06830529665833143,
+    "diff_std": 0.03375334500774739,
+    "ci": [
+      -0.16863372304369717,
+      0.023747664313438065
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/site_rate",
+    "a": "Logistic regression: Blockchain-FL (commit only)",
+    "b": "Site base rate only (reference)",
+    "metric": "c_index",
+    "a_mean": 0.5741645828597408,
+    "a_std": 0.018724488479478902,
+    "b_mean": 0.5848545123891793,
+    "b_std": 0.0016705346339148093,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is not distinguishable at this sample size from",
+    "cells": [
+      "chain_fedavg_lr",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.010689929529438503,
+    "diff_std": 0.02026957415188465,
+    "ci": [
+      -0.11077246571610506,
+      0.08882074175528555
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/site_rate",
+    "a": "Random forest: Blockchain-FL (commit only)",
+    "b": "Site base rate only (reference)",
+    "metric": "c_index",
+    "a_mean": 0.6740281882245964,
+    "a_std": 0.012072455592925203,
+    "b_mean": 0.5848545123891793,
+    "b_std": 0.0016705346339148093,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "chain_fed_rf",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.08917367583541716,
+    "diff_std": 0.012098224907012841,
+    "ci": [
+      -0.018906435845989153,
+      0.19491343019296675
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/site_rate",
+    "a": "XGBoost AFT: Blockchain-FL (commit only)",
+    "b": "Site base rate only (reference)",
+    "metric": "c_index",
+    "a_mean": 0.6370481927710843,
+    "a_std": 0.01038457113698952,
+    "b_mean": 0.5848545123891793,
+    "b_std": 0.0016705346339148093,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "chain_fedxgb_bagging_aft",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.05219368038190497,
+    "diff_std": 0.011119821608328789,
+    "ci": [
+      -0.05912673404197579,
+      0.1608275991115391
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/site_rate",
+    "a": "Logistic regression: Ours",
+    "b": "Site base rate only (reference)",
+    "metric": "c_index",
+    "a_mean": 0.5168106387815412,
+    "a_std": 0.037545261756012416,
+    "b_mean": 0.5848545123891793,
+    "b_std": 0.0016705346339148093,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "ours_lr_eps4",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.0680438736076381,
+    "diff_std": 0.03727980112727805,
+    "ci": [
+      -0.1671991629587092,
+      0.023959855820424703
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/site_rate",
+    "a": "Random forest: Ours",
+    "b": "Site base rate only (reference)",
+    "metric": "c_index",
+    "a_mean": 0.6692316435553535,
+    "a_std": 0.014540178386670042,
+    "b_mean": 0.5848545123891793,
+    "b_std": 0.0016705346339148093,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "ours_rf",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.08437713116617414,
+    "diff_std": 0.014640676966359505,
+    "ci": [
+      -0.024355604087541127,
+      0.1906260769512721
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/site_rate",
+    "a": "XGBoost AFT: Ours",
+    "b": "Site base rate only (reference)",
+    "metric": "c_index",
+    "a_mean": 0.6258695157990453,
+    "a_std": 0.009417484829618284,
+    "b_mean": 0.5848545123891793,
+    "b_std": 0.0016705346339148093,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "ours_xgb_aft",
+      "@site_rate"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.04101500340986586,
+    "diff_std": 0.009052896904158579,
+    "ci": [
+      -0.07260538603454512,
+      0.15362855010387869
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_heart/within_top",
+    "a": "Random forest: Centralized",
+    "b": "Random forest: Ours",
+    "metric": "roc_auc_within",
+    "a_mean": 0.8638811691423095,
+    "a_std": 0.0005217640080368632,
+    "b_mean": 0.8604935313847628,
+    "b_std": 0.0021928944746523967,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "central_rf",
+      "ours_rf"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.003387637757546735,
+    "diff_std": 0.002642897706378368,
+    "ci": [
+      -0.0029639219084661873,
+      0.010211753407150604
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_binary/within_top",
+    "a": "Random forest: Vanilla FL",
+    "b": "Random forest: Ours",
+    "metric": "roc_auc_within",
+    "a_mean": 0.6458071439521692,
+    "a_std": 0.014711804050601395,
+    "b_mean": 0.6413306760692932,
+    "b_std": 0.019185208610402897,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "fed_rf",
+      "ours_rf"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.00447646788287599,
+    "diff_std": 0.004699452181901794,
+    "ci": [
+      -0.0002931169549109687,
+      0.009257816834224736
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "methods_tcga_survival/within_top",
+    "a": "Random forest: Vanilla FL",
+    "b": "Random forest: Ours",
+    "metric": "c_index_within",
+    "a_mean": 0.6655042412818096,
+    "a_std": 0.011994536553242766,
+    "b_mean": 0.6602262016965128,
+    "b_std": 0.015450182061245949,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "fed_rf",
+      "ours_rf"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.005278039585296867,
+    "diff_std": 0.0035367569907839326,
+    "ci": [
+      -0.00010148295945930887,
+      0.010860753782746627
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "paired/methods_heart/xgb",
+    "a": "Vanilla FL",
+    "b": "Centralized, step-matched (diagnostic)",
+    "metric": "roc_auc",
+    "a_mean": 0.8433727538012594,
+    "a_std": 0.004558267900073816,
+    "b_mean": 0.8620151977239982,
+    "b_std": 0.004639212814403412,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "fedxgb_bagging",
+      "central_xgb_steps"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": -0.018642443922738793,
+    "diff_std": 0.004562029029529888,
+    "ci": [
+      -0.02972729031153131,
+      -0.00792036642618231
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "paired/methods_tcga_survival/xgb",
+    "a": "Vanilla FL",
+    "b": "Centralized, step-matched (diagnostic)",
+    "metric": "c_index",
+    "a_mean": 0.6370481927710843,
+    "a_std": 0.01038457113698952,
+    "b_mean": 0.5998124573766765,
+    "b_std": 0.019695435855362268,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedxgb_bagging_aft",
+      "central_xgb_steps_aft"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.03723573539440781,
+    "diff_std": 0.0266453361964733,
+    "ci": [
+      -0.0017399303397683716,
+      0.07468431502231036
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "paired_within/methods_heart/lr",
+    "a": "Vanilla FL",
+    "b": "Local",
+    "metric": "roc_auc_within",
+    "a_mean": 0.8469477719214182,
+    "a_std": 0.0023235764608443587,
+    "b_mean": 0.8409726880689986,
+    "b_std": 0.002609996851481267,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedavg_lr",
+      "local_lr"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.005975083852419738,
+    "diff_std": 0.0029259764813371826,
+    "ci": [
+      -0.0030117613052641676,
+      0.015159144486277079
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "paired_within/methods_heart/lr",
+    "a": "Vanilla FL",
+    "b": "Centralized",
+    "metric": "roc_auc_within",
+    "a_mean": 0.8469477719214182,
+    "a_std": 0.0023235764608443587,
+    "b_mean": 0.8480354575946334,
+    "b_std": 0.0014536503516216978,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "fedavg_lr",
+      "central_lr"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": -0.0010876856732151552,
+    "diff_std": 0.0014629588154358689,
+    "ci": [
+      -0.006204562079684421,
+      0.004137366161089274
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "paired_within/methods_heart/lr",
+    "a": "Ours",
+    "b": "Vanilla FL",
+    "metric": "roc_auc_within",
+    "a_mean": 0.8418160038332534,
+    "a_std": 0.003112840947381191,
+    "b_mean": 0.8469477719214182,
+    "b_std": 0.0023235764608443587,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "ours_lr_eps4",
+      "fedavg_lr"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": -0.005131768088164845,
+    "diff_std": 0.0030854676987558407,
+    "ci": [
+      -0.009972180031232255,
+      -0.0005032155243897436
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "paired_within/methods_heart/rf",
+    "a": "Vanilla FL",
+    "b": "Local",
+    "metric": "roc_auc_within",
+    "a_mean": 0.8581264973646382,
+    "a_std": 0.002053774770200479,
+    "b_mean": 0.8594345951126018,
+    "b_std": 0.0031721022951929777,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "fed_rf",
+      "local_rf"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": -0.001308097747963588,
+    "diff_std": 0.004440078984892012,
+    "ci": [
+      -0.011306645586534173,
+      0.008181581421659178
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "paired_within/methods_heart/rf",
+    "a": "Vanilla FL",
+    "b": "Centralized",
+    "metric": "roc_auc_within",
+    "a_mean": 0.8581264973646382,
+    "a_std": 0.002053774770200479,
+    "b_mean": 0.8638811691423095,
+    "b_std": 0.0005217640080368632,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "fed_rf",
+      "central_rf"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": -0.005754671777671305,
+    "diff_std": 0.002395088543214677,
+    "ci": [
+      -0.012360467727287772,
+      0.000789933428742747
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "paired_within/methods_heart/rf",
+    "a": "Ours",
+    "b": "Vanilla FL",
+    "metric": "roc_auc_within",
+    "a_mean": 0.8604935313847628,
+    "a_std": 0.0021928944746523967,
+    "b_mean": 0.8581264973646382,
+    "b_std": 0.002053774770200479,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "ours_rf",
+      "fed_rf"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.00236703402012457,
+    "diff_std": 0.0022223006007001016,
+    "ci": [
+      -0.0011431363153564435,
+      0.0061589543464075445
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "paired_within/methods_heart/xgb",
+    "a": "Vanilla FL",
+    "b": "Local",
+    "metric": "roc_auc_within",
+    "a_mean": 0.8359942501197892,
+    "a_std": 0.006507774247072634,
+    "b_mean": 0.8224197412553906,
+    "b_std": 0.010331667047529379,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedxgb_bagging",
+      "local_xgb"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.013574508864398682,
+    "diff_std": 0.009377596387873123,
+    "ci": [
+      -0.0028100001505308135,
+      0.030352772545633143
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "paired_within/methods_heart/xgb",
+    "a": "Vanilla FL",
+    "b": "Centralized",
+    "metric": "roc_auc_within",
+    "a_mean": 0.8359942501197892,
+    "a_std": 0.006507774247072634,
+    "b_mean": 0.8218782942022042,
+    "b_std": 0.0024587672085768014,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedxgb_bagging",
+      "central_xgb"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.014115955917585077,
+    "diff_std": 0.006897680571902274,
+    "ci": [
+      -0.0002875424772442529,
+      0.028411539320691445
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "paired_within/methods_heart/xgb",
+    "a": "Vanilla FL",
+    "b": "Centralized, step-matched (diagnostic)",
+    "metric": "roc_auc_within",
+    "a_mean": 0.8359942501197892,
+    "a_std": 0.006507774247072634,
+    "b_mean": 0.8410685194058457,
+    "b_std": 0.004197731159128937,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is not distinguishable at this sample size from",
+    "cells": [
+      "fedxgb_bagging",
+      "central_xgb_steps"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": -0.005074269286056543,
+    "diff_std": 0.006021581324548511,
+    "ci": [
+      -0.015693844041882274,
+      0.005519402722077302
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "paired_within/methods_heart/xgb",
+    "a": "Ours",
+    "b": "Vanilla FL",
+    "metric": "roc_auc_within",
+    "a_mean": 0.8350119789171059,
+    "a_std": 0.005598413262788868,
+    "b_mean": 0.8359942501197892,
+    "b_std": 0.006507774247072634,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "ours_xgb",
+      "fedxgb_bagging"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": -0.0009822712026833047,
+    "diff_std": 0.002892455826120999,
+    "ci": [
+      -0.006025592991806869,
+      0.0040130320040452135
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "paired_within/methods_tcga_survival/lr",
+    "a": "Vanilla FL",
+    "b": "Local",
+    "metric": "c_index_within",
+    "a_mean": 0.5737040527803958,
+    "a_std": 0.012630122233557048,
+    "b_mean": 0.523421300659755,
+    "b_std": 0.014274976653180617,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedavg_lr",
+      "local_lr"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.050282752120640886,
+    "diff_std": 0.009502217255743524,
+    "ci": [
+      -0.026223323818332044,
+      0.13653942411194833
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "paired_within/methods_tcga_survival/lr",
+    "a": "Vanilla FL",
+    "b": "Centralized",
+    "metric": "c_index_within",
+    "a_mean": 0.5737040527803958,
+    "a_std": 0.012630122233557048,
+    "b_mean": 0.5734684260131951,
+    "b_std": 0.021071410286125764,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "fedavg_lr",
+      "central_lr"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.00023562676720072505,
+    "diff_std": 0.017017408185926296,
+    "ci": [
+      -0.045121871230722366,
+      0.04410723604535804
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "paired_within/methods_tcga_survival/lr",
+    "a": "Ours",
+    "b": "Vanilla FL",
+    "metric": "c_index_within",
+    "a_mean": 0.5032987747408105,
+    "a_std": 0.047857472808011225,
+    "b_mean": 0.5737040527803958,
+    "b_std": 0.012630122233557048,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "ours_lr_eps4",
+      "fedavg_lr"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.07040527803958528,
+    "diff_std": 0.04914453650002626,
+    "ci": [
+      -0.13318613537457016,
+      -0.006309424930022804
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "paired_within/methods_tcga_survival/rf",
+    "a": "Vanilla FL",
+    "b": "Local",
+    "metric": "c_index_within",
+    "a_mean": 0.6655042412818096,
+    "a_std": 0.011994536553242766,
+    "b_mean": 0.5977615457115928,
+    "b_std": 0.015686532382992217,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fed_rf",
+      "local_rf"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.06774269557021677,
+    "diff_std": 0.023814919871663596,
+    "ci": [
+      0.009103325635822434,
+      0.13022374847374843
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "paired_within/methods_tcga_survival/rf",
+    "a": "Vanilla FL",
+    "b": "Centralized",
+    "metric": "c_index_within",
+    "a_mean": 0.6655042412818096,
+    "a_std": 0.011994536553242766,
+    "b_mean": 0.608459000942507,
+    "b_std": 0.014998805162584098,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fed_rf",
+      "central_rf"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.05704524033930254,
+    "diff_std": 0.02088263410678055,
+    "ci": [
+      0.015973306591301677,
+      0.09989826361296612
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000,
+    "clause": "but this gap was not diagnosed: Phase 8 diagnosed XGBoost only, and the random forest has no step-matched row; the centralized random forest's pooled held-out C-index is 0.615 after round 1 and 0.616 after round 30"
+  },
+  {
+    "section": "paired_within/methods_tcga_survival/rf",
+    "a": "Ours",
+    "b": "Vanilla FL",
+    "metric": "c_index_within",
+    "a_mean": 0.6602262016965128,
+    "a_std": 0.015450182061245949,
+    "b_mean": 0.6655042412818096,
+    "b_std": 0.011994536553242766,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "ours_rf",
+      "fed_rf"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.005278039585296867,
+    "diff_std": 0.0035367569907839326,
+    "ci": [
+      -0.01086075378274663,
+      0.00010148295945930702
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "paired_within/methods_tcga_survival/xgb",
+    "a": "Vanilla FL",
+    "b": "Local",
+    "metric": "c_index_within",
+    "a_mean": 0.6142318567389256,
+    "a_std": 0.012870431410834172,
+    "b_mean": 0.5948397737983034,
+    "b_std": 0.020965486628691538,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is not distinguishable at this sample size from",
+    "cells": [
+      "fedxgb_bagging_aft",
+      "local_xgb_aft"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.019392082940622068,
+    "diff_std": 0.02977424154553909,
+    "ci": [
+      -0.03155369022473271,
+      0.07028697430263073
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "paired_within/methods_tcga_survival/xgb",
+    "a": "Vanilla FL",
+    "b": "Centralized",
+    "metric": "c_index_within",
+    "a_mean": 0.6142318567389256,
+    "a_std": 0.012870431410834172,
+    "b_mean": 0.5464891611687087,
+    "b_std": 0.0208745235969543,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedxgb_bagging_aft",
+      "central_xgb_aft"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.0677426955702168,
+    "diff_std": 0.030319269119369816,
+    "ci": [
+      0.01664374579941847,
+      0.11899560092622816
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000,
+    "clause": "but centralized XGBoost over-fits (Phase 8: over the 30 rounds its training C-index rises from 0.830 to 0.993 while its held-out C-index falls from 0.666 to 0.565), and federated training is not distinguishable at this sample size from the step-matched centralized row (+0.033, 95% CI -0.009 to +0.075)"
+  },
+  {
+    "section": "paired_within/methods_tcga_survival/xgb",
+    "a": "Vanilla FL",
+    "b": "Centralized, step-matched (diagnostic)",
+    "metric": "c_index_within",
+    "a_mean": 0.6142318567389256,
+    "a_std": 0.012870431410834172,
+    "b_mean": 0.5811262959472197,
+    "b_std": 0.01875187925692412,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedxgb_bagging_aft",
+      "central_xgb_steps_aft"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.03310556079170594,
+    "diff_std": 0.029242174177790743,
+    "ci": [
+      -0.00942152409065063,
+      0.07535818613927603
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "paired_within/methods_tcga_survival/xgb",
+    "a": "Ours",
+    "b": "Vanilla FL",
+    "metric": "c_index_within",
+    "a_mean": 0.6085061262959472,
+    "a_std": 0.007798854459677379,
+    "b_mean": 0.6142318567389256,
+    "b_std": 0.012870431410834172,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "ours_xgb_aft",
+      "fedxgb_bagging_aft"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.005725730442978328,
+    "diff_std": 0.014925983965835075,
+    "ci": [
+      -0.019272751535533185,
+      0.008949779633094889
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "per_hospital_methods_heart/Cleveland",
+    "a": "LR, FedAvg",
+    "b": "LR, local",
+    "metric": "accuracy",
+    "a_mean": 0.7361842105263158,
+    "a_std": 0.019927804251132827,
+    "b_mean": 0.7519736842105263,
+    "b_std": 0.00975815590407323,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is not distinguishable at this sample size from",
+    "cells": [
+      "fedavg_lr",
+      "local_lr"
+    ],
+    "hospital": "Cleveland",
+    "dataset": "heart",
+    "diff_mean": -0.015789473684210555,
+    "diff_std": 0.015672538486278406,
+    "ci": [
+      -0.03486842105263159,
+      0.004605263157894756
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000,
+    "majority": 0.5427631578947368,
+    "majority_margin": 0.01
+  },
+  {
+    "section": "per_hospital_methods_heart/Hungary",
+    "a": "LR, FedAvg",
+    "b": "LR, local",
+    "metric": "accuracy",
+    "a_mean": 0.796923076923077,
+    "a_std": 0.0106726437888551,
+    "b_mean": 0.7853846153846153,
+    "b_std": 0.008770580193070261,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedavg_lr",
+      "local_lr"
+    ],
+    "hospital": "Hungary",
+    "dataset": "heart",
+    "diff_mean": 0.011538461538461563,
+    "diff_std": 0.016317848796612622,
+    "ci": [
+      -0.0030961538461538444,
+      0.027692307692307728
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000,
+    "majority": 0.6230769230769231,
+    "majority_margin": 0.01
+  },
+  {
+    "section": "per_hospital_methods_heart/VA Long Beach",
+    "a": "LR, FedAvg",
+    "b": "LR, local",
+    "metric": "accuracy",
+    "a_mean": 0.7723076923076924,
+    "a_std": 0.01166596222161778,
+    "b_mean": 0.7707692307692308,
+    "b_std": 0.023957556157534525,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not ranked against",
+    "rule": "bootstrap_ci",
+    "old_relation": "is not ranked against",
+    "cells": [
+      "fedavg_lr",
+      "local_lr"
+    ],
+    "hospital": "VA Long Beach",
+    "dataset": "heart",
+    "diff_mean": 0.001538461538461533,
+    "diff_std": 0.030479404240244545,
+    "ci": [
+      -0.0323076923076923,
+      0.036923076923076927
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000,
+    "majority": 0.7769230769230769,
+    "majority_margin": 0.01
+  },
+  {
+    "section": "per_hospital_methods_heart/Cleveland",
+    "a": "XGB, FedXGBBagging",
+    "b": "XGB, local",
+    "metric": "accuracy",
+    "a_mean": 0.7460526315789473,
+    "a_std": 0.014600224356034322,
+    "b_mean": 0.7671052631578947,
+    "b_std": 0.02666300543310453,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is not distinguishable at this sample size from",
+    "cells": [
+      "fedxgb_bagging",
+      "local_xgb"
+    ],
+    "hospital": "Cleveland",
+    "dataset": "heart",
+    "diff_mean": -0.021052631578947368,
+    "diff_std": 0.033026053678976666,
+    "ci": [
+      -0.049342105263157895,
+      0.007894736842105265
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000,
+    "majority": 0.5427631578947368,
+    "majority_margin": 0.01
+  },
+  {
+    "section": "per_hospital_methods_heart/Hungary",
+    "a": "XGB, FedXGBBagging",
+    "b": "XGB, local",
+    "metric": "accuracy",
+    "a_mean": 0.8015384615384615,
+    "a_std": 0.010741723110591506,
+    "b_mean": 0.7876923076923077,
+    "b_std": 0.008770580193070261,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedxgb_bagging",
+      "local_xgb"
+    ],
+    "hospital": "Hungary",
+    "dataset": "heart",
+    "diff_mean": 0.013846153846153841,
+    "diff_std": 0.006435846357954417,
+    "ci": [
+      -0.014615384615384586,
+      0.041538461538461524
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000,
+    "majority": 0.6230769230769231,
+    "majority_margin": 0.01
+  },
+  {
+    "section": "per_hospital_methods_heart/VA Long Beach",
+    "a": "XGB, FedXGBBagging",
+    "b": "XGB, local",
+    "metric": "accuracy",
+    "a_mean": 0.7461538461538462,
+    "a_std": 0.009421114395319882,
+    "b_mean": 0.64,
+    "b_std": 0.020640627484613427,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedxgb_bagging",
+      "local_xgb"
+    ],
+    "hospital": "VA Long Beach",
+    "dataset": "heart",
+    "diff_mean": 0.10615384615384618,
+    "diff_std": 0.023331924443235508,
+    "ci": [
+      0.05230769230769232,
+      0.1584615384615385
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000,
+    "majority": 0.7769230769230769,
+    "majority_margin": 0.01
+  },
+  {
+    "section": "per_hospital_methods_tcga/E2",
+    "a": "LR, FedAvg",
+    "b": "LR, local",
+    "metric": "c_index",
+    "a_mean": 0.4840506329113924,
+    "a_std": 0.07252623303639151,
+    "b_mean": 0.47189873417721523,
+    "b_std": 0.06401109501649464,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "fedavg_lr",
+      "local_lr"
+    ],
+    "hospital": "E2",
+    "dataset": "tcga",
+    "diff_mean": 0.012151898734177224,
+    "diff_std": 0.027582159392333883,
+    "ci": [
+      -0.25814835748059717,
+      0.2884903651115616
+    ],
+    "resamples": 2000,
+    "resamples_valid": 1995
+  },
+  {
+    "section": "per_hospital_methods_tcga/A2",
+    "a": "LR, FedAvg",
+    "b": "LR, local",
+    "metric": "c_index",
+    "a_mean": 0.49589905362776027,
+    "a_std": 0.037418621709044066,
+    "b_mean": 0.4514195583596214,
+    "b_std": 0.05919976727271189,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is not distinguishable at this sample size from",
+    "cells": [
+      "fedavg_lr",
+      "local_lr"
+    ],
+    "hospital": "A2",
+    "dataset": "tcga",
+    "diff_mean": 0.04447949526813881,
+    "diff_std": 0.030245276354051127,
+    "ci": [
+      -0.12207147965053008,
+      0.20367596735983146
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "per_hospital_methods_tcga/BH",
+    "a": "LR, FedAvg",
+    "b": "LR, local",
+    "metric": "c_index",
+    "a_mean": 0.5951165371809102,
+    "a_std": 0.01788208927740465,
+    "b_mean": 0.564927857935627,
+    "b_std": 0.011061721337570139,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedavg_lr",
+      "local_lr"
+    ],
+    "hospital": "BH",
+    "dataset": "tcga",
+    "diff_mean": 0.030188679245283057,
+    "diff_std": 0.018752594502862433,
+    "ci": [
+      -0.07749606546198431,
+      0.1407185086603348
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "per_hospital_methods_tcga/AR",
+    "a": "LR, FedAvg",
+    "b": "LR, local",
+    "metric": "c_index",
+    "a_mean": 0.626171875,
+    "a_std": 0.04126135467539132,
+    "b_mean": 0.433203125,
+    "b_std": 0.037553875686825756,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedavg_lr",
+      "local_lr"
+    ],
+    "hospital": "AR",
+    "dataset": "tcga",
+    "diff_mean": 0.19296875,
+    "diff_std": 0.05486856187318244,
+    "ci": [
+      0.03668105441652537,
+      0.35301163366336624
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "per_hospital_methods_tcga/E2",
+    "a": "XGB AFT, FedXGBBagging",
+    "b": "XGB AFT, local",
+    "metric": "c_index",
+    "a_mean": 0.6840506329113925,
+    "a_std": 0.01988591077129668,
+    "b_mean": 0.7549367088607595,
+    "b_std": 0.06272915050201695,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "fedxgb_bagging_aft",
+      "local_xgb_aft"
+    ],
+    "hospital": "E2",
+    "dataset": "tcga",
+    "diff_mean": -0.07088607594936709,
+    "diff_std": 0.052543082482322194,
+    "ci": [
+      -0.18740598341943998,
+      0.041676785032454956
+    ],
+    "resamples": 2000,
+    "resamples_valid": 1995
+  },
+  {
+    "section": "per_hospital_methods_tcga/A2",
+    "a": "XGB AFT, FedXGBBagging",
+    "b": "XGB AFT, local",
+    "metric": "c_index",
+    "a_mean": 0.6406940063091483,
+    "a_std": 0.054688889393487206,
+    "b_mean": 0.5435331230283912,
+    "b_std": 0.021593572635529263,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedxgb_bagging_aft",
+      "local_xgb_aft"
+    ],
+    "hospital": "A2",
+    "dataset": "tcga",
+    "diff_mean": 0.09716088328075707,
+    "diff_std": 0.05730948348200144,
+    "ci": [
+      -0.10415057491834818,
+      0.2700996680172369
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "per_hospital_methods_tcga/BH",
+    "a": "XGB AFT, FedXGBBagging",
+    "b": "XGB AFT, local",
+    "metric": "c_index",
+    "a_mean": 0.6174620791712911,
+    "a_std": 0.025118098111088824,
+    "b_mean": 0.6189049204587496,
+    "b_std": 0.01752158668515027,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "fedxgb_bagging_aft",
+      "local_xgb_aft"
+    ],
+    "hospital": "BH",
+    "dataset": "tcga",
+    "diff_mean": -0.001442841287458374,
+    "diff_std": 0.04065691169304226,
+    "ci": [
+      -0.06233922305913709,
+      0.05661088025916058
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "per_hospital_methods_tcga/AR",
+    "a": "XGB AFT, FedXGBBagging",
+    "b": "XGB AFT, local",
+    "metric": "c_index",
+    "a_mean": 0.510546875,
+    "a_std": 0.0879079843967721,
+    "b_mean": 0.4078125,
+    "b_std": 0.07221479948323818,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedxgb_bagging_aft",
+      "local_xgb_aft"
+    ],
+    "hospital": "AR",
+    "dataset": "tcga",
+    "diff_mean": 0.102734375,
+    "diff_std": 0.053065187779303434,
+    "ci": [
+      -0.023746838777660713,
+      0.23611017128018824
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "dp_sweep_heart",
+    "a": "eps=1",
+    "b": "no DP",
+    "metric": "roc_auc",
+    "a_mean": 0.842935398702562,
+    "a_std": 0.005734256111258585,
+    "b_mean": 0.8594510389012001,
+    "b_std": 0.0014278690436656573,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "dp_fedavg_lr_eps1",
+      "dp_fedavg_lr_epsinf"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": -0.01651564019863818,
+    "diff_std": 0.005617171455152959,
+    "ci": [
+      -0.02278404805593094,
+      -0.010371677684790359
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "dp_sweep_heart",
+    "a": "eps=2",
+    "b": "no DP",
+    "metric": "roc_auc",
+    "a_mean": 0.8524957763784367,
+    "a_std": 0.002910441740476894,
+    "b_mean": 0.8594510389012001,
+    "b_std": 0.0014278690436656573,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "dp_fedavg_lr_eps2",
+      "dp_fedavg_lr_epsinf"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": -0.006955262522763639,
+    "diff_std": 0.0024423310024493626,
+    "ci": [
+      -0.011573506647477203,
+      -0.0024453250133746945
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "dp_sweep_heart",
+    "a": "eps=4",
+    "b": "no DP",
+    "metric": "roc_auc",
+    "a_mean": 0.855848344559756,
+    "a_std": 0.002238980485474283,
+    "b_mean": 0.8594510389012001,
+    "b_std": 0.0014278690436656573,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "dp_fedavg_lr_eps4",
+      "dp_fedavg_lr_epsinf"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": -0.0036026943414441347,
+    "diff_std": 0.0016598767198472138,
+    "ci": [
+      -0.007646924969050904,
+      0.00022828914650212451
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "dp_sweep_heart",
+    "a": "eps=8",
+    "b": "no DP",
+    "metric": "roc_auc",
+    "a_mean": 0.8571882016514177,
+    "a_std": 0.0021382796587170725,
+    "b_mean": 0.8594510389012001,
+    "b_std": 0.0014278690436656573,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "dp_fedavg_lr_eps8",
+      "dp_fedavg_lr_epsinf"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": -0.0022628372497824232,
+    "diff_std": 0.0014672954497749067,
+    "ci": [
+      -0.006067551732200805,
+      0.0014073453106933842
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "dp_sweep_tcga",
+    "a": "eps=1",
+    "b": "no DP",
+    "metric": "c_index",
+    "a_mean": 0.507365310297795,
+    "a_std": 0.0389117012361296,
+    "b_mean": 0.5741645828597408,
+    "b_std": 0.018724488479478902,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "dp_fedavg_lr_eps1",
+      "dp_fedavg_lr_epsinf"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.0667992725619459,
+    "diff_std": 0.04776410530839321,
+    "ci": [
+      -0.1353330862370198,
+      0.0038171259520197406
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "dp_sweep_tcga",
+    "a": "eps=2",
+    "b": "no DP",
+    "metric": "c_index",
+    "a_mean": 0.5098317799499886,
+    "a_std": 0.03821602947209627,
+    "b_mean": 0.5741645828597408,
+    "b_std": 0.018724488479478902,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "dp_fedavg_lr_eps2",
+      "dp_fedavg_lr_epsinf"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.06433280290975223,
+    "diff_std": 0.04769661417060964,
+    "ci": [
+      -0.1263356601827753,
+      0.00014248316915179993
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "dp_sweep_tcga",
+    "a": "eps=4",
+    "b": "no DP",
+    "metric": "c_index",
+    "a_mean": 0.516549215730848,
+    "a_std": 0.03432785083793883,
+    "b_mean": 0.5741645828597408,
+    "b_std": 0.018724488479478902,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "dp_fedavg_lr_eps4",
+      "dp_fedavg_lr_epsinf"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.05761536712889294,
+    "diff_std": 0.04431512868021313,
+    "ci": [
+      -0.11108826412610072,
+      -0.003338815462705123
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "dp_sweep_tcga",
+    "a": "eps=8",
+    "b": "no DP",
+    "metric": "c_index",
+    "a_mean": 0.5203682655148898,
+    "a_std": 0.02522995456547117,
+    "b_mean": 0.5741645828597408,
+    "b_std": 0.018724488479478902,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is outperformed by",
+    "rule": "bootstrap_ci",
+    "old_relation": "is outperformed by",
+    "cells": [
+      "dp_fedavg_lr_eps8",
+      "dp_fedavg_lr_epsinf"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.053796317344851095,
+    "diff_std": 0.03444734859610826,
+    "ci": [
+      -0.1056380058492844,
+      -0.002682006045606183
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "attack_heart/lr/sign_flip",
+    "a": "screened",
+    "b": "unscreened",
+    "metric": "roc_auc",
+    "a_mean": 0.8102332316738705,
+    "a_std": 0.042702605149508084,
+    "b_mean": 0.655343704061259,
+    "b_std": 0.18403478651417263,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "is not distinguishable at this sample size from",
+    "cells": [
+      "ours_lr_eps4_sign_flip",
+      "ours_lr_eps4_sign_flip_noscreen"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.15488952761261163,
+    "diff_std": 0.14298244305641303,
+    "ci": [
+      0.1363178547746418,
+      0.172907730034778
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000,
+    "written_as": "not ranked: screening a clean run excludes 10.6% of honest hospital-rounds (above 5.0%), so any gain may come from dropping a skewed hospital's updates rather than from catching attackers"
+  },
+  {
+    "section": "attack_heart/lr/scaling",
+    "a": "screened",
+    "b": "unscreened",
+    "metric": "roc_auc",
+    "a_mean": 0.8532446921327278,
+    "a_std": 0.004571361273214839,
+    "b_mean": 0.8530954940723026,
+    "b_std": 0.004699152956979961,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "ours_lr_eps4_scaling",
+      "ours_lr_eps4_scaling_noscreen"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.00014919806042521522,
+    "diff_std": 0.0010581612623869947,
+    "ci": [
+      -0.0010945603384642534,
+      0.0014173575717077176
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "attack_heart/lr/label_flip",
+    "a": "screened",
+    "b": "unscreened",
+    "metric": "roc_auc",
+    "a_mean": 0.8107013040203027,
+    "a_std": 0.04093193274159692,
+    "b_mean": 0.785480980904111,
+    "b_std": 0.06438033729948912,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "ours_lr_eps4_label_flip",
+      "ours_lr_eps4_label_flip_noscreen"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.025220323116191667,
+    "diff_std": 0.025281642896912922,
+    "ci": [
+      0.020521985733474767,
+      0.03025589864083284
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000,
+    "written_as": "not ranked: screening a clean run excludes 10.6% of honest hospital-rounds (above 5.0%), so any gain may come from dropping a skewed hospital's updates rather than from catching attackers"
+  },
+  {
+    "section": "attack_heart/rf/label_flip_trees",
+    "a": "screened",
+    "b": "unscreened",
+    "metric": "roc_auc",
+    "a_mean": 0.8134687817685821,
+    "a_std": 0.04723640128276386,
+    "b_mean": 0.807209776861136,
+    "b_std": 0.05191447021809836,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "ours_rf_label_flip_trees",
+      "ours_rf_label_flip_trees_noscreen"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.006259004907445997,
+    "diff_std": 0.004837167370355859,
+    "ci": [
+      0.004454366784274414,
+      0.007969281048298115
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000,
+    "written_as": "not ranked: screening a clean run excludes 13.3% of honest hospital-rounds (above 5.0%), so any gain may come from dropping a skewed hospital's updates rather than from catching attackers"
+  },
+  {
+    "section": "attack_heart/rf/random_trees",
+    "a": "screened",
+    "b": "unscreened",
+    "metric": "roc_auc",
+    "a_mean": 0.8607660296494577,
+    "a_std": 0.007125613098921041,
+    "b_mean": 0.8561087098024588,
+    "b_std": 0.009303417398746438,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "ours_rf_random_trees",
+      "ours_rf_random_trees_noscreen"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.004657319846998864,
+    "diff_std": 0.003257060251308094,
+    "ci": [
+      0.001878237388421812,
+      0.007471521609597319
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000,
+    "written_as": "not ranked: screening a clean run excludes 13.3% of honest hospital-rounds (above 5.0%), so any gain may come from dropping a skewed hospital's updates rather than from catching attackers"
+  },
+  {
+    "section": "attack_heart/xgb/label_flip_trees",
+    "a": "screened",
+    "b": "unscreened",
+    "metric": "roc_auc",
+    "a_mean": 0.681111086732343,
+    "a_std": 0.13377247031236356,
+    "b_mean": 0.680606446233846,
+    "b_std": 0.13305712020947189,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "ours_xgb_label_flip_trees",
+      "ours_xgb_label_flip_trees_noscreen"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": 0.0005046404984970554,
+    "diff_std": 0.0011284104588387962,
+    "ci": [
+      -0.0012493755982991859,
+      0.002312878892159612
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "attack_heart/xgb/random_trees",
+    "a": "screened",
+    "b": "unscreened",
+    "metric": "roc_auc",
+    "a_mean": 0.835118590517147,
+    "a_std": 0.007197570318484038,
+    "b_mean": 0.8368650854597715,
+    "b_std": 0.007194022731256897,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "ours_xgb_random_trees",
+      "ours_xgb_random_trees_noscreen"
+    ],
+    "hospital": null,
+    "dataset": "heart",
+    "diff_mean": -0.0017464949426245547,
+    "diff_std": 0.005935860220669415,
+    "ci": [
+      -0.004125587822131494,
+      0.000585639407646132
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "attack_tcga/lr/sign_flip",
+    "a": "screened",
+    "b": "unscreened",
+    "metric": "c_index",
+    "a_mean": 0.5170379631734485,
+    "a_std": 0.047682246280562904,
+    "b_mean": 0.5167651739031598,
+    "b_std": 0.04146057434616322,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "ours_lr_eps4_sign_flip",
+      "ours_lr_eps4_sign_flip_noscreen"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.00027278927028868695,
+    "diff_std": 0.010173353881403653,
+    "ci": [
+      -0.00957081469232445,
+      0.009808942375426278
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "attack_tcga/lr/scaling",
+    "a": "screened",
+    "b": "unscreened",
+    "metric": "c_index",
+    "a_mean": 0.5174357808592862,
+    "a_std": 0.03422261888866732,
+    "b_mean": 0.5052284610138668,
+    "b_std": 0.04404686906949221,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "ours_lr_eps4_scaling",
+      "ours_lr_eps4_scaling_noscreen"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.012207319845419428,
+    "diff_std": 0.05344165413773632,
+    "ci": [
+      -0.017277818821106662,
+      0.044713741811154936
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "attack_tcga/lr/label_flip",
+    "a": "screened",
+    "b": "unscreened",
+    "metric": "c_index",
+    "a_mean": 0.5254603318936122,
+    "a_std": 0.0431892975941446,
+    "b_mean": 0.5265173903159809,
+    "b_std": 0.04051368957253618,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "ours_lr_eps4_label_flip",
+      "ours_lr_eps4_label_flip_noscreen"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.0010570584223687173,
+    "diff_std": 0.010108317843158332,
+    "ci": [
+      -0.012442566205028887,
+      0.010773437835860992
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "attack_tcga/rf/label_flip_trees",
+    "a": "screened",
+    "b": "unscreened",
+    "metric": "c_index",
+    "a_mean": 0.668276881109343,
+    "a_std": 0.03698296527660986,
+    "b_mean": 0.6548647419868152,
+    "b_std": 0.059520299886723166,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "ours_rf_label_flip_trees",
+      "ours_rf_label_flip_trees_noscreen"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.013412139122527833,
+    "diff_std": 0.02343209643671193,
+    "ci": [
+      -0.0006491778475993526,
+      0.028054491533158164
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "attack_tcga/rf/random_trees",
+    "a": "screened",
+    "b": "unscreened",
+    "metric": "c_index",
+    "a_mean": 0.6772220959308933,
+    "a_std": 0.03214067660253163,
+    "b_mean": 0.6789383950897931,
+    "b_std": 0.02947405061793959,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "ours_rf_random_trees",
+      "ours_rf_random_trees_noscreen"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.00171629915889977,
+    "diff_std": 0.0031198668227029607,
+    "ci": [
+      -0.004661328907082543,
+      0.001460207885060678
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "attack_tcga/xgb/label_flip_trees",
+    "a": "screened",
+    "b": "unscreened",
+    "metric": "c_index",
+    "a_mean": 0.6397249374857922,
+    "a_std": 0.026078534763732987,
+    "b_mean": 0.6208626960672881,
+    "b_std": 0.050365486871553206,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "ours_xgb_label_flip_trees",
+      "ours_xgb_label_flip_trees_noscreen"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.018862241418504212,
+    "diff_std": 0.025462776908831364,
+    "ci": [
+      -0.003827721368305244,
+      0.04090662110965182
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "attack_tcga/xgb/random_trees",
+    "a": "screened",
+    "b": "unscreened",
+    "metric": "c_index",
+    "a_mean": 0.6514889747669925,
+    "a_std": 0.028228580448301267,
+    "b_mean": 0.639923846328711,
+    "b_std": 0.028123121635467086,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "outperforms",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "ours_xgb_random_trees",
+      "ours_xgb_random_trees_noscreen"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.011565128438281457,
+    "diff_std": 0.01300376990311756,
+    "ci": [
+      0.0021982642055868537,
+      0.02164495836609723
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000,
+    "written_as": "not ranked: screening a clean run excludes 9.0% of honest hospital-rounds (above 5.0%), so any gain may come from dropping a skewed hospital's updates rather than from catching attackers"
+  },
+  {
+    "section": "attack_tcga_survival/xgb/label_flip_trees",
+    "a": "screened",
+    "b": "unscreened",
+    "metric": "c_index",
+    "a_mean": 0.6319504432825642,
+    "a_std": 0.019407389352647193,
+    "b_mean": 0.6270913844055468,
+    "b_std": 0.02099906763160863,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "ours_xgb_aft_label_flip_trees",
+      "ours_xgb_aft_label_flip_trees_noscreen"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.004859058877017497,
+    "diff_std": 0.007661982877040858,
+    "ci": [
+      -0.011878344441976685,
+      0.021694437538698243
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "attack_tcga_survival/xgb/random_trees",
+    "a": "screened",
+    "b": "unscreened",
+    "metric": "c_index",
+    "a_mean": 0.6291998181404865,
+    "a_std": 0.013615502367522911,
+    "b_mean": 0.6383098431461696,
+    "b_std": 0.029501475382633067,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "is comparable with",
+    "cells": [
+      "ours_xgb_aft_random_trees",
+      "ours_xgb_aft_random_trees_noscreen"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": -0.009110025005683097,
+    "diff_std": 0.01769149889290275,
+    "ci": [
+      -0.027875003100516896,
+      0.009051264429731014
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "limitations/central_xgb",
+    "a": "local_xgb_aft",
+    "b": "central_xgb_steps_aft",
+    "metric": "c_index",
+    "a_mean": 0.6500738804273698,
+    "a_std": 0.020453566640050845,
+    "b_mean": 0.5998124573766765,
+    "b_std": 0.019695435855362268,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "local_xgb_aft",
+      "central_xgb_steps_aft"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.050261423050693324,
+    "diff_std": 0.01833094090930176,
+    "ci": [
+      -0.007354637846749479,
+      0.11423360732405746
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "limitations/central_xgb",
+    "a": "local_xgb_aft",
+    "b": "central_xgb_aft",
+    "metric": "c_index_within",
+    "a_mean": 0.5948397737983034,
+    "a_std": 0.020965486628691538,
+    "b_mean": 0.5464891611687087,
+    "b_std": 0.0208745235969543,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "local_xgb_aft",
+      "central_xgb_aft"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.048350612629594725,
+    "diff_std": 0.025865552066861024,
+    "ci": [
+      -0.0038311936145452815,
+      0.1021658655809409
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  },
+  {
+    "section": "limitations/central_xgb",
+    "a": "fedxgb_bagging",
+    "b": "central_xgb_steps",
+    "metric": "roc_auc",
+    "a_mean": 0.6001388521555144,
+    "a_std": 0.007253975964177101,
+    "b_mean": 0.563303358899762,
+    "b_std": 0.012354762973459072,
+    "n_repeats": [
+      5,
+      5
+    ],
+    "relation": "is not distinguishable at this sample size from",
+    "rule": "bootstrap_ci",
+    "old_relation": "outperforms",
+    "cells": [
+      "fedxgb_bagging",
+      "central_xgb_steps"
+    ],
+    "hospital": null,
+    "dataset": "tcga",
+    "diff_mean": 0.036835493255752416,
+    "diff_std": 0.015573451459290292,
+    "ci": [
+      -0.00741362565978193,
+      0.07924796432822002
+    ],
+    "resamples": 2000,
+    "resamples_valid": 2000
+  }
+]

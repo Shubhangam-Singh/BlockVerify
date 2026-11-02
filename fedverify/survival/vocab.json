@@ -1,0 +1,50 @@
+{
+  "_about": "Fixed one-hot vocabulary: category NAMES only (public metadata, no counts), computed once from the full TCGA-BRCA cohort. Regenerate with: python3 -m fedverify.survival.data --write-vocab",
+  "source_sha256": "326d0f93bcdfd02cff803e30682d09153edb4ff5593ec82895e7beb4b3ef8b29",
+  "source_rows": 907,
+  "na_category": "NA",
+  "categorical": {
+    "menop_status": [
+      "Indeterminate (neither Pre or Postmenopausal)",
+      "Post",
+      "Pre",
+      "NA"
+    ],
+    "er_status_by_ihc": [
+      "Indeterminate",
+      "Negative",
+      "Positive",
+      "NA"
+    ],
+    "pr_status_by_ihc": [
+      "Indeterminate",
+      "Negative",
+      "Positive",
+      "NA"
+    ],
+    "her2_status_by_ihc": [
+      "Equivocal",
+      "Indeterminate",
+      "Negative",
+      "Positive",
+      "NA"
+    ],
+    "histological_type": [
+      "Infiltrating Ductal Carcinoma",
+      "Infiltrating Lobular Carcinoma",
+      "Medullary Carcinoma",
+      "Mixed Histology (please specify)",
+      "Mucinous Carcinoma",
+      "Other, specify",
+      "NA"
+    ],
+    "race": [
+      "american indian or alaska native",
+      "asian",
+      "black or african american",
+      "not reported",
+      "white",
+      "NA"
+    ]
+  }
+}

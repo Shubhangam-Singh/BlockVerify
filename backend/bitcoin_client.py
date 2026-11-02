@@ -28,7 +28,19 @@ except ImportError:
 # The fallback below is a throwaway testnet key (no real-money value) kept only so
 # the demo works out-of-the-box; set BTC_WIF in your .env to use your own wallet.
 # Address: mrDTrvKrLpW969E8CbqagN8KRRJ3u49huZ
-BTC_WIF = os.environ.get("BTC_WIF", "cVTqu1VtqxqzAkKNAQUTVh5FFwcbCRPEeo4EaH5TzgLw8UQpCU7y")
+_DEMO_WIF = "cVTqu1VtqxqzAkKNAQUTVh5FFwcbCRPEeo4EaH5TzgLw8UQpCU7y"
+_B58 = set("123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
+_PLACEHOLDERS = {"", "your_bitcoin_testnet_wif_here"}
+
+def _resolve_wif():
+    """Use BTC_WIF when it is a real WIF. The .env template value contains '_'
+    (not in base58), which used to crash the wallet badge with a library error."""
+    raw = (os.environ.get("BTC_WIF") or "").strip().strip('"').strip("'")
+    if raw.lower() in _PLACEHOLDERS or any(c not in _B58 for c in raw):
+        return _DEMO_WIF
+    return raw
+
+BTC_WIF = _resolve_wif()
 
 BLOCKSTREAM_API   = "https://blockstream.info/testnet/api"
 EXPLORER_BASE_URL = "https://blockstream.info/testnet/tx"
@@ -38,7 +50,7 @@ EXPLORER_BASE_URL = "https://blockstream.info/testnet/tx"
 def _get_key():
     if not BIT_AVAILABLE:
         raise RuntimeError("Bitcoin library (bit) is not installed on this server.")
-    return PrivateKeyTestnet(BTC_WIF)
+    return PrivateKeyTestnet(_resolve_wif())
 
 
 def get_wallet_balance() -> dict:

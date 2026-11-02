@@ -1,0 +1,37 @@
+%% FedVerify: system architecture — who talks to whom in one study run, and how a run reaches the dashboard.
+%% Plain labels first; code names in brackets. fedverify/tests/test_diagrams.py checks that every one exists.
+flowchart LR
+  subgraph HOSP["Hospitals: each keeps its own patients"]
+    direction TB
+    T["Train on own patients<br/>(dp_sgd_epochs(), train_new_trees())"]
+    SG["Sign the update<br/>(FoldCommitter.submit())"]
+  end
+  subgraph SRV["Aggregator server"]
+    direction TB
+    V["Check signature, round and counter<br/>(FoldCommitter.verify())"]
+    MR["Merkle root of the round<br/>(round_merkle_root())"]
+    SC["Screen out poisoned updates<br/>(Forensics.aggregate(), TreeProbeScreen.screen())"]
+    AV["Average the accepted updates<br/>(FedAvg.aggregate())"]
+  end
+  subgraph LED["Ledger"]
+    direction TB
+    AN["Anchor the round root<br/>(ChainAnchor.anchor_round())"]
+    BC["BlockVerify proof-of-work chain<br/>(Blockchain.mine_pending_transactions())"]
+    AL["Algorand Testnet, optional<br/>(broadcast_fl_round())"]
+  end
+  subgraph REP["Results and report"]
+    direction TB
+    RF["Run folders: rounds.jsonl, commitments.jsonl<br/>(survival/runner.py, survival/demo.py)"]
+    TB2["Tables, figures, results draft, showcase page<br/>(make_fl_healthcare_all.py)"]
+  end
+  subgraph DASH["Dashboard"]
+    direction TB
+    PU["Publish a run<br/>(push())"]
+    API["Server re-derives every root<br/>(commit_round_route())"]
+    UI["Federated tab: lineage and proof check<br/>(loadFederated(), flVerifyProof())"]
+  end
+  T --> SG --> V --> MR --> AN --> BC
+  AN -. optional .-> AL
+  MR --> SC --> AV -- new shared model --> T
+  AV --> RF --> TB2
+  RF --> PU --> API --> UI

@@ -1,0 +1,22 @@
+# FedVerify-Survival - additional dependencies (Phase 0)
+#
+# These ADD to fedverify/requirements.txt (torch, opacus, numpy, tqdm, wfdb, PyYAML); install that file first.
+# torch/torchvision still come from the CPU-only index (CLAUDE.md amendment A2).
+#
+#   pip install --break-system-packages -r fedverify/survival/requirements.txt
+#
+# Named by the master prompt:
+lifelines>=0.30      # C-index: lifelines.utils.concordance_index
+openpyxl>=3.1        # pandas.read_excel engine for fedverify/data/tcga_brca/clinical.xlsx
+cryptography>=41     # Ed25519 signed submissions (Phase 3)
+#
+# NOT named by the master prompt, but the build cannot run without them (see INVENTORY.md, "Decisions"):
+scikit-learn>=1.4    # random-forest family and StratifiedKFold (Phase 1)
+pandas>=2.1          # xlsx loader. lifelines 0.30.x declares pandas<3.0, so installing this file
+                     # DOWNGRADES a pandas 3.x install (3.0.5 on this machine) to 2.3.x.
+#
+# Revision 2 (Phase 2b): XGBoost. The CPU-only wheel: plain `xgboost` also pulls a ~200 MB NVIDIA NCCL library.
+xgboost-cpu>=3.0     # provides `import xgboost`; FedXGBBagging and survival:aft
+#
+# Revision 2 (Phase 5): figures (fedverify/analysis/make_fl_healthcare_figures.py)
+matplotlib>=3.7      # 300-dpi PNG + PDF figures; a Times-like serif is picked from the installed fonts

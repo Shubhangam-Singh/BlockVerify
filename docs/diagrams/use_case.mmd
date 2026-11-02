@@ -1,0 +1,38 @@
+%% Use-case diagram: who uses the system for what. (Mermaid has no native use-case notation: actors are the boxes
+%% outside the system boundary, use cases are the rounded shapes inside it.)
+flowchart LR
+  HOS["Actor: Hospital"]
+  AGG["Actor: Aggregator server"]
+  AUD["Actor: Auditor or examiner"]
+  RSR["Actor: Researcher"]
+  ADV["Actor: Adversary<br/>(malicious hospital or key thief)"]
+  subgraph SYS["FedVerify system"]
+    direction TB
+    UC1(["Train on own patients"])
+    UC2(["Sign and submit an update"])
+    UC3(["Check the previous block before a round"])
+    UC4(["Verify signatures and commit the round"])
+    UC5(["Screen out poisoned updates"])
+    UC6(["Average the accepted updates"])
+    UC7(["Anchor the round root on the ledger"])
+    UC8(["Verify an inclusion proof"])
+    UC9(["Inspect the accept / reject lineage"])
+    UC10(["Run the experiments and build the report"])
+    UC11(["Run the live demo"])
+  end
+  HOS --- UC1
+  HOS --- UC2
+  HOS --- UC3
+  AGG --- UC4
+  AGG --- UC5
+  AGG --- UC6
+  AGG --- UC7
+  AUD --- UC8
+  AUD --- UC9
+  AUD --- UC11
+  RSR --- UC10
+  RSR --- UC11
+  ADV -. "tries to get past" .-> UC4
+  ADV -. "tries to get past" .-> UC5
+  UC2 -. "include" .-> UC4
+  UC4 -. "include" .-> UC7

@@ -69,11 +69,22 @@
       --radius-sm: 9px;
       --radius-lg: 22px;
 
+      /* ── Motion (shared; forensic diagram reuses the same names) ── */
+      --e-out:  cubic-bezier(.16, 1, .3, 1);
+      --e-in:   cubic-bezier(.55, 0, 1, .45);
+      --e-move: cubic-bezier(.45, .05, .25, 1);
+      --e-back: cubic-bezier(.34, 1.4, .64, 1);
+
       /* ── Elevation / glow ── */
       --shadow-1: 0 1px 2px rgba(0,0,0,0.45);
       --shadow-2: 0 12px 34px rgba(0,0,0,0.40);
       --shadow-3: 0 28px 70px rgba(0,0,0,0.55);
       --glow: 0 0 0 1px rgba(var(--primary-rgb),0.30), 0 10px 36px rgba(var(--primary-rgb),0.22);
+
+      /* Sticky header height — JS syncs --header-h to the real header, and
+         --sticky-offset to header + any origin-warning banner. */
+      --header-h: 72px;
+      --sticky-offset: 72px;
     }
     body.light-theme {
       --bg: #eef1f6;
@@ -123,15 +134,75 @@
       cursor: url('data:image/svg+xml;utf8,<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 10.5V4.5a1.5 1.5 0 013 0v6M11 10V3.5a1.5 1.5 0 013 0v6.5M14 10.5V5.5a1.5 1.5 0 013 0v6M17 11v-1a1.5 1.5 0 013 0v5.5a6.5 6.5 0 01-13 0v-3.5a2.5 2.5 0 015 0z" fill="%233df0b8" stroke="%23ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>') 7 2, pointer !important;
     }
     
-    /* ── Hide Scrollbars Globally ── */
-    ::-webkit-scrollbar { display: none; }
-    * { -ms-overflow-style: none; scrollbar-width: none; }
+    /* Page scrollbar stays thin; overflow panes (Merkle, 3D strip, tables)
+       must remain visible — the old global hide clipped content with no hint. */
+    html { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.16) transparent; }
+    html::-webkit-scrollbar { width: 8px; height: 8px; }
+    html::-webkit-scrollbar-thumb { background: rgba(255,255,255,.16); border-radius: 8px; }
+    body.light-theme { scrollbar-color: rgba(15,23,42,.22) transparent; }
+    body.light-theme::-webkit-scrollbar-thumb,
+    body.light-theme html::-webkit-scrollbar-thumb { background: rgba(15,23,42,.22); }
+    .scroll-pane {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(var(--primary-rgb),.45) transparent;
+    }
+    .scroll-pane::-webkit-scrollbar { display: block; width: 8px; height: 8px; }
+    .scroll-pane::-webkit-scrollbar-thumb {
+      background: rgba(var(--primary-rgb),.45); border-radius: 8px;
+    }
+    .scroll-pane::-webkit-scrollbar-track { background: transparent; }
+
+    .mk-viewport {
+      position: relative; width: 100%; height: 520px; overflow: hidden;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--fv-wash-2); touch-action: none; cursor: grab;
+    }
+    .mk-viewport:active { cursor: grabbing; }
+    .mk-viewport svg { display: block; width: 100%; height: 100%; }
+    .mk-tools {
+      position: absolute; top: 10px; right: 10px; z-index: 4;
+      display: flex; gap: .3rem; align-items: center;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: .28rem .35rem;
+      box-shadow: var(--shadow-2);
+    }
+    .mk-tools button {
+      background: var(--fv-wash); border: 1px solid var(--border); color: var(--text);
+      border-radius: 7px; width: 30px; height: 28px; font-weight: 700; cursor: pointer;
+      font-family: var(--font); font-size: .85rem; line-height: 1;
+    }
+    .mk-tools button:hover { border-color: var(--primary); color: var(--primary); }
+    .mk-tools .mk-fit { width: auto; padding: 0 .55rem; font-size: .72rem; }
+    .mk-hint {
+      position: absolute; left: 12px; bottom: 10px; z-index: 4;
+      font-size: .68rem; color: var(--text-muted);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: .22rem .5rem; pointer-events: none;
+    }
+    .mk-legend {
+      position: absolute; right: 12px; bottom: 10px; z-index: 4;
+      display: flex; gap: .7rem; align-items: center;
+      font-size: .68rem; color: var(--text-muted);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 999px; padding: .22rem .7rem; pointer-events: none;
+    }
+    .mk-legend i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: .28rem; vertical-align: middle; }
+
+    button:focus-visible, .tab:focus-visible, .btn:focus-visible, a:focus-visible,
+    .hbtn:focus-visible, .flviz-btn:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
     
     /* ── Animated Background Canvas ── */
     #bg-canvas {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
-      pointer-events: none; opacity: 0.6;
+      pointer-events: none; opacity: 0;
+      animation: canvasIn 1.2s var(--e-out) .15s forwards;
     }
+    @keyframes canvasIn { to { opacity: .55; } }
+    body.light-theme #bg-canvas { animation-name: canvasInLight; }
+    @keyframes canvasInLight { to { opacity: .32; } }
     
     /* ── Header ── */
     .header {
@@ -188,6 +259,18 @@
       box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 60px rgba(var(--primary-rgb),0.15);
       animation: slideUpFade .25s ease;
     }
+    body.light-theme .auth-box {
+      background: linear-gradient(160deg, #ffffff 0%, #f4f7fb 100%);
+      box-shadow: 0 28px 70px rgba(15,23,42,0.16);
+    }
+    body.light-theme .chatbot-window,
+    body.light-theme .chatbot-btn {
+      background: rgba(255,255,255,0.96);
+    }
+    body.light-theme .chatbot-input,
+    body.light-theme .chatbot-input input {
+      background: rgba(15,23,42,0.04);
+    }
     .auth-logo { font-size: 2rem; text-align: center; margin-bottom: .3rem; }
     .auth-title { font-size: 1.4rem; font-weight: 800; text-align: center; margin-bottom: .25rem; }
     .auth-sub { text-align: center; color: var(--text-muted); font-size: .83rem; margin-bottom: 1.4rem; }
@@ -221,19 +304,24 @@
     .auth-err.show { display: block; }
     .auth-divider { text-align: center; font-size: .75rem; color: var(--text-muted); }
 
-    .app { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .app { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; animation: pageIn .7s var(--e-out); }
+    @keyframes pageIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
     /* ── Cards ── */
     .card, .stat-card {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
       backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.15); transition: transform 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      transition: transform .35s var(--e-out), box-shadow .35s var(--e-out), border-color .25s ease;
     }
     .card { padding: 1.8rem; margin-bottom: 1.5rem; }
     .stat-card { padding: 1.5rem; text-align: center; }
     .stat-card:hover { transform: translateY(-6px); box-shadow: 0 12px 40px rgba(0,0,0,0.25); border-color: rgba(255,255,255,0.15); }
+    .stats .stat-card:nth-child(1) { animation: slideUpFade .55s var(--e-out) .04s; }
+    .stats .stat-card:nth-child(2) { animation: slideUpFade .55s var(--e-out) .12s; }
+    .stats .stat-card:nth-child(3) { animation: slideUpFade .55s var(--e-out) .20s; }
 
-    .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: .7rem; margin-bottom: .9rem; }
     .stat-val {
       font-size: 2.2rem; font-weight: 700;
       background: linear-gradient(135deg, var(--primary), var(--primary-h));
@@ -249,8 +337,8 @@
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: .6rem;
-      position: sticky; top: 1rem; align-self: flex-start;
-      max-height: calc(100vh - 2rem); overflow-y: auto;
+      position: sticky; top: calc(var(--sticky-offset) + 8px); align-self: flex-start;
+      max-height: calc(100vh - var(--sticky-offset) - 16px); overflow-y: auto;
       scrollbar-width: thin; scrollbar-color: var(--border) transparent;
     }
     .sidebar::-webkit-scrollbar { width: 4px; }
@@ -282,10 +370,31 @@
     .tab .tab-icon { font-size: 1rem; width: 1.2rem; text-align: center; flex-shrink: 0; }
     .tab .tab-label { flex: 1; }
     .sidebar-content { flex: 1; min-width: 0; padding-left: 1.5rem; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; animation: slideUpFade .4s cubic-bezier(0.16,1,0.3,1); }
-    @keyframes slideUpFade { from { opacity:0; transform:translateY(15px); } to { opacity:1; transform:translateY(0); } }
+    html { scroll-padding-top: var(--sticky-offset); }
+    .insecure-banner {
+      display: none; position: sticky; top: var(--header-h); z-index: 99;
+      background: rgba(254, 202, 87, 0.12); border-bottom: 1px solid rgba(254, 202, 87, 0.45);
+      color: var(--warn); font-size: .8rem; padding: .45rem 1.2rem; text-align: center; line-height: 1.45;
+    }
+    .insecure-banner a { color: var(--primary); font-weight: 700; }
+    .insecure-banner.open { display: block; }
+    .tab-content { display: none; scroll-margin-top: calc(var(--sticky-offset) + 8px); }
+    .tab-content.active { display: block; animation: slideUpFade .45s var(--e-out); }
+    .tab-content.active > .card {
+      animation: cardIn .5s var(--e-out);
+    }
+    .tab-content.active > .card:nth-child(2) { animation-delay: .05s; }
+    .tab-content.active > .card:nth-child(3) { animation-delay: .10s; }
+    @keyframes slideUpFade { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes cardIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
     @keyframes feedPulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }
+    .chrome-collapse-head {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+      padding: .7rem 1.2rem; cursor: pointer; user-select: none;
+      background: rgba(var(--primary-rgb), 0.04); border-bottom: 1px solid var(--border);
+    }
+    .chrome-collapse-body { max-height: 0; overflow: hidden; transition: max-height .4s cubic-bezier(0.4,0,0.2,1); }
+    .chrome-collapse-body.open { max-height: 280px; padding: 1rem 1.4rem 1.2rem; }
     .feed-item {
       display: flex; align-items: flex-start; gap: .55rem; padding: .45rem .5rem;
       border-radius: 8px; font-size: .78rem; transition: background .2s; animation: slideUpFade .3s ease;
@@ -330,7 +439,7 @@
       transform: skewX(-20deg); transition: 0.5s;
     }
     .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(var(--primary-rgb),0.6); }
-    .btn:hover::after { left: 150%; }
+    .btn:hover::after { left: 150%; transition: left .55s var(--e-out); }
     .btn:active { transform: translateY(1px) scale(0.97); }
     .btn:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; transform: none; }
     .btn-sec { background: var(--surface2); border: 1px solid var(--border); box-shadow: none; color: var(--text); }
@@ -352,6 +461,11 @@
     }
     .file-drop:hover, .file-drop.dragover { border-color: var(--primary); transform: scale(1.01); box-shadow: 0 10px 30px rgba(var(--primary-rgb),0.15); }
     .file-drop:hover::before, .file-drop.dragover::before { opacity: 1; }
+    .file-drop.dragover { animation: dropGlow 1.4s ease-in-out infinite; }
+    @keyframes dropGlow {
+      0%,100% { box-shadow: 0 8px 24px rgba(var(--primary-rgb),0.12); }
+      50%     { box-shadow: 0 14px 40px rgba(var(--primary-rgb),0.32); }
+    }
     .file-drop p { color: var(--text-muted); font-size: 1rem; position: relative; z-index: 1; font-weight: 500; }
     .file-drop span.icon { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; transition: transform 0.3s; }
     .file-drop:hover span.icon { transform: translateY(-4px); }
@@ -860,14 +974,22 @@
     /* ── Click Particles ── */
     .click-network {
       position: fixed; pointer-events: none; z-index: 99999;
-      width: 100px; height: 100px;
-      margin-left: -50px; margin-top: -50px; /* Center perfectly on mouse */
-      animation: network-burst 0.7s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+      width: 120px; height: 120px;
+      margin-left: -60px; margin-top: -60px;
+      animation: network-burst 0.62s var(--e-out) forwards;
     }
     @keyframes network-burst {
-      0% { opacity: 0; transform: scale(0.4); }
-      15% { opacity: 1; transform: scale(1.1); }
-      100% { opacity: 0; transform: scale(1.3); }
+      0%   { opacity: 0; transform: scale(0.35); }
+      18%  { opacity: 1; transform: scale(1.05); }
+      100% { opacity: 0; transform: scale(1.28); }
+    }
+    .click-network .cn-ring {
+      transform-origin: 60px 60px;
+      animation: cnRing .62s var(--e-out) forwards;
+    }
+    @keyframes cnRing {
+      0%   { opacity: .7; transform: scale(.4); }
+      100% { opacity: 0; transform: scale(1.35); }
     }
     
     /* ── Guided Tour System ── */
@@ -1093,7 +1215,14 @@
         scroll-behavior: auto !important;
       }
       .fv-ring, .fv-scan, .tour-spotlight::after, .an-gauge, #bg-canvas,
-      .chat-typing span, .feed-dot, .alert-dot { animation: none !important; }
+      .chat-typing span, .feed-dot, .alert-dot, .header::after, .file-drop.dragover,
+      .cmp-packet, .cmp-beam, .cmp-star, .cmp-slab.match .st,
+      .cmp-slab.changed .cmp-face.f, .css3d-cube, .css3d-block.genesis,
+      .cmp-scan, .cmp-floor, .cmp-pad, .cmp-slab-inner, .cmp-col-label { animation: none !important; }
+      #bg-canvas { opacity: 0 !important; }
+      .app, .stats .stat-card, .tab-content.active, .tab-content.active > .card {
+        animation: none !important; opacity: 1 !important; transform: none !important;
+      }
     }
 
     /* ── Guided tour ───────────────────────────────────────────────────────
@@ -1212,7 +1341,13 @@
     }
     .header::after {
       content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(var(--primary-rgb),0.55), transparent);
+      background: linear-gradient(90deg, transparent 0%, rgba(var(--primary-rgb),0.15) 20%, rgba(var(--primary-rgb),0.7) 50%, rgba(var(--primary-rgb),0.15) 80%, transparent 100%);
+      background-size: 220% 100%;
+      animation: headerSheen 9s ease-in-out infinite;
+    }
+    @keyframes headerSheen {
+      0%,100% { background-position: 100% 0; opacity: .55; }
+      50%     { background-position: 0% 0; opacity: 1; }
     }
     .logo-img { width: 38px; height: 38px; border-radius: 10px; box-shadow: 0 0 0 1px rgba(var(--primary-rgb),0.35), 0 0 22px rgba(var(--primary-rgb),0.30); }
     .logo-word { font-size: 1.3rem; font-weight: 700; color: var(--text); }
@@ -1244,7 +1379,9 @@
     .user-pill .avatar { background: linear-gradient(135deg, var(--primary), var(--accent)); color: var(--primary-ink); }
 
     /* ── Stat cards ── */
-    .stats { gap: 1rem; }
+    .stats { gap: .7rem; }
+    .stat-card { padding: .9rem 1rem; }
+    .stat-val { font-size: 1.65rem; }
     .card, .stat-card {
       background: var(--surface); border: 1px solid var(--border);
       box-shadow: var(--shadow-2); backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2);
@@ -1264,7 +1401,7 @@
     .stat-card:hover { transform: translateY(-5px); border-color: rgba(var(--primary-rgb),0.35); box-shadow: var(--shadow-3), 0 0 40px -16px rgba(var(--primary-rgb),0.6); }
     .stat-ico { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; background: rgba(var(--primary-rgb),0.12); border: 1px solid rgba(var(--primary-rgb),0.25); color: var(--primary); margin-bottom: .2rem; }
     .stat-ico .ico { width: 18px; height: 18px; }
-    .stat-val { font-family: var(--display); font-size: 2.15rem; font-weight: 700; line-height: 1.05; -webkit-text-fill-color: var(--text); background: none; }
+    .stat-val { font-family: var(--display); font-size: 1.65rem; font-weight: 700; line-height: 1.05; -webkit-text-fill-color: var(--text); background: none; }
     .stat-lbl { font-size: .72rem; letter-spacing: .09em; }
 
     /* ── Sidebar / tabs ── */
@@ -1443,27 +1580,94 @@
     .cmp-verdict.diff  { border-color: rgba(var(--danger-rgb),.5);  background: rgba(var(--danger-rgb),.08);  color: var(--danger);  box-shadow: 0 0 26px -6px rgba(var(--danger-rgb),.5); animation: alertPulse 1.8s ease-in-out infinite; }
 
     /* 3D scene */
-    .cmp-3d-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .6rem; padding: 1rem 1.3rem; border-bottom: 1px solid var(--border); }
+    .cmp-3d-head {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .6rem;
+      padding: 1rem 1.3rem; border-bottom: 1px solid var(--border);
+      position: sticky; top: var(--sticky-offset); z-index: 6;
+      background: var(--surface); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    }
+    .cmp-hash-bar {
+      display: none; flex: 1 1 100%; gap: .6rem; flex-wrap: wrap;
+      font-family: var(--mono); font-size: .68rem; line-height: 1.35;
+    }
+    .cmp-hash-bar.show { display: flex; }
+    .cmp-hash-bar span {
+      flex: 1; min-width: 180px; word-break: break-all;
+      background: rgba(0,0,0,.22); border: 1px solid var(--border); border-radius: 8px; padding: .35rem .55rem;
+    }
+    .cmp-hash-bar span.match { border-color: rgba(var(--success-rgb),.4); color: var(--success); }
+    .cmp-hash-bar span.diff { border-color: rgba(var(--danger-rgb),.4); color: var(--danger); }
+    .cmp-3d-tools { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+    .cmp-3d-tools .btn { padding: .28rem .7rem; font-size: .72rem; }
+    .cmp-hud { font-size: .7rem; color: var(--text-muted); font-family: var(--mono); min-height: 1em; }
     .cmp-legend { display: flex; gap: 1rem; font-size: .72rem; color: var(--text-muted); flex-wrap: wrap; }
     .cmp-legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: .3rem; vertical-align: middle; }
     .cmp-dot.match { background: var(--success); box-shadow: 0 0 8px var(--success); }
     .cmp-dot.changed { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
     .cmp-dot.added { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
-    .cmp-scene { position: relative; height: 520px; overflow: hidden; perspective: 1250px; cursor: grab;
-      background: radial-gradient(120% 80% at 50% 0%, rgba(var(--primary-rgb),.07), transparent 60%), #05070b; }
+    .cmp-scene { position: relative; height: 620px; overflow: hidden; perspective: 1380px; cursor: grab;
+      background:
+        radial-gradient(90% 70% at 50% 0%, rgba(var(--primary-rgb),.10), transparent 58%),
+        radial-gradient(60% 50% at 18% 80%, rgba(var(--accent-rgb),.08), transparent 70%),
+        radial-gradient(60% 50% at 82% 80%, rgba(var(--primary-rgb),.07), transparent 70%),
+        #05070b; }
     .cmp-scene.dragging { cursor: grabbing; }
-    .cmp-floor { position: absolute; left: 50%; top: 66%; width: 1500px; height: 1500px; transform: translate(-50%,-50%) rotateX(81deg);
-      background-image: linear-gradient(rgba(var(--primary-rgb),.10) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--primary-rgb),.10) 1px, transparent 1px);
-      background-size: 50px 50px; -webkit-mask-image: radial-gradient(circle at center, #000 0%, transparent 60%); mask-image: radial-gradient(circle at center, #000 0%, transparent 60%); pointer-events: none; }
+    .cmp-scene::before, .cmp-scene::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 4; }
+    .cmp-scene::before {
+      background: linear-gradient(180deg, rgba(5,7,11,.55) 0%, transparent 18%, transparent 78%, rgba(5,7,11,.85) 100%);
+    }
+    .cmp-scene::after {
+      background: radial-gradient(ellipse at center, transparent 42%, rgba(5,7,11,.55) 100%);
+    }
+    .cmp-scan {
+      position: absolute; left: 0; right: 0; height: 90px; top: -90px; z-index: 5; pointer-events: none;
+      background: linear-gradient(180deg, transparent, rgba(var(--primary-rgb),.16), rgba(var(--accent-rgb),.08), transparent);
+      mix-blend-mode: screen;
+      animation: cmpScanSweep 3.4s var(--e-out) 1.15s 1;
+    }
+    @keyframes cmpScanSweep {
+      0% { top: -90px; opacity: 0; }
+      12% { opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+    .cmp-floor { position: absolute; left: 50%; top: 70%; width: 1700px; height: 1700px; transform: translate(-50%,-50%) rotateX(81deg);
+      background-image: linear-gradient(rgba(var(--primary-rgb),.11) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--primary-rgb),.11) 1px, transparent 1px);
+      background-size: 46px 46px; -webkit-mask-image: radial-gradient(circle at center, #000 0%, transparent 58%); mask-image: radial-gradient(circle at center, #000 0%, transparent 58%); pointer-events: none;
+      animation: cmpFloorDrift 28s linear infinite; }
+    @keyframes cmpFloorDrift { from { background-position: 0 0; } to { background-position: 46px 46px; } }
     .cmp-world { position: absolute; left: 50%; top: 50%; transform-style: preserve-3d; will-change: transform; }
-    .cmp-col-label { position: absolute; transform-style: preserve-3d; font-weight: 800; font-size: .82rem; letter-spacing: .14em; white-space: nowrap; margin: -10px 0 0 -45px; text-align: center; width: 90px; text-shadow: 0 0 12px currentColor; }
+    .cmp-world.is-focus .cmp-slab { filter: brightness(.42) saturate(.7); }
+    .cmp-world.is-focus .cmp-slab.is-on { filter: brightness(1.28) saturate(1.25); }
+    .cmp-world.is-focus .cmp-beam { opacity: .22 !important; }
+    .cmp-world.is-focus .cmp-beam.is-on { opacity: 1 !important; }
+    .cmp-col-label { position: absolute; transform-style: preserve-3d; font-weight: 800; font-size: .82rem; letter-spacing: .16em; white-space: nowrap; margin: -10px 0 0 -48px; text-align: center; width: 96px; text-shadow: 0 0 16px currentColor; animation: cmpLabelGlow 3.2s ease-in-out infinite; }
+    @keyframes cmpLabelGlow { 0%,100% { opacity: .82; filter: none; } 50% { opacity: 1; filter: drop-shadow(0 0 8px currentColor); } }
     /* volumetric layer slabs (6 faces) */
-    .cmp-slab { position: absolute; transform-style: preserve-3d; }
+    .cmp-slab { position: absolute; transform-style: preserve-3d; transition: filter .28s var(--e-out); }
+    .cmp-slab-inner { transform-style: preserve-3d; animation: cmpSlabFloat 3.8s ease-in-out infinite; }
+    @keyframes cmpSlabFloat {
+      0%,100% { transform: translateZ(0); }
+      50% { transform: translateZ(7px); }
+    }
+    .cmp-slab:not(.ghost):hover { filter: brightness(1.38) saturate(1.22); }
+    .cmp-slab:not(.ghost):hover .cmp-slab-inner { animation: none; transform: translateZ(16px) scale(1.045); transition: transform .28s var(--e-out); }
+    .cmp-slab.match .st { animation: cmpDotBreathe 2.6s ease-in-out infinite; }
+    .cmp-slab.added:not(.ghost) .cmp-face.f,
+    .cmp-slab.removed:not(.ghost) .cmp-face.f { animation: cmpWarnPulse 2.2s ease-in-out infinite; }
+    @keyframes cmpDotBreathe {
+      0%,100% { box-shadow: 0 0 6px var(--success); transform: scale(1); }
+      50%     { box-shadow: 0 0 14px 3px var(--success); transform: scale(1.25); }
+    }
+    @keyframes cmpWarnPulse {
+      0%,100% { box-shadow: 0 0 14px -2px rgba(var(--warn-rgb),.45), inset 0 0 10px rgba(var(--warn-rgb),.12); }
+      50%     { box-shadow: 0 0 28px 1px rgba(var(--warn-rgb),.8), inset 0 0 14px rgba(var(--warn-rgb),.28); }
+    }
     .cmp-face { position: absolute; box-sizing: border-box; background: linear-gradient(180deg, rgba(32,39,56,.98), rgba(13,17,26,.98)); border: 1px solid var(--border); }
     .cmp-face.f, .cmp-face.bk { width: var(--w); height: var(--h); left: calc(var(--w) / -2); top: calc(var(--h) / -2); }
     .cmp-face.lf, .cmp-face.rt { width: var(--d); height: var(--h); left: calc(var(--d) / -2); top: calc(var(--h) / -2); }
     .cmp-face.tp, .cmp-face.bt { width: var(--w); height: var(--d); left: calc(var(--w) / -2); top: calc(var(--d) / -2); }
-    .cmp-face.f  { transform: translateZ(calc(var(--d) / 2)); border-radius: 7px; display: flex; align-items: center; gap: .5rem; padding: 0 .65rem; font-size: .67rem; font-weight: 600; }
+    .cmp-face.f  { transform: translateZ(calc(var(--d) / 2)); border-radius: 7px; display: flex; align-items: center; gap: .5rem; padding: 0 .65rem; font-size: .67rem; font-weight: 600;
+      background: linear-gradient(180deg, rgba(48,58,78,.98), rgba(13,17,26,.98)); }
     .cmp-face.bk { transform: rotateY(180deg) translateZ(calc(var(--d) / 2)); filter: brightness(.55); }
     .cmp-face.rt { transform: rotateY(90deg)  translateZ(calc(var(--w) / 2)); filter: brightness(.7); }
     .cmp-face.lf { transform: rotateY(-90deg) translateZ(calc(var(--w) / 2)); filter: brightness(.7); }
@@ -1486,15 +1690,20 @@
     /* starfield + glow pads */
     .cmp-stars { position: absolute; transform-style: preserve-3d; }
     .cmp-star { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #d7fff2; box-shadow: 0 0 6px #7dffe0; animation: cmpTwinkle 3s ease-in-out infinite; }
+    .cmp-star.lg { width: 3px; height: 3px; box-shadow: 0 0 10px #9fffea; }
     @keyframes cmpTwinkle { 0%,100% { opacity: .2; } 50% { opacity: 1; } }
-    .cmp-pad { position: absolute; width: 240px; height: 240px; left: -120px; top: -120px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(var(--pc),.5), rgba(var(--pc),0) 66%); pointer-events: none; }
+    .cmp-pad { position: absolute; width: 280px; height: 280px; left: -140px; top: -140px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(var(--pc),.55), rgba(var(--pc),0) 66%); pointer-events: none;
+      animation: cmpPadPulse 4.5s ease-in-out infinite; }
+    @keyframes cmpPadPulse { 0%,100% { opacity: .62; } 50% { opacity: 1; } }
     /* energy beams */
-    .cmp-beam { position: absolute; transform-style: preserve-3d; height: 3px; margin-top: -1.5px; border-radius: 2px; pointer-events: none; background-size: 200% 100%; }
-    .cmp-beam.match { background-image: linear-gradient(90deg, rgba(var(--success-rgb),0), rgba(var(--success-rgb),.85), rgba(var(--success-rgb),0)); animation: cmpBeamFlow 2.6s linear infinite; }
-    .cmp-beam.changed { background-image: linear-gradient(90deg, rgba(var(--danger-rgb),0), rgba(var(--danger-rgb),.95), rgba(var(--danger-rgb),0)); box-shadow: 0 0 10px rgba(var(--danger-rgb),.6); animation: cmpBeamFlow 1.3s linear infinite; }
+    .cmp-beam { position: absolute; transform-style: preserve-3d; height: 4px; margin-top: -2px; border-radius: 3px; pointer-events: none; background-size: 200% 100%;
+      box-shadow: 0 0 12px currentColor; }
+    .cmp-beam.match { background-image: linear-gradient(90deg, rgba(var(--success-rgb),0), rgba(var(--success-rgb),.95), rgba(var(--success-rgb),0)); color: rgb(var(--success-rgb)); animation: cmpBeamFlow 2.4s linear infinite; }
+    .cmp-beam.changed { background-image: linear-gradient(90deg, rgba(var(--danger-rgb),0), rgba(var(--danger-rgb),1), rgba(var(--danger-rgb),0)); color: rgb(var(--danger-rgb)); box-shadow: 0 0 16px rgba(var(--danger-rgb),.75); animation: cmpBeamFlow 1.15s linear infinite; }
     @keyframes cmpBeamFlow { from { background-position: 180% 0; } to { background-position: -180% 0; } }
     .cmp-packet { position: absolute; left: 0; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 12px 2px var(--danger); animation: cmpFlow 1.2s linear infinite; }
+    .cmp-packet.match { background: var(--success); box-shadow: 0 0 12px 2px var(--success); animation-duration: 2.4s; animation-delay: .4s; }
     @keyframes cmpFlow { 0% { left: 0; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
     .cmp-tip { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 30; background: rgba(8,11,17,.96); border: 1px solid var(--border); border-radius: 8px; padding: .5rem .7rem; font-size: .72rem; max-width: 240px; opacity: 0; transform: translateY(4px); transition: opacity .15s; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
     .cmp-tip.show { opacity: 1; transform: translateY(0); }
@@ -1752,8 +1961,9 @@
     <span class="logo-word">Block<span>Verify</span></span>
   </div>
   <div class="user-box">
+    <button class="hbtn hbtn-icon" onclick="toggleTheme()" id="themeToggle" title="Toggle theme"><svg class="ico"><use href="#i-sun"/></svg></button>
     <!-- Shown when logged OUT -->
-    <div id="headerLoggedOut">
+    <div id="headerLoggedOut" style="display:flex;align-items:center;gap:.5rem;">
       <button class="btn-login-header" onclick="openAuthModal('login')"><svg class="ico"><use href="#i-lock"/></svg> Login / Register</button>
     </div>
     <!-- Shown when logged IN -->
@@ -1764,11 +1974,14 @@
       </div>
       <button class="hbtn" onclick="startGuidedTour()" title="Interactive Tour"><svg class="ico"><use href="#i-compass"/></svg><span class="hbtn-tx">Tour</span></button>
       <button class="hbtn" onclick="showWelcome()" title="Quick start guide"><svg class="ico"><use href="#i-help"/></svg><span class="hbtn-tx">Help</span></button>
-      <button class="hbtn hbtn-icon" onclick="toggleTheme()" id="themeToggle" title="Toggle theme"><svg class="ico"><use href="#i-sun"/></svg></button>
       <button class="hbtn hbtn-icon btn-logout" onclick="logout()" title="Logout"><svg class="ico"><use href="#i-logout"/></svg></button>
     </div>
   </div>
 </header>
+<div id="insecureBanner" class="insecure-banner" role="status">
+  This page is open at a non-secure origin, so the browser disables native SHA-256 and clipboard.
+  Use <a href="http://localhost:8080/" id="insecureLocalLink">http://localhost:8080</a> instead of <code>0.0.0.0</code>.
+</div>
 
 <div id="toastContainer" class="toast-container"></div>
 
@@ -1778,38 +1991,41 @@
   <div class="stats">
     <div class="stat-card"><div class="stat-ico"><svg class="ico"><use href="#i-models"/></svg></div><div class="stat-val" id="sModels">—</div><div class="stat-lbl">Models Registered</div></div>
     <div class="stat-card"><div class="stat-ico"><svg class="ico"><use href="#i-verify"/></svg></div><div class="stat-val" id="sVerify">—</div><div class="stat-lbl">Verifications</div></div>
-    <div class="stat-card"><div class="stat-ico"><svg class="ico"><use href="#i-cube"/></svg></div><div class="stat-val" id="sBlocks">—</div><div class="stat-lbl">Algorand Round</div></div>
+    <div class="stat-card"><div class="stat-ico"><svg class="ico"><use href="#i-cube"/></svg></div><div class="stat-val" id="sBlocks">—</div><div class="stat-lbl">Testnet round</div></div>
   </div>
 
   <!-- Algorand Wallet Link -->
   <div id="walletAddrBar" style="text-align:center;margin:-0.8rem 0 1.2rem;font-size:.78rem;color:var(--text-muted);display:flex;align-items:center;justify-content:center;gap:.35rem;flex-wrap:wrap;">
     <svg class="ico" style="width:.95em;height:.95em;color:var(--primary);"><use href="#i-proof"/></svg> Server Wallet: <span id="walletAddrShort" style="font-family:var(--mono);color:var(--text-muted);">connecting…</span>
-    <a id="walletAddrLink" href="https://lora.algokit.io/testnet" target="_blank" style="color:var(--primary);margin-left:.4rem;font-size:.75rem;display:none;">[View on Algorand ↗]</a>
+    <a id="walletAddrLink" href="https://lora.algokit.io/testnet" target="_blank" rel="noopener noreferrer" style="color:var(--primary);margin-left:.4rem;font-size:.75rem;display:none;">[View on Algorand ↗]</a>
   </div>
 
-  <!-- Activity Chart -->
-  <div class="card" style="margin-bottom:1.5rem;padding:1.4rem 1.8rem;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem;">
+  <!-- Activity Chart (collapsed by default so tab content starts on-screen) -->
+  <div class="card" id="activityChartCard" style="margin-bottom:.8rem;padding:0;overflow:hidden;">
+    <div class="chrome-collapse-head" onclick="toggleActivityChart()">
       <div style="display:flex;align-items:center;gap:.7rem;">
         <span class="card-title-ico"><svg class="ico"><use href="#i-chart"/></svg></span>
         <div>
-          <div style="font-size:1.05rem;font-weight:700;font-family:var(--display);letter-spacing:-.02em;">Platform Activity</div>
-          <div style="font-size:.8rem;color:var(--text-muted);">Daily registrations &amp; verifications</div>
+          <div style="font-size:.95rem;font-weight:700;font-family:var(--display);letter-spacing:-.02em;">Platform Activity</div>
+          <div style="font-size:.75rem;color:var(--text-muted);">Daily registrations &amp; verifications</div>
         </div>
       </div>
-      <div style="display:flex;gap:.4rem;">
-        <button onclick="loadActivityChart(7)"  class="btn btn-sec" id="actBtn7"  style="padding:.3rem .75rem;font-size:.8rem;" data-tip="Show last 7 days of platform activity.">7d</button>
-        <button onclick="loadActivityChart(14)" class="btn"        id="actBtn14" style="padding:.3rem .75rem;font-size:.8rem;" data-tip="Show last 14 days of platform activity.">14d</button>
-        <button onclick="loadActivityChart(30)" class="btn btn-sec" id="actBtn30" style="padding:.3rem .75rem;font-size:.8rem;" data-tip="Show last 30 days of platform activity.">30d</button>
-      </div>
+      <span id="actToggleArrow" style="font-size:.7rem;color:var(--text-muted);transition:transform .3s;">▼</span>
     </div>
-    <div style="position:relative;height:180px;">
-      <canvas id="activityChart"></canvas>
+    <div id="activityChartBody" class="chrome-collapse-body">
+      <div style="display:flex;gap:.4rem;margin-bottom:.8rem;flex-wrap:wrap;">
+        <button onclick="event.stopPropagation();loadActivityChart(7)"  class="btn btn-sec" id="actBtn7"  style="padding:.3rem .75rem;font-size:.8rem;" data-tip="Show last 7 days of platform activity.">7d</button>
+        <button onclick="event.stopPropagation();loadActivityChart(14)" class="btn"        id="actBtn14" style="padding:.3rem .75rem;font-size:.8rem;" data-tip="Show last 14 days of platform activity.">14d</button>
+        <button onclick="event.stopPropagation();loadActivityChart(30)" class="btn btn-sec" id="actBtn30" style="padding:.3rem .75rem;font-size:.8rem;" data-tip="Show last 30 days of platform activity.">30d</button>
+      </div>
+      <div style="position:relative;height:180px;">
+        <canvas id="activityChart"></canvas>
+      </div>
     </div>
   </div>
 
   <!-- Live Activity Feed -->
-  <div class="card" id="activityFeedCard" style="margin-bottom:1.2rem;padding:0;overflow:hidden;">
+  <div class="card" id="activityFeedCard" style="margin-bottom:.8rem;padding:0;overflow:hidden;">
     <div onclick="toggleFeedPanel()" style="display:flex;align-items:center;justify-content:space-between;padding:.7rem 1.2rem;cursor:pointer;user-select:none;background:rgba(var(--primary-rgb),0.04);border-bottom:1px solid var(--border);">
       <div style="display:flex;align-items:center;gap:.5rem;">
         <svg class="ico" style="width:1em;height:1em;color:var(--primary);"><use href="#i-feed"/></svg>
@@ -1957,21 +2173,28 @@
     </div>
 
     <!-- Stunning 3D structural comparison -->
-    <div class="card" id="cmp3dCard" style="display:none;padding:0;overflow:hidden;">
+    <div class="card" id="cmp3dCard" style="display:none;padding:0;overflow:visible;">
       <div class="cmp-3d-head">
         <div>
           <div style="font-weight:700;font-size:1rem;display:flex;align-items:center;gap:.5rem;"><svg class="ico" style="color:var(--primary);"><use href="#i-models"/></svg> 3D Structural Comparison</div>
-          <div style="font-size:.74rem;color:var(--text-muted);margin-top:.2rem;">Drag to orbit · scroll to zoom · hover a layer for details</div>
+          <div style="font-size:.74rem;color:var(--text-muted);margin-top:.2rem;">Drag to orbit · scroll to zoom · hover a layer · click to isolate · Esc clears · R resets</div>
         </div>
-        <div class="cmp-legend">
-          <span><i class="cmp-dot match"></i> identical</span>
-          <span><i class="cmp-dot changed"></i> weights changed</span>
-          <span><i class="cmp-dot added"></i> added / removed</span>
+        <div class="cmp-3d-tools">
+          <div class="cmp-legend">
+            <span><i class="cmp-dot match"></i> identical</span>
+            <span><i class="cmp-dot changed"></i> weights changed</span>
+            <span><i class="cmp-dot added"></i> added / removed</span>
+          </div>
+          <button type="button" class="btn btn-sec" onclick="resetCmpView()">Reset view</button>
+          <button type="button" class="btn btn-sec" id="cmpPauseBtn" onclick="toggleCmpAuto()">Pause orbit</button>
+          <span id="cmpHud" class="cmp-hud"></span>
         </div>
+        <div id="cmpHashBar" class="cmp-hash-bar" aria-live="polite"></div>
       </div>
       <div class="cmp-scene" id="cmpScene">
         <div class="cmp-floor"></div>
         <div class="cmp-world" id="cmpWorld"></div>
+        <div class="cmp-scan" id="cmpScan" aria-hidden="true"></div>
         <div class="cmp-tip" id="cmpTip"></div>
       </div>
     </div>
@@ -2130,17 +2353,17 @@
   <!-- Explorer -->
   <div class="tab-content" id="tab-explorer">
     <div class="card">
-      <h2><span class="card-title-ico"><svg class="ico"><use href="#i-explorer"/></svg></span> Chain Explorer — 3D Block Visualizer</h2>
-      <p class="subtitle">Live view of the BlockVerify custom PoW chain. Every block is cryptographically linked to the one before it. Hover to inspect — click to open.</p>
+      <h2><span class="card-title-ico"><svg class="ico"><use href="#i-explorer"/></svg></span> Chain Explorer</h2>
+      <p class="subtitle">Algorand Testnet holds the public seals. The cubes below are this server’s local proof-of-work chain — every block is linked to the one before it. Click a cube to inspect.</p>
 
       <!-- Algorand badge -->
       <div style="display:flex;align-items:center;gap:1rem;background:linear-gradient(135deg,rgba(0,200,120,0.1),rgba(var(--primary-rgb),0.1));border:1px solid rgba(0,200,120,0.25);border-radius:14px;padding:1.2rem 1.5rem;margin-bottom:1.2rem;flex-wrap:wrap;">
         <span class="card-title-ico" style="width:46px;height:46px;"><svg class="ico" style="width:24px;height:24px;"><use href="#i-proof"/></svg></span>
         <div style="flex:1;min-width:200px;">
-          <div style="font-weight:700;font-size:1.05rem;margin-bottom:.25rem;">Connected to Algorand Testnet</div>
-          <div style="font-size:.82rem;color:var(--text-muted);">Consensus: Pure Proof-of-Stake (PPoS) &nbsp;·&nbsp; Finality: ~3.4 s &nbsp;·&nbsp; Node: AlgoNode Public API</div>
+          <div style="font-weight:700;font-size:1.05rem;margin-bottom:.25rem;">Algorand Testnet (live seals) + local PoW visualiser</div>
+          <div style="font-size:.82rem;color:var(--text-muted);">Registrations are Algorand Testnet transactions. The cubes below are this server’s local proof-of-work chain — a teaching view, not the public ledger.</div>
         </div>
-        <a href="https://lora.algokit.io/testnet" target="_blank" class="btn" style="text-decoration:none;white-space:nowrap;">Open Algorand Explorer ↗</a>
+        <a href="https://lora.algokit.io/testnet" target="_blank" rel="noopener noreferrer" class="btn" style="text-decoration:none;white-space:nowrap;">Open Algorand Explorer ↗</a>
       </div>
 
       <!-- Info cards -->
@@ -2151,17 +2374,17 @@
         </div>
         <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:1rem;">
           <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:.4rem;">Verify a Transaction</div>
-          <div style="font-size:.88rem;line-height:1.5;">After any operation, copy the <strong>Algo TxID</strong> shown in the result and paste it at <a href="https://lora.algokit.io/testnet" target="_blank" style="color:var(--primary);">allo.info</a> to see the full on-chain proof.</div>
+          <div style="font-size:.88rem;line-height:1.5;">After any operation, copy the <strong>Algo TxID</strong> shown in the result and paste it at <a href="https://lora.algokit.io/testnet" target="_blank" rel="noopener noreferrer" style="color:var(--primary);">lora.algokit.io</a> to see the full on-chain proof.</div>
         </div>
         <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:1rem;">
           <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:.4rem;">Chain Integrity</div>
-          <div style="font-size:.88rem;line-height:1.5;">Algorand's PPoS consensus guarantees <strong>100% Byzantine fault tolerance</strong>. Data once confirmed on Algorand cannot be altered or deleted by anyone — including us.</div>
+          <div style="font-size:.88rem;line-height:1.5;">Algorand’s PPoS consensus finalizes under a <strong>⅓-Byzantine</strong> bound. Once a round is confirmed, that transaction cannot be altered or deleted by us.</div>
         </div>
       </div>
 
       <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;">
         <button class="btn btn-sec" id="validateBtn" onclick="validateChain()" data-tip="Confirm Algorand Testnet is maintaining full chain integrity.">Validate Chain Integrity</button>
-        <a href="https://bank.testnet.algorand.network/" target="_blank" class="btn btn-sec" style="text-decoration:none;display:inline-flex;align-items:center;gap:.4rem;"><svg class="ico"><use href="#i-wallet"/></svg> Get Test ALGO</a>
+        <a href="https://bank.testnet.algorand.network/" target="_blank" rel="noopener noreferrer" class="btn btn-sec" style="text-decoration:none;display:inline-flex;align-items:center;gap:.4rem;"><svg class="ico"><use href="#i-wallet"/></svg> Get Test ALGO</a>
         <button class="btn btn-sec" onclick="loadChain()" style="margin-left:auto;display:inline-flex;align-items:center;gap:.4rem;"><svg class="ico"><use href="#i-refresh"/></svg> Refresh Chain</button>
       </div>
       <div id="chainValid" style="margin-top:.4rem;"></div>
@@ -2172,12 +2395,12 @@
     <div class="card" style="padding:0;overflow:hidden;position:relative;">
       <div style="padding:1rem 1.4rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
         <div>
-          <div style="font-weight:700;font-size:.95rem;display:flex;align-items:center;gap:.45rem;"><svg class="ico" style="width:1em;height:1em;color:var(--primary);"><use href="#i-cube"/></svg> 3D Block Chain</div>
-          <div style="font-size:.75rem;color:var(--text-muted);margin-top:.2rem;">Drag to rotate • Scroll to zoom • Click a block to inspect</div>
+          <div style="font-weight:700;font-size:.95rem;display:flex;align-items:center;gap:.45rem;"><svg class="ico" style="width:1em;height:1em;color:var(--primary);"><use href="#i-cube"/></svg> Local PoW chain</div>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-top:.2rem;">Scroll sideways • Click a cube to inspect</div>
         </div>
         <span id="chainBlockCount" style="font-size:.78rem;color:var(--text-muted);"></span>
       </div>
-      <div id="chain3dCanvas" style="width:100%;height:400px;position:relative;"></div>
+      <div id="chain3dCanvas" class="scroll-pane" style="width:100%;height:440px;position:relative;"></div>
       <!-- Hover tooltip overlay -->
       <div id="block3dTooltip" style="position:absolute;display:none;background:rgba(10,10,20,0.92);border:1px solid var(--primary);border-radius:6px;padding:.6rem .9rem;font-size:.78rem;font-family:var(--mono);color:var(--text);pointer-events:none;z-index:100;max-width:220px;line-height:1.5;"></div>
     </div>
@@ -2274,13 +2497,13 @@
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem;">
         <div>
           <h2 style="margin:0;"><span class="card-title-ico"><svg class="ico"><use href="#i-merkle"/></svg></span> Model Registry Merkle Tree</h2>
-          <p class="subtitle" style="margin-top:.3rem;">A cryptographic Merkle tree built from all registered model hashes. Changing any single model hash changes the entire root — tamper-proof integrity visualization.</p>
+          <p class="subtitle" style="margin-top:.3rem;">Over <strong>registered model file hashes</strong> — not layer manifests and not federated round roots. Scroll to zoom, drag to pan, click a node to copy its hash. An odd leaf count pads with a duplicate marked <em>(dup)</em>.</p>
         </div>
         <button onclick="loadAlgoMerkle()" class="btn" style="font-size:.78rem;padding:.4rem .8rem;display:inline-flex;align-items:center;gap:.4rem;"><svg class="ico"><use href="#i-refresh"/></svg> Rebuild Tree</button>
       </div>
       <div id="algoMerkleRoot" style="font-size:.82rem;font-family:var(--mono);background:rgba(var(--primary-rgb),.12);border:1px solid rgba(var(--primary-rgb),.3);border-radius:8px;padding:.6rem 1rem;margin-bottom:.8rem;word-break:break-all;display:none;"></div>
       <div id="algoMerkleInfo" style="font-size:.78rem;color:var(--text-muted);margin-bottom:.5rem;"></div>
-      <div id="algoMerkleSvg" style="width:100%;overflow-x:auto;min-height:120px;">
+      <div id="algoMerkleSvg" class="mk-viewport" style="width:100%;">
         <div style="text-align:center;padding:2rem;color:var(--text-muted);">Click "Rebuild Tree" or switch to Chain Proof tab to generate the Merkle tree.</div>
       </div>
     `;
@@ -2311,7 +2534,7 @@
         <div style="background:rgba(var(--primary-rgb),.12);border:1px solid rgba(var(--primary-rgb),.3);border-radius:8px;padding:.6rem;">
           <div style="color:var(--primary);"><svg class="ico" style="width:1.3em;height:1.3em;"><use href="#i-spark"/></svg></div>
           <div style="font-weight:700;color:var(--primary);">Algorand Testnet</div>
-          <div style="color:var(--text-muted);">Fast sidechain<br>Individual model hashes</div>
+          <div style="color:var(--text-muted);">Fast public chain<br>Individual model hashes</div>
         </div>
         <div style="font-size:1.4rem;color:var(--text-muted);">→</div>
         <div style="background:rgba(247,147,26,.08);border:1px solid rgba(247,147,26,.35);border-radius:8px;padding:.6rem;">
@@ -2340,23 +2563,8 @@
       <div id="btcAnchorResult"></div>
     `;
     proofTab.appendChild(btcCard);
-
-    // Load BTC wallet info on tab switch
-    setTimeout(() => {
-      fetch(`${API}/bitcoin/wallet`, { credentials: 'include' })
-        .then(r => r.json()).then(d => {
-          const badge = document.getElementById('btcWalletBadge');
-          if (!badge) return;
-          if (d.success) {
-            badge.innerHTML = `🟢 BTC Wallet: <strong>${d.btc.toFixed(6)} tBTC</strong> &nbsp;<a href="${d.explorer}" target="_blank" style="color:#f7931a;font-size:.7rem;">View ↗</a>`;
-          } else {
-            badge.innerHTML = `🔴 Wallet error: ${d.error}`;
-          }
-        }).catch(() => {
-          const badge = document.getElementById('btcWalletBadge');
-          if (badge) badge.innerHTML = '🔴 Wallet offline';
-        });
-    }, 800);
+    // loadBtcWalletBadge lives in the main script below; calling it here throws
+    // ReferenceError because this IIFE runs during HTML parse. switchTab('proof') loads it.
   })();
   </script>
 
@@ -2482,7 +2690,7 @@
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
           <div>
             <div class="an-title"><svg class="ico" style="color:#8b7cff;width:1em;height:1em;"><use href="#i-compass"/></svg> How One Round Works</div>
-            <div class="an-sub">Watch a single training round end to end &mdash; local training, screening, averaging, and the on-chain commitment.</div>
+            <div class="an-sub">Teaching diagram of a single round &mdash; local training, screening, averaging, and the on-chain commitment. Z-scores here are illustrative, not this run’s numbers.</div>
           </div>
           <button class="flviz-btn" onclick="flVizToggleCard()" id="flVizCollapse">Hide</button>
         </div>
@@ -2567,8 +2775,8 @@
           </div>
           <div class="qs-card" onclick="switchTab('explorer')">
             <div class="qs-icon"><svg class="ico"><use href="#i-explorer"/></svg></div>
-            <h4>4. Algorand Explorer</h4>
-            <p>Every registration is a live Algorand Testnet transaction. Click to explore your proofs on the global ledger.</p>
+            <h4>4. Chain Explorer</h4>
+            <p>Registrations are live Algorand Testnet transactions. The Explorer tab also shows this server’s local PoW chain as a teaching visualiser.</p>
           </div>
           <div class="qs-card" onclick="switchTab('federated')" style="border-color:#8b7cff;">
             <div class="qs-icon" style="color:#8b7cff;"><svg class="ico"><use href="#i-globe"/></svg></div>
@@ -2589,7 +2797,7 @@
           <span style="opacity: 0.3;">·</span>
           <span><strong id="helpStatVerify" style="color:var(--text);">—</strong> Verifications</span>
           <span style="opacity: 0.3;">·</span>
-          <span><strong id="helpStatBlocks" style="color:var(--text);">—</strong> Algorand Round</span>
+          <span><strong id="helpStatBlocks" style="color:var(--text);">—</strong> Testnet round</span>
         </div>
       </div>
 
@@ -2988,11 +3196,12 @@ function logout() {
   openAuthModal('login');
 }
 
-function toast(type, msg, duration) {
+function toast(type, msg, duration, raw) {
   const container = document.getElementById('toastContainer');
   const el = document.createElement('div');
   el.className = `toast ${type}`;
-  el.innerHTML = `<span>${msg}</span>`;
+  const html = raw ? String(msg) : escapeHtml(String(msg == null ? '' : msg));
+  el.innerHTML = `<span>${html}</span>`;
   container.appendChild(el);
   const ms = duration || (type === 'info' ? 1800 : 4500);
   setTimeout(() => {
@@ -3034,7 +3243,11 @@ function setLoading(btnId, loading, label) {
   btn.innerHTML = loading ? `<span class="spinner"></span> ${label || 'Working...'}` : label;
 }
 
+let _tabHashLock = false;
+const _TAB_IDS = ['register','verify','compare','versions','audit','alerts','models','analytics','registry','explorer','proof','ledger','federated','help'];
+
 function switchTab(name, btn) {
+  if (!_TAB_IDS.includes(name)) return;
   // If btn is missing or doesn't exist, find the correct sidebar button
   if (!btn || !btn.classList) {
     btn = document.querySelector(`.sidebar .tab[onclick*="'${name}'"]`);
@@ -3044,6 +3257,9 @@ function switchTab(name, btn) {
   if (btn) btn.classList.add('active');
   const target = document.getElementById('tab-' + name);
   if (target) target.classList.add('active');
+  if (!_tabHashLock && location.hash !== '#' + name) {
+    try { history.replaceState(null, '', '#' + name); } catch (e) {}
+  }
   if (name === 'explorer') loadChain();
   if (name === 'models')   loadMyModels();
   if (name === 'registry') loadRegistry();
@@ -3063,6 +3279,7 @@ function switchTab(name, btn) {
       if (typeof loadContractInfo  === 'function') loadContractInfo();
       if (typeof startNetworkPolling === 'function') startNetworkPolling();
       if (typeof loadAlgoMerkle    === 'function') loadAlgoMerkle();
+      if (typeof loadBtcWalletBadge === 'function') loadBtcWalletBadge();
     }, 150);
   } else {
     if (typeof stopNetworkPolling === 'function') stopNetworkPolling();
@@ -3442,6 +3659,7 @@ async function registerModel() {
     });
     const d = await res.json();
     if (d.success) {
+      _lastAlgoCert = { modelId: d.modelId, modelName: name, modelHash: hash, txid: d.algoTxId, round: d.round };
       fallbackCopy(d.modelId, null);
       document.getElementById('regModelResult').innerHTML = `
         <div class="model-id-box">
@@ -3454,13 +3672,13 @@ async function registerModel() {
             </div>
           </div>
           <div class="id-row">
-            <code>${d.modelId}</code>
-            <button class="copy-btn" onclick="copyText('${d.modelId}', this)">Copy ID</button>
+            <code>${escapeHtml(d.modelId)}</code>
+            <button class="copy-btn" onclick="copyText('${escapeHtml(d.modelId)}', this)">Copy ID</button>
           </div>
-          <div style="font-size:.75rem;color:var(--text-muted);margin-top:.5rem;">Algo TxID: <a href="https://lora.algokit.io/testnet/transaction/${d.algoTxId}" target="_blank" style="color:var(--primary)">${d.algoTxId.substring(0,8)}...</a> · Owner: ${user} · PoW nonce: ${powNonce}</div>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-top:.5rem;">Algo TxID: <a href="https://lora.algokit.io/testnet/transaction/${encodeURIComponent(d.algoTxId || '')}" target="_blank" rel="noopener noreferrer" style="color:var(--primary)">${escapeHtml((d.algoTxId || '').substring(0,8))}...</a> · Owner: ${escapeHtml(user)} · PoW nonce: ${escapeHtml(String(powNonce))}</div>
           <div style="margin-top:.8rem;">
             <button class="btn" style="font-size:.8rem;padding:.45rem 1rem;background:linear-gradient(135deg,#00e5a0,#2de2c5);border:none;"
-              onclick="downloadAlgoCertificate('${d.modelId}','${name.replace(/'/g,"\\\\'")}','${hash}','${d.algoTxId}','${d.round}')">
+              onclick="downloadAlgoCertificate('${escapeHtml(d.modelId)}')">
               📄 Download Blockchain Certificate
             </button>
           </div>
@@ -3516,13 +3734,13 @@ async function verifyModel() {
         <div class="verify-result-body">
           <div class="hash-compare-row">
             <label>Stored Hash (on-chain)</label>
-            <code class="${valid ? 'hash-match' : 'hash-neutral'}">${d.storedHash}</code>
+            <code class="${valid ? 'hash-match' : 'hash-neutral'}">${escapeHtml(d.storedHash || '')}</code>
           </div>
           <div class="hash-compare-row">
             <label>Your Hash (computed)</label>
-            <code class="${valid ? 'hash-match' : 'hash-nomatch'}">${d.providedHash}</code>
+            <code class="${valid ? 'hash-match' : 'hash-nomatch'}">${escapeHtml(d.providedHash || '')}</code>
           </div>
-          <div style="font-size:.78rem;color:var(--text-muted);">Algo TxID: <a href="https://lora.algokit.io/testnet/transaction/${d.algoTxId}" target="_blank" style="color:var(--primary)">${d.algoTxId.substring(0,8)}...</a> · Verifier: ${user}</div>
+          <div style="font-size:.78rem;color:var(--text-muted);">Algo TxID: <a href="https://lora.algokit.io/testnet/transaction/${encodeURIComponent(d.algoTxId || '')}" target="_blank" rel="noopener noreferrer" style="color:var(--primary)">${escapeHtml((d.algoTxId || '').substring(0,8))}...</a> · Verifier: ${escapeHtml(user)}</div>
           ${!valid && Object.keys(d.layerHashes || {}).length > 0 && layerHashesMap.ver ? `
           <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.05);">
             <div style="font-size:.85rem;font-weight:700;color:var(--danger);margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem;"><svg class="ico" style="width:1em;height:1em;"><use href="#i-shield"/></svg> Tampered Architecture Detected</div>
@@ -3537,7 +3755,7 @@ async function verifyModel() {
 
           <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.05);">
             <button class="btn btn-sec" style="width:100%;font-size:.8rem;padding:.5rem;border-color:#bb86fc;color:#bb86fc;" onclick='runZkProof()'>
-              🧮 Generate zk-SNARK Execution Proof
+              🧮 Generate zk-SNARK Execution Proof <span style="font-size:.65rem;opacity:.8;font-weight:700;letter-spacing:.04em;">SIMULATION</span>
             </button>
             <div id="zkProofTerminal" style="display:none;margin-top:1rem;background:#050505;border:1px solid #333;border-radius:8px;padding:1rem;font-family:var(--mono);font-size:.75rem;min-height:150px;max-height:300px;overflow-y:auto;">
             </div>
@@ -4035,7 +4253,10 @@ const FL_ATTACK_INFO = {
   gaussian:   {label:'Noise',        blurb:'Attackers replace their update with pure Gaussian noise, carrying no information about their data.'},
   zero:       {label:'Free-rider',   blurb:'Attackers send a zero update: they take the model without contributing.'},
   label_flip: {label:'Label flip',   blurb:'Attackers train on deliberately wrong labels. The resulting update is a <em>legitimately trained</em> one on poisoned data, which makes it the hardest to spot statistically.'},
-  backdoor:   {label:'Backdoor',     blurb:'A 3&times;3 trigger patch is stamped on some training images and relabelled to a target class (BadNets). Clean accuracy stays normal, which is what makes backdoors dangerous &mdash; watch <b>ASR</b>, not accuracy.'}
+  backdoor:   {label:'Backdoor',     blurb:'A 3&times;3 trigger patch is stamped on some training images and relabelled to a target class (BadNets). Clean accuracy stays normal, which is what makes backdoors dangerous &mdash; watch <b>ASR</b>, not accuracy.'},
+  // FedVerify-Survival (heart / TCGA) tree attacks — additive, used only by those runs
+  label_flip_trees: {label:'Label flip (trees)', blurb:'The malicious hospital grows its trees on flipped outcomes: properly trained trees on poisoned labels, screened by comparing every hospital\'s new trees on a public probe set.'},
+  random_trees:     {label:'Random trees',       blurb:'The malicious hospital sends trees grown on random rows with shuffled outcomes: well-formed trees that carry no information about its patients.'}
 };
 const FL_AGG_INFO = {
   fedavg:       'plain averaging — <b>no defence at all</b>',
@@ -4043,7 +4264,12 @@ const FL_AGG_INFO = {
   krum:         'Krum — keeps the single most central client',
   multikrum:    'Multi-Krum — averages the K−f most central clients',
   median:       'coordinate-wise median',
-  trimmed_mean: 'β-trimmed mean'
+  trimmed_mean: 'β-trimmed mean',
+  // FedVerify-Survival aggregators — additive
+  concat_trees:                  'tree bagging — every hospital\'s trees kept, <b>no defence</b>',
+  fedxgb_bagging:                'FedXGBBagging — boosters averaged, <b>no defence</b>',
+  'probe_screen+concat_trees':   'probe-set screen on each hospital\'s new trees, survivors bagged',
+  'probe_screen+fedxgb_bagging': 'probe-set screen on each hospital\'s new trees, survivors FedXGBBagging-averaged'
 };
 
 function flToggleHelp(){
@@ -4150,6 +4376,8 @@ function renderFlScenario(meta, lineage){
   }
   const dp = (meta.epsilon && meta.epsilon !== 'inf')
     ? ` Trained under differential privacy at <b>ε=${meta.epsilon}</b>.` : '';
+  const rounds = (meta.perRoundTruth && atk !== 'none' && (meta.attackRounds||[]).length && meta.attackRounds.length < (lineage||[]).length)
+    ? ` The malicious client attacks in round${meta.attackRounds.length>1?'s':''} <b>${meta.attackRounds.join(', ')}</b> only.` : '';
   const tau = (meta.tau != null)
     ? `<div style="margin-top:.45rem;font-size:.76rem;color:var(--text-muted);">Rejection threshold τ = <b style="color:var(--text);">${(+meta.tau).toFixed(3)}</b>`
       + (meta.tauSource
@@ -4158,7 +4386,7 @@ function renderFlScenario(meta, lineage){
             + ` <code style="font-size:.7rem;">${escapeHtml(String(meta.tauSource).split('/').pop())}</code>`
           : ` &middot; <span style="color:#eab308;">supplied manually &mdash; NOT calibrated, so these detection numbers are not meaningful</span>`) + `</div>`
     : '';
-  box.innerHTML = head + dp + `<div style="margin-top:.4rem;">${info.blurb}</div>` + tau;
+  box.innerHTML = head + dp + rounds + `<div style="margin-top:.4rem;">${info.blurb}</div>` + tau;
 }
 
 // Animate a numeric stat from 0 to its value. Purely presentational — the DOM ends on
@@ -4187,13 +4415,21 @@ function _statCard(val, label, color, hint){
 
 // Detection quality from a lineage plus ground truth. Extracted so the single-run view
 // and the comparison view cannot drift apart — there is one implementation of this maths.
+// Per-round ground truth: a run that sets meta.perRoundTruth (FedVerify-Survival, e.g. the live demo, whose
+// hospital is malicious in one round only) is scored against each round's own attackers. Without the flag the
+// run-level list is used, exactly as before.
+function _flTruth(r, meta, atkSet){
+  return (meta && meta.perRoundTruth && Array.isArray(r.attackers)) ? new Set(r.attackers.map(String)) : atkSet;
+}
+
 function flDetection(lineage, meta){
   const atkSet = new Set(((meta && meta.attackerIds) || []).map(String));
   let tp=0, fp=0, fn=0, honestSeen=0;
   for(const r of lineage){
+    const truth = _flTruth(r, meta, atkSet);
     const rej = new Set((r.rejected||[]).map(String));
     for(const c of [].concat(r.accepted||[], r.rejected||[]).map(String)){
-      if(atkSet.has(c)){ rej.has(c) ? tp++ : fn++; }
+      if(truth.has(c)){ rej.has(c) ? tp++ : fn++; }
       else { honestSeen++; if(rej.has(c)) fp++; }
     }
   }
@@ -4297,18 +4533,21 @@ function renderFlGrid(lineage, meta, boxEl, legEl){
   let nCaught=0, nMissed=0, nWrong=0;
   for(const cid of ids){
     const isAtk = atkSet.has(String(cid));
-    const tag = isAtk ? `<span style="color:var(--danger);font-weight:700;">client ${escapeHtml(String(cid))}</span> <span style="font-size:.58rem;color:var(--danger);">MALICIOUS</span>`
+    const when = (isAtk && meta.perRoundTruth && (meta.attackRounds||[]).length)
+      ? ` (round${meta.attackRounds.length>1?'s':''} ${meta.attackRounds.join(', ')})` : '';
+    const tag = isAtk ? `<span style="color:var(--danger);font-weight:700;">client ${escapeHtml(String(cid))}</span> <span style="font-size:.58rem;color:var(--danger);">MALICIOUS${escapeHtml(when)}</span>`
                       : `client ${escapeHtml(String(cid))}`;
     html += `<div style="font-size:.65rem;color:var(--text-muted);text-align:right;padding-right:.35rem;white-space:nowrap;">${tag}</div><div style="line-height:0;">`;
     for(const r of lineage){
       const rejected = (r.rejected||[]).map(String).includes(String(cid));
       const present  = rejected || (r.accepted||[]).map(String).includes(String(cid));
+      const atkHere  = _flTruth(r, meta, atkSet).has(String(cid));   // === isAtk unless meta.perRoundTruth
       let bg, t;
       if(!present){ bg=C.absent; t='not selected this round'; }
       else if(!known){ bg = rejected ? C.missed : C.caught; t = rejected ? 'rejected' : 'accepted'; }
-      else if(isAtk && rejected){ bg=C.caught; t='malicious — correctly rejected'; nCaught++; }
-      else if(isAtk && !rejected){ bg=C.missed; t='MALICIOUS — slipped through'; nMissed++; }
-      else if(!isAtk && rejected){ bg=C.wrong;  t='honest — wrongly excluded'; nWrong++; }
+      else if(atkHere && rejected){ bg=C.caught; t='malicious — correctly rejected'; nCaught++; }
+      else if(atkHere && !rejected){ bg=C.missed; t='MALICIOUS — slipped through'; nMissed++; }
+      else if(!atkHere && rejected){ bg=C.wrong;  t='honest — wrongly excluded'; nWrong++; }
       else { bg=C.ok; t='honest — accepted'; }
       html += `<span title="round ${r.round} · client ${escapeHtml(String(cid))} · ${t}" style="${cell}background:${bg};"></span>`;
     }
@@ -4866,7 +5105,7 @@ async function runDeepInspection(storedLayers, storedOrder, modelId){
     const btn=document.createElement('button');
     btn.className='btn btn-prim';
     btn.style.cssText='margin-top:.9rem;width:100%;border-radius:6px;font-weight:700;padding:.5rem;';
-    btn.innerHTML='Initiate Decentralized Self-Healing (IPFS)';
+    btn.innerHTML='Initiate Decentralized Self-Healing (IPFS) <span style="font-size:.65rem;opacity:.8;">SIMULATION</span>';
     btn.onclick=()=>{ btn.disabled=true; runSelfHealing(healFirst.name, healFirst.type); };
     logBox.appendChild(btn);
   }
@@ -4882,7 +5121,7 @@ async function runZkProof() {
   
   term.innerHTML = `
     <div style="display:flex; justify-content:space-between; border-bottom:1px solid #bb86fc; padding-bottom:.5rem; margin-bottom:.5rem;">
-      <span style="color:#bb86fc; font-weight:bold; letter-spacing:1px;">zk-SNARK PROVER MODULE</span>
+      <span style="color:#bb86fc; font-weight:bold; letter-spacing:1px;">zk-SNARK PROVER MODULE <span style="font-size:.65rem;opacity:.75;">SIMULATION</span></span>
       <span style="color:#bb86fc;" id="zkSpin">⠋</span>
     </div>
     <div id="zkLog"></div>
@@ -4896,7 +5135,7 @@ async function runZkProof() {
   const spinInt = setInterval(() => { spinner.textContent = spinFrames[++spinIdx % spinFrames.length]; }, 80);
 
   const steps = [
-    { delay: 400  , text: `<span style="color:#888;">[0.00s]</span> Initializing PLONK proving system...` },
+    { delay: 400  , text: `<span style="color:#888;">[0.00s]</span> <span style="color:var(--warn);font-weight:700;">SIMULATION</span> — this does not talk to a real prover.` },
     { delay: 500  , text: `<span style="color:#888;">[0.12s]</span> Loading structured reference string (SRS) PK...` },
     { delay: 300  , text: `<span style="color:#888;">[0.45s]</span> Compiling Neural Network circuit to constraints... <span style="color:var(--primary)">12,504,812 gates</span>` },
     { delay: 800  , text: `<span style="color:#888;">[1.12s]</span> Computing witness polynomials <span style="color:#bb86fc">w(x), z(x)</span>...` },
@@ -4971,7 +5210,7 @@ async function runSelfHealing(layerName, type) {
   const actionText = actionMap[type] || actionMap.weight;
 
   const steps = [
-    { delay: 400, text: `<span style="color:#888;">[ipfs-client]</span> Connecting to local IPFS gateway (127.0.0.1:5001)...` },
+    { delay: 400, text: `<span style="color:#888;">[ipfs-client]</span> <span style="color:var(--warn);font-weight:700;">SIMULATION</span> — no IPFS daemon is contacted.` },
     { delay: 500, text: `<span style="color:#success;">[ipfs-client]</span> Connected to Swarm. Peers: 142 active.` },
     { delay: 600, text: `<span style="color:#888;">[resolver]</span> Locating immutable genesis block CID for Model...` },
     { delay: 800, text: `<span style="color:#bb86fc;">[resolver]</span> Found CID: <b>Qm${generateHex(44)}</b>` },
@@ -5153,8 +5392,8 @@ function renderModels(models, query) {
   const user = _authUser || '';
   if (models.length === 0) {
     const msg = query
-      ? `No models match "<strong>${query}</strong>".`
-      : `No models registered yet under <strong>${user}</strong>.`;
+      ? `No models match "<strong>${escapeHtml(query)}</strong>".`
+      : `No models registered yet under <strong>${escapeHtml(user)}</strong>.`;
     document.getElementById('modelsResult').innerHTML = `
       <div class="empty-state">
         <span class="empty-icon">📦</span><p>${msg}</p>
@@ -5172,34 +5411,34 @@ function renderModels(models, query) {
       ? '<span class="badge" style="background:rgba(255,107,107,0.15);color:#ff6b6b;border:1px solid rgba(255,107,107,0.3);">🔒 Private</span>'
       : '<span class="badge" style="background:rgba(var(--success-rgb),0.12);color:var(--success);border:1px solid rgba(var(--success-rgb),0.25);">🌐 Public</span>';
     h += `<div class="model-item">
-      <div class="model-item-name">${m.modelName} ${statusBadge} <span class="badge badge-warn">v${m.currentVersion}</span> ${privBadge}</div>
+      <div class="model-item-name">${escapeHtml(m.modelName)} ${statusBadge} <span class="badge badge-warn">v${escapeHtml(String(m.currentVersion ?? ''))}</span> ${privBadge}</div>
       <div style="display:flex;align-items:center;gap:.6rem;margin:.4rem 0;">
         ${hashIdenticon(m.modelHash, 36)}
         <div style="flex:1;min-width:0;">
           <div style="font-size:.62rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;">Hash Fingerprint</div>
-          <code style="font-size:.7rem;color:var(--text-muted);word-break:break-all;">${m.modelHash}</code>
+          <code style="font-size:.7rem;color:var(--text-muted);word-break:break-all;">${escapeHtml(m.modelHash || '')}</code>
         </div>
       </div>
       <div class="model-item-id">
-        <code>${m.modelId}</code>
-        <button class="copy-btn" onclick="copyText('${m.modelId}', this)" style="flex-shrink:0;">Copy ID</button>
+        <code>${escapeHtml(m.modelId)}</code>
+        <button class="copy-btn" onclick="copyText('${escapeHtml(m.modelId)}', this)" style="flex-shrink:0;">Copy ID</button>
       </div>
       <div class="model-item-meta">
         <span>Algorand Tx</span>
         <span>${new Date(m.registeredAt * 1000).toLocaleDateString()}</span>
       </div>
       <div class="model-item-actions">
-        <button class="btn btn-sec" style="font-size:.8rem;padding:.45rem .9rem;" onclick="prefillVerify('${m.modelId}')" data-tip="Go to Verify tab with this model's ID pre-filled — re-upload your file to check its integrity.">Verify</button>
-        <button class="btn btn-sec" style="font-size:.8rem;padding:.45rem .9rem;" onclick="prefillVersion('${m.modelId}')" data-tip="Add a new version — upload a new file and add a changelog note while keeping the full history.">Add Version</button>
-        <button class="btn btn-sec" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(var(--primary-rgb),0.2),rgba(var(--success-rgb),0.15));border-color:rgba(var(--primary-rgb),0.4);" onclick="downloadReport('${m.modelId}','${m.modelName.replace(/'/g,'')}')" data-tip="Download a PDF integrity report — includes model metadata, hash, version history, and full audit trail.">📄 PDF Report</button>
-        <button class="btn btn-sec" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(var(--primary-rgb),0.22),rgba(var(--accent-rgb),0.15));border-color:rgba(var(--primary-rgb),0.45);" onclick="downloadCertificate('${m.modelId}','${m.modelName.replace(/'/g,'')}')" data-tip="Download a professional PDF certificate with a QR code linking to the Algorand transaction."><svg class="ico"><use href="#i-award"/></svg> Certificate</button>
-        <button class="btn btn-sec" id="ocBtn_${m.modelId}" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(var(--success-rgb),0.2),rgba(var(--primary-rgb),0.15));border-color:rgba(var(--success-rgb),0.4);" onclick="verifyOnChain('${m.modelId}',this)" data-tip="Read the Algorand smart contract's global state and compare the on-chain hash with the local hash — proves the blockchain is used for verification.">🔗 Verify On-Chain</button>
-        <button class="btn btn-sec" id="tamperBtn_${m.modelId}" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(255,107,107,0.2),rgba(253,203,110,0.15));border-color:rgba(255,107,107,0.4);color:#ff6b6b;" onclick="tamperSimulate('${m.modelId}',this)" data-tip="DEMO: Deliberately corrupt this model's local hash, then run On-Chain Verify to prove the blockchain detects tampering.">⚠️ Tamper Demo</button>
-        <button class="btn btn-sec" id="privBtn_${m.modelId}" style="font-size:.8rem;padding:.45rem .9rem;" onclick="togglePrivacy('${m.modelId}',${!m.isPrivate})" data-tip="${m.isPrivate ? 'Make this model public — anyone can see and verify it in the Registry.' : 'Make this model private — only you can verify it, hidden from public Registry.'}">${m.isPrivate ? '🔒 Make Public' : '🌐 Make Private'}</button>
-        ${m.isActive ? `<button class="btn btn-danger" style="font-size:.8rem;padding:.45rem .9rem;" onclick="deactivateModel('${m.modelId}')" data-tip="Permanently deactivate this model — it will no longer accept verifications.">Deactivate</button>` : ''}
+        <button class="btn btn-sec" style="font-size:.8rem;padding:.45rem .9rem;" onclick="prefillVerify('${escapeHtml(m.modelId)}')" data-tip="Go to Verify tab with this model's ID pre-filled — re-upload your file to check its integrity.">Verify</button>
+        <button class="btn btn-sec" style="font-size:.8rem;padding:.45rem .9rem;" onclick="prefillVersion('${escapeHtml(m.modelId)}')" data-tip="Add a new version — upload a new file and add a changelog note while keeping the full history.">Add Version</button>
+        <button class="btn btn-sec" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(var(--primary-rgb),0.2),rgba(var(--success-rgb),0.15));border-color:rgba(var(--primary-rgb),0.4);" onclick="downloadReport('${escapeHtml(m.modelId)}')" data-tip="Download a PDF integrity report — includes model metadata, hash, version history, and full audit trail.">📄 PDF Report</button>
+        <button class="btn btn-sec" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(var(--primary-rgb),0.22),rgba(var(--accent-rgb),0.15));border-color:rgba(var(--primary-rgb),0.45);" onclick="downloadCertificate('${escapeHtml(m.modelId)}')" data-tip="Download a professional PDF certificate with a QR code linking to the Algorand transaction."><svg class="ico"><use href="#i-award"/></svg> Certificate</button>
+        <button class="btn btn-sec" id="ocBtn_${escapeHtml(m.modelId)}" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(var(--success-rgb),0.2),rgba(var(--primary-rgb),0.15));border-color:rgba(var(--success-rgb),0.4);" onclick="verifyOnChain('${escapeHtml(m.modelId)}',this)" data-tip="Read the Algorand smart contract's global state and compare the on-chain hash with the local hash — proves the blockchain is used for verification.">🔗 Verify On-Chain</button>
+        <button class="btn btn-sec" id="tamperBtn_${escapeHtml(m.modelId)}" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(255,107,107,0.2),rgba(253,203,110,0.15));border-color:rgba(255,107,107,0.4);color:#ff6b6b;" onclick="tamperSimulate('${escapeHtml(m.modelId)}',this)" data-tip="DEMO: Deliberately corrupt this model's local hash, then run On-Chain Verify to prove the blockchain detects tampering.">⚠️ Tamper Demo</button>
+        <button class="btn btn-sec" id="privBtn_${escapeHtml(m.modelId)}" style="font-size:.8rem;padding:.45rem .9rem;" onclick="togglePrivacy('${escapeHtml(m.modelId)}',${!m.isPrivate})" data-tip="${m.isPrivate ? 'Make this model public — anyone can see and verify it in the Registry.' : 'Make this model private — only you can verify it, hidden from public Registry.'}">${m.isPrivate ? '🔒 Make Public' : '🌐 Make Private'}</button>
+        ${m.isActive ? `<button class="btn btn-danger" style="font-size:.8rem;padding:.45rem .9rem;" onclick="deactivateModel('${escapeHtml(m.modelId)}')" data-tip="Permanently deactivate this model — it will no longer accept verifications.">Deactivate</button>` : ''}
       </div>
-      <div id="ocResult_${m.modelId}" style="margin-top:.5rem;"></div>
-      <div id="tamperResult_${m.modelId}" style="margin-top:.5rem;"></div>
+      <div id="ocResult_${escapeHtml(m.modelId)}" style="margin-top:.5rem;"></div>
+      <div id="tamperResult_${escapeHtml(m.modelId)}" style="margin-top:.5rem;"></div>
     </div>`;
   });
   document.getElementById('modelsResult').innerHTML = h + '</div>';
@@ -5294,28 +5533,50 @@ function build3DChain(blocks) {
   const blockGlow  = 'rgba(var(--primary-rgb),0.55)';
 
   // Inject keyframes once
-  if (!document.getElementById('_3dkf2')) {
-    const old = document.getElementById('_3dkf'); if (old) old.remove();
+  if (!document.getElementById('_3dkf3')) {
+    const old = document.getElementById('_3dkf2') || document.getElementById('_3dkf'); if (old) old.remove();
     const s = document.createElement('style');
-    s.id = '_3dkf2';
+    s.id = '_3dkf3';
     s.textContent = `
-      @keyframes _float3d { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+      @keyframes _float3d { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
       @keyframes _dash3d { to { stroke-dashoffset: -24; } }
+      @keyframes _spawn3d {
+        from { opacity:0; transform: rotateX(-22deg) rotateY(-50deg) scale(.45); }
+        to   { opacity:1; transform: rotateX(-22deg) rotateY(20deg) scale(1); }
+      }
+      @keyframes _idleYaw {
+        0%,100% { transform: rotateX(-22deg) rotateY(16deg); }
+        50%     { transform: rotateX(-24deg) rotateY(28deg); }
+      }
+      @keyframes _genPulse {
+        0%,100% { filter: drop-shadow(0 0 10px rgba(240,180,41,.5)); }
+        50%     { filter: drop-shadow(0 0 22px rgba(240,180,41,.95)); }
+      }
       .css3d-scene { width:100%; height:440px; overflow-x:auto; overflow-y:hidden;
-        display:flex; align-items:center; padding:40px 50px; gap:0;
-        background:transparent; position:relative; }
-      .css3d-wrap { display:flex; align-items:center; gap:0; flex-shrink:0; }
+        display:flex; align-items:center; padding:28px 50px 12px; gap:0;
+        background:transparent; position:relative;
+        scrollbar-width:thin; scrollbar-color:rgba(0,229,160,.45) transparent; }
+      .css3d-scene::-webkit-scrollbar { display:block; height:8px; }
+      .css3d-scene::-webkit-scrollbar-thumb { background:rgba(0,229,160,.45); border-radius:8px; }
+      .css3d-wrap { display:flex; align-items:flex-start; gap:0; flex-shrink:0; }
       .css3d-block {
         width:90px; height:90px; position:relative; perspective:700px; cursor:pointer;
         flex-shrink:0; transition:filter .3s;
       }
-      .css3d-block:hover { filter:brightness(1.5) saturate(1.4); }
-      .css3d-block:hover .css3d-cube { transform: rotateX(-22deg) rotateY(30deg) scale(1.1); }
+      .css3d-caption {
+        width:90px; margin-top:10px; text-align:center; font-family:var(--mono,'monospace');
+        font-size:10px; line-height:1.35; color:var(--text-muted); pointer-events:none;
+      }
+      .css3d-caption .css3d-cap-i { color:var(--primary); font-weight:800; font-size:11px; }
+      .css3d-block.genesis + .css3d-caption .css3d-cap-i { color:#f0b429; }
+      .css3d-block.genesis { animation: _genPulse 2.6s ease-in-out infinite; }
+      .css3d-block:hover { filter:brightness(1.55) saturate(1.35); }
+      .css3d-block:hover .css3d-cube { animation: none; transform: rotateX(-28deg) rotateY(38deg) scale(1.12); }
       .css3d-cube {
         width:90px; height:90px; position:relative;
         transform-style:preserve-3d;
         transform: rotateX(-22deg) rotateY(20deg);
-        transition: transform 0.4s ease;
+        transition: transform 0.45s cubic-bezier(.16,1,.3,1);
       }
       .css3d-face {
         position:absolute; width:90px; height:90px;
@@ -5332,8 +5593,8 @@ function build3DChain(blocks) {
       .css3d-face.left   { transform: rotateY(-90deg)  translateZ(45px); }
       .css3d-face.top    { transform: rotateX(90deg)   translateZ(45px); }
       .css3d-face.bottom { transform: rotateX(-90deg)  translateZ(45px); }
-      .css3d-connector { display:flex; align-items:center; width:60px; flex-shrink:0; }
-      .light-mode .css3d-face { color:#222 !important; }
+      .css3d-connector { display:flex; align-items:center; width:60px; flex-shrink:0; padding-top: 35px; }
+      .light-theme .css3d-face { color:#222 !important; }
     `;
     document.head.appendChild(s);
   }
@@ -5353,26 +5614,31 @@ function build3DChain(blocks) {
     const borderCol = isGenesis ? 'rgba(240,180,41,0.7)' : 'rgba(162,155,254,0.6)';
     const ts    = new Date(b.timestamp * 1000).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
     const delay = (i * 0.3).toFixed(1);
+    const spawnMs = i * 120;
 
     // Floating wrapper
     const floatDiv = document.createElement('div');
-    floatDiv.style.cssText = `animation:_float3d ${2 + (i % 3) * 0.5}s ease-in-out ${delay}s infinite; display:flex; align-items:center;`;
+    floatDiv.style.cssText = `animation:_float3d ${2.4 + (i % 3) * 0.45}s ease-in-out ${delay}s infinite; display:flex; flex-direction:column; align-items:center;`;
 
     // Block
     const blockDiv = document.createElement('div');
-    blockDiv.className = 'css3d-block';
+    blockDiv.className = 'css3d-block' + (isGenesis ? ' genesis' : '');
     blockDiv.title = `Block #${b.index}\nNonce: ${b.nonce}\nTxns: ${b.transactions.length}`;
     blockDiv.style.cssText = `filter:drop-shadow(0 0 12px ${glow});`;
     blockDiv.onclick = () => openBlockModal(b.index);
 
     const cube = document.createElement('div');
     cube.className = 'css3d-cube';
+    cube.style.animation = `_spawn3d .7s cubic-bezier(.16,1,.3,1) ${spawnMs}ms both`;
+    setTimeout(() => {
+      if (cube.isConnected) cube.style.animation = `_idleYaw ${7 + (i % 3)}s ease-in-out ${i * 0.25}s infinite`;
+    }, spawnMs + 720);
 
     const faceData = [
-      {cls:'front', label: `#${b.index}\n${isGenesis ? '⭐ Genesis' : b.transactions.length + ' txn' + (b.transactions.length !== 1 ? 's' : '')}\n${ts}`},
-      {cls:'back',  label: b.hash ? b.hash.substring(0,8)+'…' : ''},
-      {cls:'right', label: ''},
-      {cls:'left',  label: ''},
+      {cls:'front', label: isGenesis ? 'GEN' : '#' + b.index},
+      {cls:'back',  label: b.hash ? b.hash.substring(0,8) : ''},
+      {cls:'right', label: b.hash ? b.hash.substring(8,16) : ''},
+      {cls:'left',  label: b.nonce != null ? 'n ' + b.nonce : ''},
       {cls:'top',   label: ''},
       {cls:'bottom',label: ''},
     ];
@@ -5385,7 +5651,15 @@ function build3DChain(blocks) {
     });
 
     blockDiv.appendChild(cube);
+    const cap = document.createElement('div');
+    cap.className = 'css3d-caption';
+    const txnN = (b.transactions || []).length;
+    cap.innerHTML = `<div class="css3d-cap-i">#${b.index}${isGenesis ? ' · Genesis' : ''}</div>`
+      + `<div>${txnN} txn${txnN !== 1 ? 's' : ''}</div>`
+      + `<div class="css3d-cap-d">${ts}</div>`;
+    floatDiv.style.flexDirection = 'column';
     floatDiv.appendChild(blockDiv);
+    floatDiv.appendChild(cap);
     wrap.appendChild(floatDiv);
 
     // Connector to next block
@@ -5398,6 +5672,9 @@ function build3DChain(blocks) {
         <line x1="0" y1="10" x2="54" y2="10" stroke="${blockColor}" stroke-width="2"
           stroke-dasharray="6 4" marker-end="url(#a${i})"
           style="animation:_dash3d 1s linear infinite;"/>
+        <circle r="3.2" fill="${blockColor}" opacity="0.95">
+          <animateMotion dur="${1.35 + (i % 3) * 0.2}s" repeatCount="indefinite" path="M2,10 L52,10"/>
+        </circle>
       </svg>`;
       wrap.appendChild(conn);
     }
@@ -5635,7 +5912,34 @@ function closeBlockModal(e) {
 }
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeBlockModal(null); closeMerkleModal(null); }
+  if (e.key === 'Escape') {
+    closeBlockModal(null); closeMerkleModal(null);
+    const auth = document.getElementById('authModal');
+    if (auth && auth.classList.contains('open') && typeof closeAuthModal === 'function') closeAuthModal();
+    const wel = document.getElementById('welcomeModal');
+    if (wel && wel.classList.contains('open') && typeof closeWelcome === 'function') closeWelcome();
+    const cmpOn = document.getElementById('tab-compare')?.classList.contains('active');
+    if (cmpOn) {
+      const world = document.getElementById('cmpWorld');
+      if (world) {
+        world.classList.remove('is-focus');
+        world.querySelectorAll('.is-on').forEach(el => el.classList.remove('is-on'));
+        if (typeof updateCmpHud === 'function') updateCmpHud();
+      }
+    }
+    return;
+  }
+  const cmpOn = document.getElementById('tab-compare')?.classList.contains('active');
+  if (!cmpOn) return;
+  if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if (e.key === 'r' || e.key === 'R') { e.preventDefault(); resetCmpView(); }
+  else if (e.key === ' ') { e.preventDefault(); toggleCmpAuto(); }
+  else if (e.key === 'ArrowLeft') { _cmpView.ry -= 10; applyCmpView(); }
+  else if (e.key === 'ArrowRight') { _cmpView.ry += 10; applyCmpView(); }
+  else if (e.key === 'ArrowUp') { _cmpView.rx = Math.max(-78, _cmpView.rx - 6); applyCmpView(); }
+  else if (e.key === 'ArrowDown') { _cmpView.rx = Math.min(20, _cmpView.rx + 6); applyCmpView(); }
+  else if (e.key === '+' || e.key === '=') { _cmpView.zoom = Math.min(2.2, _cmpView.zoom * 1.08); applyCmpView(); }
+  else if (e.key === '-' || e.key === '_') { _cmpView.zoom = Math.max(0.5, _cmpView.zoom * 0.92); applyCmpView(); }
 });
 
 
@@ -5729,7 +6033,7 @@ function _drawMerkleTree(tree, leaves) {
     .attr('transform', `translate(${offsetX},${offsetY})`);
 
   // ── Links ──────────────────────────────────────────────────────
-  g.selectAll('.mk-link')
+  const mkLinks = g.selectAll('.mk-link')
     .data(root.links()).enter()
     .append('path')
     .attr('class', 'mk-link')
@@ -5739,12 +6043,30 @@ function _drawMerkleTree(tree, leaves) {
     .attr('stroke-dasharray', d => d.source.depth === 0 ? '4,3' : 'none')
     .attr('d', d3.linkVertical().x(d => d.x).y(d => d.y));
 
+  mkLinks.each(function(d) {
+    let len = 0;
+    try { len = this.getTotalLength(); } catch (err) { return; }
+    d3.select(this)
+      .attr('stroke-dasharray', len)
+      .attr('stroke-dashoffset', len)
+      .transition().duration(640).delay((maxDepth - (d.target.depth || 1)) * 140)
+      .ease(d3.easeCubicOut)
+      .attr('stroke-dashoffset', 0);
+  });
+
   // ── Nodes ──────────────────────────────────────────────────────
   const nodeG = g.selectAll('.mk-node')
     .data(root.descendants()).enter()
     .append('g')
     .attr('class', 'mk-node')
-    .attr('transform', d => `translate(${d.x},${d.y})`);
+    .attr('transform', d => `translate(${d.x},${d.y}) scale(0.7)`)
+    .style('opacity', 0);
+  nodeG.transition()
+    .duration(480)
+    .delay(d => 40 + (maxDepth - d.depth) * 140)
+    .ease(d3.easeCubicOut)
+    .attr('transform', d => `translate(${d.x},${d.y}) scale(1)`)
+    .style('opacity', 1);
 
   // Pick colour per node
   function nodeCol(d) {
@@ -6070,18 +6392,18 @@ function renderRegistry(models, total, page, pages) {
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1rem 1.2rem;display:flex;flex-wrap:wrap;gap:.6rem;align-items:flex-start;transition:border-color .2s;" onmouseover="this.style.borderColor='rgba(var(--primary-rgb),0.4)'" onmouseout="this.style.borderColor='var(--border)'">
         <div style="flex-shrink:0;margin-top:.1rem;">${hashIdenticon(m.modelHash, 38)}</div>
         <div style="flex:1;min-width:180px;">
-          <div style="font-weight:700;font-size:.95rem;margin-bottom:.3rem;">${m.modelName} ${status} <span class="badge badge-warn">v${m.currentVersion}</span></div>
+          <div style="font-weight:700;font-size:.95rem;margin-bottom:.3rem;">${escapeHtml(m.modelName)} ${status} <span class="badge badge-warn">v${escapeHtml(String(m.currentVersion ?? ''))}</span></div>
           <div style="font-size:.78rem;color:var(--text-muted);display:flex;gap:.8rem;flex-wrap:wrap;">
-            <span>🔑 <code style="font-size:.75rem;">${m.modelId}</code></span>
-            <span>👤 ${m.owner}</span>
+            <span>🔑 <code style="font-size:.75rem;">${escapeHtml(m.modelId)}</code></span>
+            <span>👤 ${escapeHtml(m.owner || '')}</span>
             <span>⛓ Algorand Hosted</span>
             <span>📅 ${fmt(m.registeredAt)}</span>
           </div>
         </div>
         <div style="display:flex;gap:.5rem;flex-shrink:0;align-items:center;">
-          <button class="btn btn-sec" style="font-size:.78rem;padding:.35rem .8rem;" onclick="copyText('${m.modelId}',this)">Copy ID</button>
-          <button class="btn btn-sec" style="font-size:.78rem;padding:.35rem .8rem;background:linear-gradient(135deg,rgba(var(--primary-rgb),0.18),rgba(var(--success-rgb),0.12));border-color:rgba(var(--primary-rgb),0.35);" onclick="downloadReport('${m.modelId}','${m.modelName.replace(/'/g,'')}')">📄 PDF</button>
-          <button class="btn btn-sec" style="font-size:.78rem;padding:.35rem .8rem;background:linear-gradient(135deg,rgba(var(--primary-rgb),0.2),rgba(var(--accent-rgb),0.13));border-color:rgba(var(--primary-rgb),0.4);" onclick="downloadCertificate('${m.modelId}','${m.modelName.replace(/'/g,'')}')" data-tip="Download a blockchain certificate (PDF) with QR code."><svg class="ico"><use href="#i-award"/></svg> Cert</button>
+          <button class="btn btn-sec" style="font-size:.78rem;padding:.35rem .8rem;" onclick="copyText('${escapeHtml(m.modelId)}',this)">Copy ID</button>
+          <button class="btn btn-sec" style="font-size:.78rem;padding:.35rem .8rem;background:linear-gradient(135deg,rgba(var(--primary-rgb),0.18),rgba(var(--success-rgb),0.12));border-color:rgba(var(--primary-rgb),0.35);" onclick="downloadReport('${escapeHtml(m.modelId)}')">📄 PDF</button>
+          <button class="btn btn-sec" style="font-size:.78rem;padding:.35rem .8rem;background:linear-gradient(135deg,rgba(var(--primary-rgb),0.2),rgba(var(--accent-rgb),0.13));border-color:rgba(var(--primary-rgb),0.4);" onclick="downloadCertificate('${escapeHtml(m.modelId)}')" data-tip="Download a blockchain certificate (PDF) with QR code."><svg class="ico"><use href="#i-award"/></svg> Cert</button>
         </div>
       </div>`;
   });
@@ -6135,6 +6457,29 @@ async function downloadCertificate(modelId, modelName) {
 let _feedOpen = false;
 let _feedEvents = [];
 let _feedTimer = null;
+
+let _actChartOpen = false;
+function toggleActivityChart() {
+  const body = document.getElementById('activityChartBody');
+  const arrow = document.getElementById('actToggleArrow');
+  if (!body) return;
+  _actChartOpen = !_actChartOpen;
+  body.classList.toggle('open', _actChartOpen);
+  if (arrow) arrow.style.transform = _actChartOpen ? 'rotate(180deg)' : 'rotate(0)';
+  if (!_actChartOpen) return;
+  // Wait for the max-height transition so Chart.js does not init at height 0.
+  const kick = () => {
+    if (_chartInstance) { try { _chartInstance.resize(); } catch (e) {} }
+    else loadActivityChart(_activeDays);
+  };
+  const onEnd = (ev) => {
+    if (ev && ev.propertyName && ev.propertyName !== 'max-height') return;
+    body.removeEventListener('transitionend', onEnd);
+    kick();
+  };
+  body.addEventListener('transitionend', onEnd);
+  setTimeout(() => { body.removeEventListener('transitionend', onEnd); kick(); }, 450);
+}
 
 function toggleFeedPanel() {
   const panel = document.getElementById('feedPanel');
@@ -6501,7 +6846,7 @@ function _anHealth(blocks, txs, avgMt, P, isDark) {
 // ════════════════════════════════════════════════════════════════════
 const _cmp = { A: null, B: null };                 // {name, hex, layers|null}
 let _cmpAuto = null, _cmpDrag = null;
-const _cmpView = { rx: -18, ry: 26, zoom: 1 };
+const _cmpView = { rx: -18, ry: 26, zoom: 1, bob: 0 };
 
 async function onCompareFile(slot) {
   const input = document.getElementById('cmpFile' + slot);
@@ -6520,7 +6865,7 @@ async function onCompareFile(slot) {
       try { const j = JSON.parse(await file.text()); if (j && j.layers) layers = j.layers; } catch (e) {}
     }
     _cmp[slot] = { name: file.name, hex, layers };
-    hbox.innerHTML = `<span class="lbl">SHA-256 · ${slot}</span>${hex}`;
+    hbox.innerHTML = `<span class="lbl">SHA-256 · ${slot}</span><span style="word-break:break-all;">${_escapeHtml(hex)}</span> <button class="copy-btn" onclick="copyText('${hex}', this)">Copy</button>`;
     renderComparison();
   } catch (e) { toast('err', 'Hash error: ' + e.message); hbox.style.display = 'none'; }
 }
@@ -6532,11 +6877,21 @@ function renderComparison() {
     verdict.innerHTML = '<div class="cmp-verdict-ico">⇄</div><div class="cmp-verdict-txt">Awaiting<br>both files</div>';
     document.getElementById('cmp3dCard').style.display = 'none';
     document.getElementById('cmpDiffCard').style.display = 'none';
+    const bar0 = document.getElementById('cmpHashBar');
+    if (bar0) { bar0.className = 'cmp-hash-bar'; bar0.innerHTML = ''; }
     return;
   }
   const identical = A.hex === B.hex;
   document.getElementById('cmpHashA').className = 'cmp-hash ' + (identical ? 'match' : 'diff');
   document.getElementById('cmpHashB').className = 'cmp-hash ' + (identical ? 'match' : 'diff');
+  const bar = document.getElementById('cmpHashBar');
+  if (bar) {
+    const cls = identical ? 'match' : 'diff';
+    bar.className = 'cmp-hash-bar show';
+    bar.innerHTML =
+      `<span class="${cls}"><b>A</b> ${_escapeHtml(A.hex)}</span>`
+      + `<span class="${cls}"><b>B</b> ${_escapeHtml(B.hex)}</span>`;
+  }
   verdict.className = 'cmp-verdict ' + (identical ? 'match' : 'diff');
   verdict.innerHTML = identical
     ? '<div class="cmp-verdict-ico">✓</div><div class="cmp-verdict-txt">IDENTICAL<br>files match</div>'
@@ -6620,79 +6975,123 @@ function detectReorder(LA, LB) {     // common layers appearing in a different o
 function build3DComparison(rows) {
   const world = document.getElementById('cmpWorld');
   world.innerHTML = '';
-  const N = rows.length, gap = 52, colX = 152, top = -((N - 1) / 2) * gap;
+  world.classList.remove('is-focus');
+  const N = rows.length, gap = N > 8 ? 46 : 54, colX = 158, top = -((N - 1) / 2) * gap;
+  const scan = document.getElementById('cmpScan');
+  if (scan) { scan.style.animation = 'none'; void scan.offsetWidth; scan.style.animation = ''; }
 
-  // depth starfield
   const stars = document.createElement('div'); stars.className = 'cmp-stars';
-  for (let i = 0; i < 48; i++) {
-    const s = document.createElement('div'); s.className = 'cmp-star';
-    s.style.transform = `translate3d(${(Math.random() - 0.5) * 960}px, ${(Math.random() - 0.5) * 660}px, ${-140 - Math.random() * 560}px)`;
-    s.style.animationDelay = (Math.random() * 3).toFixed(2) + 's';
-    s.style.opacity = (0.15 + Math.random() * 0.55).toFixed(2);
+  for (let i = 0; i < 72; i++) {
+    const s = document.createElement('div'); s.className = 'cmp-star' + (i % 7 === 0 ? ' lg' : '');
+    s.style.transform = `translate3d(${(Math.random() - 0.5) * 1100}px, ${(Math.random() - 0.5) * 780}px, ${-120 - Math.random() * 640}px)`;
+    s.style.animationDelay = (Math.random() * 3.6).toFixed(2) + 's';
+    s.style.animationDuration = (2.4 + Math.random() * 2.4).toFixed(2) + 's';
+    s.style.opacity = (0.12 + Math.random() * 0.6).toFixed(2);
     stars.appendChild(s);
   }
   world.appendChild(stars);
 
-  // glow pads under each tower
   [['var(--accent-rgb)', -colX], ['var(--primary-rgb)', colX]].forEach(([col, x]) => {
     const pad = document.createElement('div'); pad.className = 'cmp-pad';
     pad.style.setProperty('--pc', col);
-    pad.style.transform = `translate3d(${x}px, ${-top + 52}px, 0) rotateX(84deg)`;
+    pad.style.transform = `translate3d(${x}px, ${-top + 58}px, 0) rotateX(84deg)`;
     world.appendChild(pad);
   });
 
-  // column labels
   const mkLabel = (txt, x, color) => {
     const l = document.createElement('div'); l.className = 'cmp-col-label';
     l.textContent = txt; l.style.color = color;
-    l.style.transform = `translate3d(${x}px, ${top - 56}px, 34px)`; world.appendChild(l);
+    l.style.transform = `translate3d(${x}px, ${top - 60}px, 40px)`; world.appendChild(l);
   };
   mkLabel('MODEL A', -colX, 'var(--accent)');
   mkLabel('MODEL B', colX, 'var(--primary)');
+  world.querySelectorAll('.cmp-col-label').forEach((l, i) => {
+    l.dataset.x = String(i === 0 ? -colX : colX);
+    l.dataset.y = String(top - 60);
+    l.dataset.z = '40';
+  });
 
   const maxSize = Math.max(1, ...rows.map(r => r.size || 0));
   rows.forEach((r, i) => {
+    r._i = i;
     const y = top + i * gap;
-    const depth = 16 + 36 * Math.min(1, Math.sqrt((r.size || 0) / maxSize));   // thickness ∝ params
+    const depth = 16 + 38 * Math.min(1, Math.sqrt((r.size || 0) / maxSize));
     if (r.inA && r.inB) {
       const beam = document.createElement('div');
       beam.className = 'cmp-beam ' + (r.status === 'match' ? 'match' : 'changed');
-      const w = 2 * colX - 172; beam.style.width = w + 'px'; beam.style.marginLeft = (-w / 2) + 'px';
+      beam.dataset.layer = String(i);
+      const w = 2 * colX - 176; beam.style.width = w + 'px'; beam.style.marginLeft = (-w / 2) + 'px';
       beam.style.transform = `translate3d(0px, ${y}px, 0)`;
-      if (r.status === 'changed') { const pkt = document.createElement('span'); pkt.className = 'cmp-packet'; beam.appendChild(pkt); }
+      beam.style.opacity = '0';
+      const nPkt = r.status === 'changed' ? 3 : 2;
+      for (let k = 0; k < nPkt; k++) {
+        const pkt = document.createElement('span');
+        pkt.className = 'cmp-packet' + (r.status === 'match' ? ' match' : '');
+        pkt.style.animationDelay = (0.15 + k * 0.42) + 's';
+        beam.appendChild(pkt);
+      }
       world.appendChild(beam);
+      setTimeout(() => { beam.style.transition = 'opacity .5s ease'; beam.style.opacity = '1'; }, 320 + i * 75);
     }
-    world.appendChild(makeSlab(r, 'A', -colX, y, depth));
-    world.appendChild(makeSlab(r, 'B', colX, y, depth));
+    world.appendChild(makeSlab(r, 'A', -colX, y, depth, i));
+    world.appendChild(makeSlab(r, 'B', colX, y, depth, i));
   });
-  cmpIntro();   // animated camera sweep, then auto-orbit
+  cmpIntro();
 }
-function makeSlab(r, side, x, y, depth) {
+function makeSlab(r, side, x, y, depth, idx) {
   const ghost = (r.status === 'removed' && side === 'B') || (r.status === 'added' && side === 'A');
   const slab = document.createElement('div');
   slab.className = 'cmp-slab ' + (ghost ? 'ghost' : r.status);
-  slab.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-  slab.style.setProperty('--w', '170px');
-  slab.style.setProperty('--h', '34px');
+  slab.dataset.layer = String(idx);
+  const rest = `translate3d(${x}px, ${y}px, 0)`;
+  slab.style.transform = `translate3d(${x}px, ${y + 28}px, -70px)`;
+  slab.style.opacity = '0';
+  slab.style.setProperty('--w', '176px');
+  slab.style.setProperty('--h', '36px');
   slab.style.setProperty('--d', (ghost ? 14 : depth) + 'px');
+  const inner = document.createElement('div');
+  inner.className = 'cmp-slab-inner';
+  inner.style.animationDelay = ((idx || 0) * 0.17 + (side === 'B' ? 0.08 : 0)) + 's';
   const face = (cls, html) => { const f = document.createElement('div'); f.className = 'cmp-face ' + cls; if (html) f.innerHTML = html; return f; };
   const content = ghost
     ? '<span class="st"></span><span class="nm" style="color:var(--text-muted)">— absent —</span>'
     : `<span class="st"></span><span class="nm">${_escapeHtml(r.name)}</span>`;
-  slab.append(face('f', content), face('bk'), face('lf'), face('rt'), face('tp'), face('bt'));
+  inner.append(face('f', content), face('bk'), face('lf'), face('rt'), face('tp'), face('bt'));
+  slab.appendChild(inner);
   if (!ghost) {
     slab.addEventListener('mouseenter', () => showCmpTip(r, slab));
     slab.addEventListener('mouseleave', hideCmpTip);
+    slab.addEventListener('click', ev => { ev.stopPropagation(); focusCmpLayer(idx); });
   }
+  const delay = (idx || 0) * 75 + (side === 'B' ? 45 : 0);
+  requestAnimationFrame(() => {
+    slab.style.transition = `transform .75s cubic-bezier(.16,1,.3,1) ${delay}ms, opacity .55s ease ${delay}ms`;
+    slab.style.opacity = ghost ? '0.16' : '1';
+    slab.style.transform = rest;
+    setTimeout(() => { slab.style.transition = 'filter .28s ease'; }, delay + 780);
+  });
   return slab;
+}
+function focusCmpLayer(idx) {
+  const world = document.getElementById('cmpWorld');
+  if (!world) return;
+  const on = world.querySelector('.cmp-slab.is-on[data-layer="'+idx+'"]');
+  world.querySelectorAll('.is-on').forEach(el => el.classList.remove('is-on'));
+  if (on) { world.classList.remove('is-focus'); updateCmpHud(); return; }
+  world.classList.add('is-focus');
+  world.querySelectorAll('[data-layer="'+idx+'"]').forEach(el => el.classList.add('is-on'));
+  updateCmpHud(idx);
 }
 function cmpIntro() {
   stopCmpAuto();
-  _cmpView.zoom = 1; _cmpView.rx = -16;
-  const startRy = -72, endRy = 24, t0 = performance.now(), dur = 1100;
+  _cmpView.zoom = 0.78; _cmpView.rx = -26; _cmpView.bob = 0;
+  const startRy = -82, endRy = 28, t0 = performance.now(), dur = 1420;
   (function step(now) {
     const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
-    _cmpView.ry = startRy + (endRy - startRy) * e; applyCmpView();
+    _cmpView.ry = startRy + (endRy - startRy) * e;
+    _cmpView.rx = -26 + 8 * e;
+    _cmpView.zoom = 0.78 + 0.22 * e;
+    applyCmpView();
     if (k < 1) requestAnimationFrame(step); else startCmpAuto();
   })(t0);
 }
@@ -6719,18 +7118,75 @@ function showCmpTip(r, slab) {
 function hideCmpTip() { document.getElementById('cmpTip').classList.remove('show'); }
 function applyCmpView() {
   const w = document.getElementById('cmpWorld');
-  if (w) w.style.transform = `translate(-50%,-50%) scale(${_cmpView.zoom}) rotateX(${_cmpView.rx}deg) rotateY(${_cmpView.ry}deg)`;
+  if (!w) return;
+  const bob = _cmpView.bob || 0;
+  w.style.transform = `translate(-50%,-50%) scale(${_cmpView.zoom}) rotateX(${_cmpView.rx + bob}deg) rotateY(${_cmpView.ry}deg)`;
+  w.querySelectorAll('.cmp-col-label').forEach(l => {
+    const x = l.dataset.x || '0', y = l.dataset.y || '0', z = l.dataset.z || '0';
+    l.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotateY(${-_cmpView.ry}deg) rotateX(${-(_cmpView.rx + bob)}deg)`;
+  });
+}
+function resetCmpView() {
+  _cmpView.rx = -18; _cmpView.ry = 26; _cmpView.zoom = 1; _cmpView.bob = 0;
+  const world = document.getElementById('cmpWorld');
+  if (world) {
+    world.classList.remove('is-focus');
+    world.querySelectorAll('.is-on').forEach(el => el.classList.remove('is-on'));
+  }
+  applyCmpView();
+  updateCmpHud();
+  startCmpAuto();
+  const btn = document.getElementById('cmpPauseBtn');
+  if (btn) btn.textContent = 'Pause orbit';
+}
+function toggleCmpAuto() {
+  const btn = document.getElementById('cmpPauseBtn');
+  if (_cmpAuto) {
+    stopCmpAuto();
+    if (btn) btn.textContent = 'Resume orbit';
+  } else {
+    startCmpAuto();
+    if (btn) btn.textContent = 'Pause orbit';
+  }
+}
+function updateCmpHud(idx) {
+  const hud = document.getElementById('cmpHud');
+  if (!hud) return;
+  if (idx == null) { hud.textContent = ''; return; }
+  hud.textContent = 'layer ' + (idx + 1) + ' isolated · click empty space or Esc to restore';
 }
 function startCmpAuto() {
   stopCmpAuto();
-  _cmpAuto = setInterval(() => { if (!_cmpDrag) { _cmpView.ry += 0.22; applyCmpView(); } }, 33);
+  let last = performance.now();
+  const t0 = last;
+  function spin(now) {
+    if (_cmpAuto == null) return;
+    const dt = Math.min(40, now - last); last = now;
+    if (!_cmpDrag) {
+      _cmpView.ry += dt * 0.0072;
+      _cmpView.bob = Math.sin((now - t0) / 1600) * 1.35;
+      applyCmpView();
+    }
+    _cmpAuto = requestAnimationFrame(spin);
+  }
+  _cmpAuto = requestAnimationFrame(spin);
 }
-function stopCmpAuto() { if (_cmpAuto) { clearInterval(_cmpAuto); _cmpAuto = null; } }
+function stopCmpAuto() {
+  if (_cmpAuto) { cancelAnimationFrame(_cmpAuto); _cmpAuto = null; }
+}
 function initCmpOrbit() {
   const scene = document.getElementById('cmpScene');
   if (!scene || scene._orbit) return;
   scene._orbit = true;
   scene.addEventListener('pointerdown', e => {
+    if (!e.target.closest('.cmp-slab')) {
+      const world = document.getElementById('cmpWorld');
+      if (world) {
+        world.classList.remove('is-focus');
+        world.querySelectorAll('.is-on').forEach(el => el.classList.remove('is-on'));
+        updateCmpHud();
+      }
+    }
     _cmpDrag = { x: e.clientX, y: e.clientY, rx: _cmpView.rx, ry: _cmpView.ry };
     scene.classList.add('dragging'); hideCmpTip();
     try { scene.setPointerCapture(e.pointerId); } catch (err) {}
@@ -6919,13 +7375,47 @@ async function bootConnect() {
   }
 }
 
+function syncHeaderH() {
+  const h = document.querySelector('.header');
+  const b = document.getElementById('insecureBanner');
+  const headerPx = h ? h.offsetHeight : 72;
+  const bannerPx = (b && b.classList.contains('open')) ? b.offsetHeight : 0;
+  document.documentElement.style.setProperty('--header-h', headerPx + 'px');
+  document.documentElement.style.setProperty('--sticky-offset', (headerPx + bannerPx) + 'px');
+}
+function warnInsecureOrigin() {
+  const host = location.hostname;
+  if (host !== '0.0.0.0' && host !== '[::]' && host !== '::') return;
+  const bar = document.getElementById('insecureBanner');
+  if (!bar) return;
+  bar.classList.add('open');
+  const a = document.getElementById('insecureLocalLink');
+  if (a) a.href = location.protocol + '//localhost:' + (location.port || '8080') + location.pathname + location.hash;
+  syncHeaderH();
+}
+function applyTabFromHash() {
+  const name = (location.hash || '').replace(/^#/, '');
+  if (name && _TAB_IDS.includes(name)) {
+    _tabHashLock = true;
+    switchTab(name);
+    _tabHashLock = false;
+  }
+}
+
 // ── Init ──
 bootConnect();
 initTheme();
 initUser();
 initSocket();
-loadActivityChart(14);
-// Show welcome modal only on first ever visit (after login)
+syncHeaderH();
+warnInsecureOrigin();
+applyTabFromHash();
+window.addEventListener('resize', syncHeaderH);
+window.addEventListener('hashchange', applyTabFromHash);
+document.querySelectorAll('a[target="_blank"]').forEach(a => {
+  const rel = (a.getAttribute('rel') || '').split(/\s+/);
+  if (!rel.includes('noopener')) a.setAttribute('rel', (rel.concat(['noopener','noreferrer']).filter(Boolean).join(' ')));
+});
 setInterval(refreshStats, 5000);
 
 </script>
@@ -7036,113 +7526,149 @@ setInterval(refreshStats, 5000);
 <script>
 (function() {
   const canvas = document.getElementById('bg-canvas');
-  const ctx = canvas.getContext('2d');
-  
-  let width, height;
+  if (!canvas) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    canvas.style.display = 'none';
+    return;
+  }
+
+  const ctx = canvas.getContext('2d', { alpha: true });
+  const LINK = 138;
+  let width = 0, height = 0, dpr = 1;
   let nodes = [];
-  const connectionDistance = 150;
-  
-  // Customise these based on theme
-  let nodeColor, lineColor;
+  let running = false;
+  let raf = 0;
+  let light = false;
+  let rgbP = [0, 229, 160], rgbA = [91, 140, 255];
+  const mouse = { x: 0, y: 0, on: false };
+
+  function parseRgb(name, fallback) {
+    const v = getComputedStyle(document.body).getPropertyValue(name).trim();
+    const m = v.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    return m ? [+m[1], +m[2], +m[3]] : fallback;
+  }
+  function readTheme() {
+    light = document.body.classList.contains('light-theme');
+    rgbP = parseRgb('--primary-rgb', [0, 229, 160]);
+    rgbA = parseRgb('--accent-rgb', [91, 140, 255]);
+  }
+  function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
 
   function resize() {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
-    initNodes();
-  }
-
-  function getThemeColors() {
-    const isLight = document.body.classList.contains('light-theme');
-    // Using subtle colours that match existing variables
-    nodeColor = isLight ? 'rgba(99, 102, 241, 0.4)' : 'rgba(var(--primary-rgb), 0.5)';
-    lineColor = isLight ? 'rgba(79, 70, 229, 0.15)' : 'rgba(var(--primary-rgb), 0.15)';
-  }
-
-  class Node {
-    constructor() {
-      this.x = Math.random() * width;
-      this.y = Math.random() * height;
-      this.vx = (Math.random() - 0.5) * 0.5;
-      this.vy = (Math.random() - 0.5) * 0.5;
-      this.radius = Math.random() * 2 + 1.5;
-    }
-
-    update() {
-      this.x += this.vx;
-      this.y += this.vy;
-
-      if (this.x < 0 || this.x > width) this.vx *= -1;
-      if (this.y < 0 || this.y > height) this.vy *= -1;
-    }
-
-    draw() {
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-      ctx.fillStyle = nodeColor;
-      ctx.fill();
-    }
-  }
-
-  function initNodes() {
-    nodes = [];
-    // Adjust density based on screen size
-    const numNodes = Math.floor((width * height) / 15000); 
-    for (let i = 0; i < numNodes; i++) {
-      nodes.push(new Node());
-    }
-  }
-
-  function drawLines() {
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const dx = nodes[i].x - nodes[j].x;
-        const dy = nodes[i].y - nodes[j].y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance < connectionDistance) {
-          // Opacity decreases as distance increases
-          ctx.beginPath();
-          ctx.moveTo(nodes[i].x, nodes[i].y);
-          ctx.lineTo(nodes[j].x, nodes[j].y);
-          ctx.lineWidth = 1;
-          
-          // Use pure RGB from theme colours and adjust alpha based on distance
-          const alpha = 1 - (distance / connectionDistance);
-          const isLight = document.body.classList.contains('light-theme');
-          ctx.strokeStyle = isLight ? `rgba(79, 70, 229, ${alpha * 0.2})` : `rgba(var(--primary-rgb), ${alpha * 0.3})`;
-          
-          ctx.stroke();
-        }
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = Math.floor(width * dpr);
+    canvas.height = Math.floor(height * dpr);
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const n = Math.max(16, Math.min(64, Math.floor((width * height) / 24000)));
+    if (nodes.length !== n) {
+      nodes = [];
+      for (let i = 0; i < n; i++) {
+        nodes.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 0.22,
+          vy: (Math.random() - 0.5) * 0.22,
+          r: Math.random() * 1.35 + 0.7,
+          tw: Math.random() * Math.PI * 2,
+          hue: Math.random() < 0.7 ? 'p' : 'a'
+        });
       }
     }
   }
 
-  function animate() {
+  function tick() {
+    if (!running) return;
     ctx.clearRect(0, 0, width, height);
-    getThemeColors(); // Check theme every frame in case it changes
-    
-    nodes.forEach(node => {
-      node.update();
-      node.draw();
-    });
-    
-    drawLines();
-    requestAnimationFrame(animate);
+    const mx = mouse.x, my = mouse.y, hon = mouse.on;
+
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      if (hon) {
+        const dx = mx - n.x, dy = my - n.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < 50000 && d2 > 16) {
+          n.vx += dx * 0.000010;
+          n.vy += dy * 0.000010;
+        }
+      }
+      n.vx *= 0.994;
+      n.vy *= 0.994;
+      if (n.vx > 0.45) n.vx = 0.45; else if (n.vx < -0.45) n.vx = -0.45;
+      if (n.vy > 0.45) n.vy = 0.45; else if (n.vy < -0.45) n.vy = -0.45;
+      n.x += n.vx;
+      n.y += n.vy;
+      n.tw += 0.011;
+      if (n.x < -24) n.x = width + 24;
+      else if (n.x > width + 24) n.x = -24;
+      if (n.y < -24) n.y = height + 24;
+      else if (n.y > height + 24) n.y = -24;
+    }
+
+    for (let i = 0; i < nodes.length; i++) {
+      const a = nodes[i];
+      for (let j = i + 1; j < nodes.length; j++) {
+        const b = nodes[j];
+        const dx = a.x - b.x, dy = a.y - b.y;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d >= LINK) continue;
+        const t = 1 - d / LINK;
+        const col = a.hue === 'a' ? rgbA : rgbP;
+        ctx.strokeStyle = rgba(col, t * t * (light ? 0.16 : 0.26));
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+    }
+
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      const col = n.hue === 'a' ? rgbA : rgbP;
+      const pulse = 0.58 + 0.42 * Math.sin(n.tw);
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r * 3.1, 0, Math.PI * 2);
+      ctx.fillStyle = rgba(col, (light ? 0.035 : 0.065) * pulse);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.fillStyle = rgba(col, (light ? 0.32 : 0.50) * pulse);
+      ctx.fill();
+    }
+    raf = requestAnimationFrame(tick);
   }
 
-  window.addEventListener('resize', resize);
-  
-  // Also listen for theme toggle to update colours instantly
-  const themeBtn = document.getElementById('themeToggle');
-  if(themeBtn) {
-    themeBtn.addEventListener('click', () => {
-      // Small delay to let body class update first
-      setTimeout(getThemeColors, 10);
-    });
+  function start() {
+    if (running) return;
+    running = true;
+    raf = requestAnimationFrame(tick);
+  }
+  function stop() {
+    running = false;
+    cancelAnimationFrame(raf);
   }
 
+  let resizeTimer = 0;
+  window.addEventListener('resize', function() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resize, 80);
+  });
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) stop(); else start();
+  });
+  window.addEventListener('mousemove', function(e) {
+    mouse.x = e.clientX; mouse.y = e.clientY; mouse.on = true;
+  }, { passive: true });
+  document.addEventListener('mouseleave', function() { mouse.on = false; });
+  new MutationObserver(readTheme).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+  readTheme();
   resize();
-  animate();
+  start();
 })();
 </script>
 
@@ -7151,43 +7677,45 @@ setInterval(refreshStats, 5000);
 ═══════════════════════════════════════════════════════ -->
 <script>
 document.addEventListener('mousedown', function(e) {
+  if (e.button !== 0) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const skip = e.target.closest && e.target.closest(
+    'input, textarea, select, button, a, .tour-blocker, .tour-tooltip, .modal-overlay, .auth-overlay, .chatbot-window, .cmp-scene'
+  );
+  if (skip) return;
+
   const container = document.createElement('div');
   container.className = 'click-network';
   container.style.left = e.clientX + 'px';
   container.style.top = e.clientY + 'px';
-  
-  let nodes = '';
-  let lines = '';
-  const numNodes = Math.floor(Math.random() * 2) + 2; // 2 or 3 satellite blocks
-  
-  for (let i = 0; i < numNodes; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const dist = Math.random() * 20 + 15; // distances from center (50,50)
-    const x = 50 + Math.cos(angle) * dist;
-    const y = 50 + Math.sin(angle) * dist;
-    
-    lines += `<line x1="50" y1="50" x2="${x}" y2="${y}" stroke="#2de2c5" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.8"/>`;
-    nodes += `<rect x="${x-3}" y="${y-3}" width="6" height="6" fill="#2de2c5" rx="1.5"/>`;
+  container.setAttribute('aria-hidden', 'true');
+
+  const light = document.body.classList.contains('light-theme');
+  const ink = light ? '#0aa37a' : '#00e5a0';
+  const sat = light ? '#2a9d8f' : '#2de2c5';
+  const nSat = 2 + Math.floor(Math.random() * 2);
+  let nodes = '', lines = '';
+  const cx = 60, cy = 60;
+  for (let i = 0; i < nSat; i++) {
+    const angle = (Math.PI * 2 * i) / nSat + Math.random() * 0.5;
+    const dist = 18 + Math.random() * 16;
+    const x = cx + Math.cos(angle) * dist;
+    const y = cy + Math.sin(angle) * dist;
+    lines += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="${sat}" stroke-width="1.4" stroke-dasharray="3 3" opacity="0.85"/>`;
+    nodes += `<rect x="${x-3}" y="${y-3}" width="6" height="6" fill="${sat}" rx="1.4"/>`;
   }
-  
-  // Combine into an SVG graph showing a little blockchain network linking
-  container.innerHTML = `
-    <svg width="100" height="100" viewBox="0 0 100 100">
-      <g>
-        ${lines}
-        <rect x="46" y="46" width="8" height="8" fill="#00e5a0" rx="2"/>
-        ${nodes}
-      </g>
-    </svg>
-  `;
-  
+  container.innerHTML =
+    `<svg width="120" height="120" viewBox="0 0 120 120">` +
+      `<circle class="cn-ring" cx="${cx}" cy="${cy}" r="18" fill="none" stroke="${ink}" stroke-width="1.2" opacity="0.55"/>` +
+      lines +
+      `<rect x="${cx-4.5}" y="${cy-4.5}" width="9" height="9" fill="${ink}" rx="2"/>` +
+      nodes +
+    `</svg>`;
   document.body.appendChild(container);
-  
-  // Cleanup
-  setTimeout(() => {
+  setTimeout(function() {
     if (container.parentNode) container.parentNode.removeChild(container);
-  }, 700);
-}, {passive: true});
+  }, 680);
+}, { passive: true });
 </script>
 
 <script>
@@ -7197,7 +7725,7 @@ const TOUR_STEPS = [
   { target: '#regDrop', chapter: 'Getting started', tab: 'register', title: '📂 Upload Your Model File', body: 'Drag and drop or click to select any file (.pt, .h5, .pkl, .onnx, PDF, ZIP — anything). The SHA-256 fingerprint is computed instantly in your browser.', position: 'bottom' },
   { target: '#tab-verify', chapter: 'Getting started', tab: 'verify', title: '✅ Step 2 — Verify Integrity', body: 'Re-upload the same file later. BlockVerify re-hashes it and compares against the blockchain record. Match = untampered. Mismatch = model was modified.', position: 'bottom' },
   { target: '#tab-explorer', chapter: 'On-chain proof', tab: 'explorer', title: '🔗 Step 3 — Algorand Testnet Explorer', body: 'Every registration and verification is broadcast as an immutable transaction on the live Algorand Testnet. Visit the explorer to inspect your permanent on-chain proofs.', position: 'bottom' },
-  { target: '#validateBtn', chapter: 'On-chain proof', tab: 'explorer', title: '🛡 Validate Chain Integrity', body: 'Click this to confirm Algorand Testnet is live and your transactions are globally secured. Algorand\'s Pure Proof-of-Stake (PPoS) ensures 100% Byzantine fault tolerance — always ✅ Valid.', position: 'top' },
+  { target: '#validateBtn', chapter: 'On-chain proof', tab: 'explorer', title: '🛡 Validate Chain Integrity', body: 'Click this to confirm Algorand Testnet is live. PPoS finalizes under a ⅓-Byzantine bound — once confirmed, we cannot alter that transaction.', position: 'top' },
   { target: '#tab-models', chapter: 'Managing models', tab: 'models', title: '📦 Step 4 — My Models', body: 'All your registered models appear here. You can verify, add new versions, download a PDF integrity report, toggle privacy, or deactivate a model.', position: 'bottom' },
   { target: '#tab-federated', chapter: 'Federated learning', delay: 300, tab: 'federated', title: '🌐 Step 5 — Federated Learning', body: 'Everything so far protects a <b>finished</b> model. This tab protects one that is still being <b>built by many parties at once</b> — say ten hospitals training a shared AI without any of them sending patient data. Each contributes an update; nobody shares raw data.', position: 'bottom' },
   { target: '#flHowCard', chapter: 'Federated learning', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '🎞 Watch a Round Happen', body: 'Before the numbers, watch the mechanism. This animation walks through one full round — six hospitals training privately, a poisoned update being caught and thrown out, the survivors averaged, and the whole round fingerprinted onto the blockchain. Use <b>Back</b> and <b>Next</b> under it to move at your own pace.', position: 'bottom' },
@@ -7440,9 +7968,11 @@ function endGuidedTour() {
 
 
 window.addEventListener('DOMContentLoaded', () => {
+  syncHeaderH();
+  warnInsecureOrigin();
   if (!bvLSGet('bv_tour_done')) {
     setTimeout(() => {
-      toast('info', `New to BlockVerify? <br><a href="#" onclick="startGuidedTour();return false;" style="color:var(--primary-h);font-weight:700;">Take the guided tour 🧭</a>`, 12000);
+      toast('info', `New to BlockVerify? <br><a href="#" onclick="startGuidedTour();return false;" style="color:var(--primary-h);font-weight:700;">Take the guided tour 🧭</a>`, 12000, true);
     }, 2000);
   }
 });
@@ -7611,8 +8141,16 @@ async function loadWalletAddressBar() {
   }
 }
 
+let _lastAlgoCert = null;
 // ── Blockchain Certificate (PDF with QR code) ─────────────────────────
 async function downloadAlgoCertificate(modelId, modelName, modelHash, txid, round) {
+  if (arguments.length < 3 && _lastAlgoCert && (!modelId || modelId === _lastAlgoCert.modelId)) {
+    modelId = _lastAlgoCert.modelId;
+    modelName = _lastAlgoCert.modelName;
+    modelHash = _lastAlgoCert.modelHash;
+    txid = _lastAlgoCert.txid;
+    round = _lastAlgoCert.round;
+  }
   // Dynamically load jsPDF + QRCode if not already loaded
   if (!window.jsPDF) {
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
@@ -7868,6 +8406,30 @@ async function loadAlgoMerkle() {
   }
 }
 
+function _btcFriendlyError(raw) {
+  const s = String(raw || '');
+  if (/base58|invalid base58|_/i.test(s)) {
+    return 'Bitcoin testnet key is not configured (the .env placeholder is not a real WIF). The server will use the built-in demo key after a restart.';
+  }
+  return s;
+}
+function loadBtcWalletBadge() {
+  const badge = document.getElementById('btcWalletBadge');
+  const btn = document.getElementById('btcAnchorBtn');
+  if (!badge) return;
+  fetch(`${API}/bitcoin/wallet`, { credentials: 'include' })
+    .then(r => r.json()).then(d => {
+      if (d.success) {
+        badge.innerHTML = `🟢 BTC Wallet: <strong>${Number(d.btc).toFixed(6)} tBTC</strong> &nbsp;<a href="${escapeHtml(d.explorer || '#')}" target="_blank" rel="noopener noreferrer" style="color:#f7931a;font-size:.7rem;">View ↗</a>`;
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+      } else {
+        badge.innerHTML = `🔴 ${escapeHtml(_btcFriendlyError(d.error))}`;
+      }
+    }).catch(() => {
+      badge.innerHTML = '🔴 Bitcoin wallet offline — is the backend running?';
+    });
+}
+
 // ── Bitcoin L1 Anchoring ────────────────────────────────────────────────────
 async function anchorToBitcoin() {
   const btn      = document.getElementById('btcAnchorBtn');
@@ -7895,7 +8457,7 @@ async function anchorToBitcoin() {
     const d = await res.json();
 
     if (!d.success) {
-      resultEl.innerHTML = `<div style="color:var(--danger);font-size:.84rem;margin-top:.5rem;">❌ ${d.error}</div>`;
+      resultEl.innerHTML = `<div style="color:var(--danger);font-size:.84rem;margin-top:.5rem;">❌ ${escapeHtml(_btcFriendlyError(d.error))}</div>`;
       return;
     }
 
@@ -7936,14 +8498,7 @@ async function anchorToBitcoin() {
 
     toast('ok', '₿ Merkle Root anchored to Bitcoin Testnet!');
 
-    // Refresh wallet balance
-    fetch(`${API}/bitcoin/wallet`, { credentials: 'include' })
-      .then(r => r.json()).then(d2 => {
-        const badge = document.getElementById('btcWalletBadge');
-        if (badge && d2.success) {
-          badge.innerHTML = `🟢 BTC Wallet: <strong>${d2.btc.toFixed(6)} tBTC</strong> &nbsp;<a href="${d2.explorer}" target="_blank" style="color:#f7931a;font-size:.7rem;">View ↗</a>`;
-        }
-      }).catch(() => {});
+    loadBtcWalletBadge();
 
   } catch(e) {
     if (e.message === 'Session expired. Please log in again.') {
@@ -7979,7 +8534,7 @@ function _drawAlgoMerkle(tree, leaves, container) {
     glow:     '#00e5a0',
     rootGlow: '#fd79a8',
     label:    isDark ? '#feca57' : '#f39c12',
-    text:     '#ffffff',
+    text:     isDark ? '#ffffff' : '#0f1729',
     leafTag:  isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)',
     bg:       isDark ? '#0d111e' : '#f5f6fa',
   };
@@ -8006,22 +8561,33 @@ function _drawAlgoMerkle(tree, leaves, container) {
   const offsetY = margin.top;
 
   // ── Inject CSS animation for pulsing root ──
-  if (!document.getElementById('merkle-pulse-style')) {
+  if (!document.getElementById('merkle-pulse-style-2')) {
+    const olds = document.getElementById('merkle-pulse-style'); if (olds) olds.remove();
     const style = document.createElement('style');
-    style.id = 'merkle-pulse-style';
+    style.id = 'merkle-pulse-style-2';
     style.textContent = `
       @keyframes mkPulse {
         0%, 100% { filter: drop-shadow(0 0 6px ${palette.rootGlow}); }
         50% { filter: drop-shadow(0 0 18px ${palette.rootGlow}) drop-shadow(0 0 30px ${palette.rootGlow}40); }
       }
-      `;
+      @keyframes mkCrownIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: none; }
+      }
+      .mk-node.mk-dim { opacity: .22 !important; }
+      path.mk-hi { stroke-width: 3.6px !important; filter: drop-shadow(0 0 5px #00e5a0); }
+    `;
     document.head.appendChild(style);
   }
 
+  container.classList.add('mk-viewport');
+  container.style.height = '520px';
   const svg = d3.select(container).append('svg')
-    .attr('width', svgW).attr('height', svgH)
+    .attr('width', '100%')
+    .attr('height', '100%')
     .style('background', 'transparent')
-    .style('overflow', 'visible');
+    .style('overflow', 'hidden');
+  const zoomG = svg.append('g').attr('class', 'mk-zoom');
 
   // ── SVG Defs: gradients + filters ──
   const defs = svg.append('defs');
@@ -8055,7 +8621,7 @@ function _drawAlgoMerkle(tree, leaves, container) {
   linkGrad.append('stop').attr('offset','0%').attr('stop-color', palette.linkHi);
   linkGrad.append('stop').attr('offset','100%').attr('stop-color', palette.link);
 
-  const g = svg.append('g')
+  const g = zoomG.append('g')
     .attr('transform', `translate(${offsetX},${offsetY})`);
 
   // ── Animated links (curved bezier) ──
@@ -8068,17 +8634,32 @@ function _drawAlgoMerkle(tree, leaves, container) {
     .attr('stroke-linecap', 'round')
     .attr('d', d3.linkVertical().x(d => d.x).y(d => d.y));
 
-  // Animate link drawing
-  links.each(function() {
-    const pathLen = this.getTotalLength();
+  // Draw links bottom-up (leaves hash first, then fold toward the root)
+  links.each(function(d) {
+    let pathLen = 0;
+    try { pathLen = this.getTotalLength(); } catch (err) { return; }
+    const delay = (maxDepth - (d.target.depth || 1)) * 160;
     d3.select(this)
       .attr('stroke-dasharray', pathLen)
       .attr('stroke-dashoffset', pathLen)
       .transition()
-      .duration(800)
-      .delay((d, i) => i * 100)
+      .duration(720)
+      .delay(delay)
       .ease(d3.easeCubicOut)
       .attr('stroke-dashoffset', 0);
+    const p = this.getAttribute('d');
+    if (p) {
+      d3.select(this.parentNode).append('circle')
+        .attr('r', 3.1)
+        .attr('fill', '#7dffe0')
+        .attr('opacity', 0.9)
+        .attr('filter', 'url(#mkGlow)')
+        .append('animateMotion')
+          .attr('dur', (1.55 + ((d.target.depth || 1) % 3) * 0.22) + 's')
+          .attr('repeatCount', 'indefinite')
+          .attr('begin', (0.7 + delay / 1000) + 's')
+          .attr('path', p);
+    }
   });
 
   // ── Small dots at link junctions ──
@@ -8094,15 +8675,36 @@ function _drawAlgoMerkle(tree, leaves, container) {
   const nodeG = g.selectAll('.mk-node')
     .data(root.descendants()).enter()
     .append('g')
-    .attr('transform', d => `translate(${d.x},${d.y})`)
+    .attr('class', 'mk-node')
+    .attr('transform', d => `translate(${d.x},${d.y}) scale(0.55)`)
     .style('opacity', 0);
 
-  // Fade-in animation
   nodeG.transition()
-    .duration(500)
-    .delay((d, i) => 300 + i * 80)
+    .duration(560)
+    .delay(d => 60 + (maxDepth - d.depth) * 160)
     .ease(d3.easeCubicOut)
+    .attr('transform', d => `translate(${d.x},${d.y}) scale(1)`)
     .style('opacity', 1);
+
+  nodeG
+    .style('cursor', 'pointer')
+    .on('mouseenter', function(ev, d) {
+      const anc = new Set(d.ancestors());
+      nodeG.classed('mk-dim', n => !anc.has(n));
+      links.classed('mk-hi', l => anc.has(l.source) && anc.has(l.target));
+    })
+    .on('mouseleave', function() {
+      nodeG.classed('mk-dim', false);
+      links.classed('mk-hi', false);
+    })
+    .on('click', function(ev, d) {
+      ev.stopPropagation();
+      if (container._mkMoved) return;
+      const h = d.data && d.data.hash;
+      if (!h) return;
+      copyText(h, null);
+      toast('ok', 'Copied ' + h.slice(0, 12) + '…');
+    });
 
   function gradId(d) {
     if (d.depth === 0) return 'url(#mkGradRoot)';
@@ -8177,6 +8779,7 @@ function _drawAlgoMerkle(tree, leaves, container) {
     .attr('pointer-events', 'none')
     .text(d => {
       const label = d.data.label || d.data.modelId || '';
+      if (/\(dup\)\s*$/i.test(label)) return 'padding (dup)';
       return label.length > 14 ? label.slice(0, 12) + '…' : label;
     });
 
@@ -8189,40 +8792,80 @@ function _drawAlgoMerkle(tree, leaves, container) {
     .attr('letter-spacing', '0.12em')
     .attr('fill', palette.label)
     .attr('filter', 'url(#mkGlow)')
-    .text('👑 MERKLE ROOT');
+    .style('opacity', 0)
+    .text('👑 MERKLE ROOT')
+    .transition().delay(80 + maxDepth * 160 + 400).duration(500)
+    .style('opacity', 1);
 
-  // ── Decorative particle dots ──
-  for (let i = 0; i < 12; i++) {
-    const px = Math.random() * svgW;
-    const py = Math.random() * svgH;
-    svg.append('circle')
-      .attr('cx', px).attr('cy', py)
-      .attr('r', Math.random() * 1.8 + 0.5)
-      .attr('fill', palette.glow)
-      .attr('opacity', Math.random() * 0.2 + 0.05);
+  const hint = document.createElement('div');
+  hint.className = 'mk-hint';
+  hint.textContent = 'Scroll to zoom · drag to pan · double-click a spot to zoom in · click a node to copy';
+  container.appendChild(hint);
+
+  const legend = document.createElement('div');
+  legend.className = 'mk-legend';
+  legend.innerHTML =
+    '<span><i style="background:#fd79a8"></i>Root</span>'
+    + '<span><i style="background:#00b894"></i>Internal</span>'
+    + '<span><i style="background:#00e5a0"></i>Leaf (model)</span>';
+  container.appendChild(legend);
+
+  const tools = document.createElement('div');
+  tools.className = 'mk-tools';
+  tools.innerHTML =
+    '<button type="button" data-mk="out" title="Zoom out">−</button>'
+    + '<button type="button" data-mk="in" title="Zoom in">+</button>'
+    + '<button type="button" class="mk-fit" data-mk="fit" title="Fit the whole tree">Fit</button>';
+  container.appendChild(tools);
+
+  function fitTransform() {
+    const vw = container.clientWidth || W;
+    const vh = container.clientHeight || 520;
+    const pad = 28;
+    const s = Math.min((vw - pad * 2) / svgW, (vh - pad * 2) / svgH, 1.35);
+    return d3.zoomIdentity.translate((vw - svgW * s) / 2, (vh - svgH * s) / 2).scale(s);
   }
 
-  // ── Legend bar ──
-  const legendY = svgH - 28;
-  const legendBg = svg.append('g');
-  legendBg.append('rect')
-    .attr('x', svgW / 2 - 170).attr('y', legendY - 12)
-    .attr('width', 340).attr('height', 24)
-    .attr('rx', 12)
-    .attr('fill', isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)')
-    .attr('stroke', isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)')
-    .attr('stroke-width', 0.5);
+  const zoom = d3.zoom()
+    .scaleExtent([0.15, 8])
+    .filter(ev => {
+      if (ev.type === 'wheel') return true;
+      if (ev.type === 'mousedown' || ev.type === 'touchstart') return true;
+      return !ev.ctrlKey;
+    })
+    .on('start', () => { container._mkMoved = false; })
+    .on('zoom', ev => {
+      if (ev.sourceEvent && (ev.sourceEvent.type === 'mousemove' || ev.sourceEvent.type === 'touchmove')) {
+        container._mkMoved = true;
+      }
+      zoomG.attr('transform', ev.transform);
+    });
 
-  const legendItems = [
-    { col: palette.root.start, label: 'Root (Merkle)' },
-    { col: palette.internal.start, label: 'Internal Node' },
-    { col: palette.leaf.start, label: 'Leaf (Model)' },
-  ];
-  legendItems.forEach((it, i) => {
-    const lx = svgW / 2 - 145 + i * 115;
-    svg.append('circle').attr('cx', lx).attr('cy', legendY).attr('r', 5).attr('fill', it.col).attr('filter','url(#mkGlow)');
-    svg.append('text').attr('x', lx + 10).attr('y', legendY + 3.5)
-      .attr('font-size', '9px').attr('font-weight','600').attr('fill', isDark ? '#aaa' : '#555').text(it.label);
+  svg.call(zoom);
+  svg.call(zoom.transform, fitTransform());
+  container.addEventListener('wheel', ev => ev.preventDefault(), { passive: false });
+  svg.on('dblclick.zoom', null);
+  svg.on('dblclick.mkfit', (ev) => {
+    ev.preventDefault();
+    const [x, y] = d3.pointer(ev, svg.node());
+    svg.transition().duration(280).call(zoom.scaleBy, 1.8, [x, y]);
+  });
+
+  tools.addEventListener('click', ev => {
+    const btn = ev.target.closest('[data-mk]');
+    if (!btn) return;
+    ev.stopPropagation();
+    const act = btn.getAttribute('data-mk');
+    if (act === 'in') svg.transition().duration(180).call(zoom.scaleBy, 1.35);
+    else if (act === 'out') svg.transition().duration(180).call(zoom.scaleBy, 1 / 1.35);
+    else if (act === 'fit') svg.transition().duration(280).call(zoom.transform, fitTransform());
+  });
+
+  container.tabIndex = 0;
+  container.addEventListener('keydown', ev => {
+    if (ev.key === '+' || ev.key === '=') { ev.preventDefault(); svg.transition().duration(120).call(zoom.scaleBy, 1.25); }
+    else if (ev.key === '-' || ev.key === '_') { ev.preventDefault(); svg.transition().duration(120).call(zoom.scaleBy, 0.8); }
+    else if (ev.key === '0' || ev.key === 'Escape') { ev.preventDefault(); svg.transition().duration(220).call(zoom.transform, fitTransform()); }
   });
 }
 
@@ -8236,7 +8879,7 @@ async function verifyOnChain(modelId, btn) {
   const origText = btn.innerHTML;
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Reading contract...';
-  out.innerHTML = '<div style="padding:.5rem;color:var(--text-muted);font-size:.8rem;"><span class="spinner"></span> Querying Algorand smart contract App #758544892...</div>';
+  out.innerHTML = '<div style="padding:.5rem;color:var(--text-muted);font-size:.8rem;"><span class="spinner"></span> Querying Algorand smart contract…</div>';
 
   try {
     const res = await apiFetch(`${API}/algo/verify-onchain/${modelId}`);
@@ -8307,7 +8950,10 @@ async function loadLedger() {
     const res = await fetch(`${API}/algo/ledger?limit=${limit}`);
     const d   = await res.json();
     if (!d.success) {
-      out.innerHTML = `<div class="result-box err">Error: ${d.error}</div>`;
+      out.innerHTML = `<div class="result-box err" style="display:flex;flex-wrap:wrap;align-items:center;gap:.8rem;justify-content:space-between;">
+        <div style="flex:1;min-width:220px;">${_escapeHtml(d.error || 'Could not load the ledger.')}<div style="font-size:.78rem;opacity:.8;margin-top:.35rem;font-weight:500;">This is the public Algorand Testnet, not a bug in BlockVerify. Try again in a moment.</div></div>
+        <button class="btn btn-sec" onclick="loadLedger()" style="font-size:.78rem;padding:.4rem .85rem;">Retry</button>
+      </div>`;
       return;
     }
 
@@ -8324,7 +8970,7 @@ async function loadLedger() {
         'transfer': 'background:#636e72;color:#fff',
       };
       const style = colors[action] || colors['transfer'];
-      return `<span style="${style};padding:.15rem .5rem;border-radius:4px;font-size:.68rem;font-weight:700;text-transform:uppercase;">${action}</span>`;
+      return `<span style="${style};padding:.15rem .5rem;border-radius:4px;font-size:.68rem;font-weight:700;text-transform:uppercase;">${_escapeHtml(action || 'transfer')}</span>`;
     };
 
     const timeAgo = (ts) => {
@@ -8340,13 +8986,13 @@ async function loadLedger() {
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:.55rem .5rem;font-size:.78rem;color:var(--primary);font-weight:600;">#${tx.round?.toLocaleString() || '—'}</td>
         <td style="padding:.55rem .5rem;font-size:.74rem;font-family:monospace;">
-          <a href="${tx.explorer_url}" target="_blank" style="color:var(--primary);">${tx.txid?.substring(0,12) || '—'}…</a>
+          <a href="${_escapeHtml(tx.explorer_url || '#')}" target="_blank" rel="noopener noreferrer" style="color:var(--primary);">${_escapeHtml((tx.txid || '').substring(0,12) || '—')}…</a>
         </td>
         <td style="padding:.55rem .5rem;">${actionBadge(tx.action)}</td>
-        <td style="padding:.55rem .5rem;font-size:.78rem;">${tx.model_name || '—'}</td>
-        <td style="padding:.55rem .5rem;font-size:.78rem;color:var(--text-muted);">${tx.owner || '—'}</td>
+        <td style="padding:.55rem .5rem;font-size:.78rem;">${_escapeHtml(tx.model_name || '—')}</td>
+        <td style="padding:.55rem .5rem;font-size:.78rem;color:var(--text-muted);">${_escapeHtml(tx.owner || '—')}</td>
         <td style="padding:.55rem .5rem;font-size:.74rem;color:var(--text-muted);">${tx.fee?.toFixed(4) || '—'}</td>
-        <td style="padding:.55rem .5rem;font-size:.74rem;color:var(--text-muted);">${timeAgo(tx.timestamp)}</td>
+        <td style="padding:.55rem .5rem;font-size:.74rem;color:var(--text-muted);" title="${tx.timestamp ? new Date(tx.timestamp * 1000).toLocaleString() : ''}">${timeAgo(tx.timestamp)}</td>
       </tr>
     `).join('');
 
@@ -8376,7 +9022,10 @@ async function loadLedger() {
       </div>`;
 
   } catch(e) {
-    out.innerHTML = `<div class="result-box err">Network error: ${e.message}</div>`;
+    out.innerHTML = `<div class="result-box err" style="display:flex;flex-wrap:wrap;align-items:center;gap:.8rem;justify-content:space-between;">
+      <div style="flex:1;min-width:220px;">Network error: ${_escapeHtml(String(e.message || e))}<div style="font-size:.78rem;opacity:.8;margin-top:.35rem;font-weight:500;">This is the public Algorand Testnet, not a bug in BlockVerify. Try again in a moment.</div></div>
+      <button class="btn btn-sec" onclick="loadLedger()" style="font-size:.78rem;padding:.4rem .85rem;">Retry</button>
+    </div>`;
   }
 }
 

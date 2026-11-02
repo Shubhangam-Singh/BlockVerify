@@ -1,0 +1,37 @@
+%% Data-flow diagram, level 1: the processes inside the system, the data stores and the flows between them.
+%% Process names come with the code that does the work (checked by fedverify/tests/test_diagrams.py).
+flowchart TB
+  HOS["Hospital"]
+  RES["Researcher or examiner"]
+  PUB["Public ledger (optional)"]
+  P1(("1.0 Train locally<br/>dp_sgd_epochs()"))
+  P2(("2.0 Sign and submit<br/>FoldCommitter.prepare()"))
+  P3(("3.0 Verify and commit<br/>FoldCommitter.process()"))
+  P4(("4.0 Screen and average<br/>Forensics.aggregate()"))
+  P5(("5.0 Evaluate and report<br/>compute()"))
+  P6(("6.0 Publish and audit<br/>push(), get_proof()"))
+  D1[("D1 Patient records<br/>never leave the hospital")]
+  D2[("D2 Key registry<br/>KeyRegistry")]
+  D3[("D3 Proof-of-work ledger<br/>Blockchain")]
+  D4[("D4 Run files<br/>rounds.jsonl, commitments.jsonl")]
+  D5[("D5 Calibration file<br/>taus_survival.json")]
+  D6[("D6 Dashboard run store<br/>fl_runs.json")]
+  HOS -- "start a round" --> P1
+  D1 -- "training rows" --> P1
+  D3 -- "previous block is valid" --> P1
+  P1 -- "model update" --> P2
+  P2 -- "signed submission and update bytes" --> P3
+  D2 -- "registered public key" --> P3
+  P3 -- "round root, mined block" --> D3
+  P3 -- "leaves and inclusion proofs" --> D4
+  P3 -- "accepted updates, rebuilt from the committed bytes" --> P4
+  D5 -- "threshold tau" --> P4
+  P4 -- "new shared model" --> P1
+  P4 -- "accepted / rejected and scores" --> D4
+  D4 -- "predictions and lineage" --> P5
+  P5 -- "tables, figures, results draft" --> RES
+  D4 -- "round commitments" --> P6
+  P6 -- "runs, lineage, proofs" --> D6
+  D6 -- "lineage and proof to check" --> RES
+  P3 -. "round root (optional)" .-> PUB
+  PUB -. "anchored root" .-> RES

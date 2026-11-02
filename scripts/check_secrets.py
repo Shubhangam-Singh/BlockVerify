@@ -33,8 +33,21 @@ def staged_files():
 
 
 def staged_content(path):
-    r = subprocess.run(["git", "show", f":{path}"], capture_output=True, text=True)
-    return r.stdout if r.returncode == 0 else ""
+    """Staged blob as text, or None if it is missing or not UTF-8.
+
+    ``text=True`` decodes stdout as UTF-8 before the caller can skip binaries,
+    so a staged .xlsx or .png aborts the hook with UnicodeDecodeError.
+    """
+    r = subprocess.run(["git", "show", f":{path}"], capture_output=True)
+    if r.returncode != 0 or not r.stdout:
+        return None
+    raw = r.stdout
+    if b"\0" in raw[:2048]:
+        return None                                    # binary
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return None                                    # xlsx, png, and other non-text
 
 
 def scan(paths):
@@ -43,8 +56,8 @@ def scan(paths):
         if path in ALLOW_FILES:
             continue
         content = staged_content(path)
-        if not content or "\0" in content[:2048]:
-            continue                                   # binary
+        if content is None:
+            continue
         for lineno, line in enumerate(content.splitlines(), 1):
             for name, pat in PATTERNS:
                 m = pat.search(line)

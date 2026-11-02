@@ -1,0 +1,27 @@
+%% Sequence diagram of one federated round (chain_* and ours_* methods, and the live demo).
+sequenceDiagram
+  autonumber
+  participant H as Hospital (each of K)
+  participant FC as Aggregator (FoldCommitter)
+  participant KR as Key registry (KeyRegistry)
+  participant SC as Screen (Forensics)
+  participant AN as Anchor (ChainAnchor)
+  participant BC as Ledger (Blockchain)
+  H->>AN: Is the previous round still on the ledger? (MeteredAnchor.verify_previous())
+  AN->>BC: Re-check every block (is_chain_valid())
+  BC-->>AN: Valid, and the block still holds the previous root
+  AN-->>H: Go ahead
+  H->>H: Train on own patients (dp_sgd_epochs())
+  H->>H: Serialize, content ID, sign (serialize_lr(), content_id(), sign_submission())
+  H->>FC: Signed submission and update bytes (FoldCommitter.submit())
+  FC->>KR: Right key, this round, fresh counter? (KeyRegistry.verify())
+  KR-->>FC: Accept, or reject with a reason (replay, wrong key, ...)
+  FC->>FC: Merkle root over the accepted digests (round_merkle_root(), inclusion_proof())
+  FC->>AN: Anchor the round root (ChainAnchor.anchor_round())
+  AN->>BC: Add the transactions and mine a block (Blockchain.mine_pending_transactions())
+  BC-->>AN: Block hash, used as the transaction id
+  FC->>FC: Rebuild each update from its committed bytes (deserialize())
+  FC->>SC: Score the committed updates (Forensics.aggregate())
+  SC-->>FC: Accepted / rejected, and which score fired
+  FC-->>H: New shared model, the average of the accepted updates
+  Note over FC,BC: rounds.jsonl and commitments.jsonl record every step, and the dashboard server re-derives each root (commit_round_route())

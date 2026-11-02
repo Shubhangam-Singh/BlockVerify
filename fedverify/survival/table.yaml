@@ -1,0 +1,295 @@
+# FL-healthcare tables and figures (Revision 2, Phase 5): which results cell fills which row.
+#
+# No number lives here. Every number in a table or figure is read from a results file (summary.json, config.json,
+# rounds.jsonl, oof.jsonl, chain_metrics.json, chain_blocks.jsonl, chain_attacks/*/summary.json, profile_top10.json)
+# or, for other papers' rows, from fedverify/survival/ref/*.csv. A cell is a run folder:
+#     <results>/<exp>/<cell>/seed<seed>/        exp: heart -> heart, tcga -> survival
+# "n/a" marks a combination that does not exist by design (no DP for trees, no accuracy for a survival time). A cell
+# that should exist but has no results renders as an em dash and is listed on stderr. Edit rows freely; keep "Ours" last.
+
+seed: 0
+expected_repeats: 5
+
+datasets:
+  heart: {exp: heart, label: "UCI heart disease", short: "Heart", vocab: fedverify/survival/heart_vocab.json}
+  tcga: {exp: survival, label: "TCGA-BRCA", short: "TCGA", vocab: fedverify/survival/vocab.json}
+
+families:
+  lr: {label: "Logistic regression", short: "LR"}
+  rf: {label: "Random forest", short: "RF"}
+  xgb: {label: "XGBoost", short: "XGB"}
+
+metric_labels: {accuracy: "Accuracy", f1: "F1", roc_auc: "ROC-AUC", c_index: "C-index",
+                roc_auc_within: "ROC-AUC within hospital", c_index_within: "C-index within hospital"}
+
+literature:
+  table_iii: fedverify/survival/ref/ieee_table_iii.csv
+  table_iv: fedverify/survival/ref/ieee_table_iv.csv
+  source: "Myrzashova et al., IEEE Trans. Sustainable Computing 10(1), 2025"
+
+# Tables III and IV: our rows. `settings` is the run whose config.json describes the setting; `performance` lists
+# the clean "ours" cells quoted in Table IV.
+ours:
+  heart:
+    settings: ours_xgb
+    performance:
+      - {family: xgb, cell: ours_xgb, metrics: [accuracy, f1, roc_auc], name: "XGBoost (FedXGBBagging)"}
+      - {family: lr, cell: ours_lr_eps4, metrics: [accuracy, f1, roc_auc], name: "Logistic regression (DP-FedAvg)"}
+    chain_cell: chain_fedavg_lr_local        # mined proof-of-work run: latency for Table IV
+  tcga:
+    settings: ours_xgb_aft
+    performance:
+      - {family: xgb, cell: ours_xgb_aft, metrics: [c_index], name: "XGBoost AFT (FedXGBBagging)"}
+      - {family: xgb, cell: ours_xgb, metrics: [roc_auc, f1], name: "XGBoost, death indicator (FedXGBBagging)"}
+      - {family: lr, cell: ours_lr_eps4, metrics: [c_index, roc_auc], name: "Logistic regression (DP-FedAvg)"}
+    chain_cell: chain_fedavg_lr_local
+
+method_tables:
+  methods_heart:
+    dataset: heart
+    metrics: [accuracy, f1, roc_auc, roc_auc_within]
+    # Phase 11: in LaTeX only, two floats (every column kept): at one float it had to shrink to 70% of the page.
+    latex_parts: [[accuracy, f1, roc_auc], [roc_auc, roc_auc_within]]
+    families: [lr, rf, xgb]
+    rows:
+      - {label: "Local", lr: local_lr, rf: local_rf, xgb: local_xgb}
+      - {label: "Centralized", lr: central_lr, rf: central_rf, xgb: central_xgb}
+      - {label: "Centralized, step-matched (diagnostic)", lr: n/a, rf: n/a, xgb: central_xgb_steps,
+         diagnostic: central_step_matched}
+      - {label: "Vanilla FL", lr: fedavg_lr, rf: fed_rf, xgb: fedxgb_bagging}
+      - {label: "DP-FL ({epsilon})", lr: dp_fedavg_lr_eps4, rf: n/a, xgb: n/a}
+      - {label: "Blockchain-FL (commit only)", lr: chain_fedavg_lr, rf: chain_fed_rf, xgb: chain_fedxgb_bagging}
+      - {label: "Ours", lr: ours_lr_eps4, rf: ours_rf, xgb: ours_xgb}
+  methods_tcga_binary:
+    dataset: tcga
+    metrics: [roc_auc, f1, accuracy, roc_auc_within]
+    latex_parts: [[roc_auc, f1, accuracy], [roc_auc, roc_auc_within]]
+    families: [lr, rf, xgb]
+    rows:
+      - {label: "Local", lr: local_lr, rf: local_rf, xgb: local_xgb}
+      - {label: "Centralized", lr: central_lr, rf: central_rf, xgb: central_xgb}
+      - {label: "Centralized, step-matched (diagnostic)", lr: n/a, rf: n/a, xgb: central_xgb_steps,
+         diagnostic: central_step_matched}
+      - {label: "Vanilla FL", lr: fedavg_lr, rf: fed_rf, xgb: fedxgb_bagging}
+      - {label: "DP-FL ({epsilon})", lr: dp_fedavg_lr_eps4, rf: n/a, xgb: n/a}
+      - {label: "Blockchain-FL (commit only)", lr: chain_fedavg_lr, rf: chain_fed_rf, xgb: chain_fedxgb_bagging}
+      - {label: "Ours", lr: ours_lr_eps4, rf: ours_rf, xgb: ours_xgb}
+  methods_tcga_survival:        # C-index: logistic and RF rank by predicted risk, XGBoost AFT by predicted time
+    dataset: tcga
+    metrics: [c_index, c_index_within]
+    families: [lr, rf, xgb]
+    family_labels: {xgb: "XGBoost AFT"}
+    rows:
+      - {label: "Local", lr: local_lr, rf: local_rf, xgb: local_xgb_aft}
+      - {label: "Centralized", lr: central_lr, rf: central_rf, xgb: central_xgb_aft}
+      - {label: "Centralized, step-matched (diagnostic)", lr: n/a, rf: n/a, xgb: central_xgb_steps_aft,
+         diagnostic: central_step_matched}
+      - {label: "Vanilla FL", lr: fedavg_lr, rf: fed_rf, xgb: fedxgb_bagging_aft}
+      - {label: "DP-FL ({epsilon})", lr: dp_fedavg_lr_eps4, rf: n/a, xgb: n/a}
+      - {label: "Blockchain-FL (commit only)", lr: chain_fedavg_lr, rf: chain_fed_rf, xgb: chain_fedxgb_bagging_aft}
+      - {label: "Ours", lr: ours_lr_eps4, rf: ours_rf, xgb: ours_xgb_aft}
+
+# The reference heart paper's Table III layout: rows = models, columns = each hospital's LOCAL model on its own
+# patients, then the pooled result of each aggregation method. Switzerland has no local model (Revision 2 §2.1).
+per_hospital_tables:
+  per_hospital_heart:
+    dataset: heart
+    metric: accuracy
+    hospitals: [Cleveland, Hungary, VA Long Beach]
+    aggregated: {federated: "Federated", centralized: "Centralized", ours: "Ours"}
+    rows:
+      - {label: "Logistic regression", local: local_lr, federated: fedavg_lr, centralized: central_lr, ours: ours_lr_eps4}
+      - {label: "Random forest", local: local_rf, federated: fed_rf, centralized: central_rf, ours: ours_rf}
+      - {label: "XGBoost", local: local_xgb, federated: fedxgb_bagging, centralized: central_xgb, ours: ours_xgb}
+  per_hospital_tcga:
+    dataset: tcga
+    metric: c_index
+    hospitals: [BH, A2, E2, A8, AR]
+    aggregated: {federated: "Federated", centralized: "Centralized", ours: "Ours"}
+    rows:
+      - {label: "Logistic regression", local: local_lr, federated: fedavg_lr, centralized: central_lr, ours: ours_lr_eps4}
+      - {label: "Random forest", local: local_rf, federated: fed_rf, centralized: central_rf, ours: ours_rf}
+      - {label: "XGBoost AFT", local: local_xgb_aft, federated: fedxgb_bagging_aft, centralized: central_xgb_aft, ours: ours_xgb_aft}
+
+# Does federation help each hospital? Rows = methods, columns = every hospital, each patient scored by the method.
+per_hospital_method_tables:
+  per_hospital_methods_heart:
+    dataset: heart
+    metric: accuracy
+    rows:
+      - {label: "LR, local", cell: local_lr}
+      - {label: "LR, FedAvg", cell: fedavg_lr}
+      - {label: "LR, ours", cell: ours_lr_eps4}
+      - {label: "XGB, local", cell: local_xgb}
+      - {label: "XGB, FedXGBBagging", cell: fedxgb_bagging}
+      - {label: "XGB, ours", cell: ours_xgb}
+  per_hospital_methods_tcga:
+    dataset: tcga
+    metric: c_index
+    rows:
+      - {label: "LR, local", cell: local_lr}
+      - {label: "LR, FedAvg", cell: fedavg_lr}
+      - {label: "LR, ours", cell: ours_lr_eps4}
+      - {label: "XGB AFT, local", cell: local_xgb_aft}
+      - {label: "XGB AFT, FedXGBBagging", cell: fedxgb_bagging_aft}
+      - {label: "XGB AFT, ours", cell: ours_xgb_aft}
+
+dp_tables:
+  dp_sweep_heart:
+    dataset: heart
+    metrics: [accuracy, f1, roc_auc]
+    cells: [dp_fedavg_lr_eps1, dp_fedavg_lr_eps2, dp_fedavg_lr_eps4, dp_fedavg_lr_eps8, dp_fedavg_lr_epsinf]
+  dp_sweep_tcga:
+    dataset: tcga
+    metrics: [c_index, roc_auc, f1]
+    cells: [dp_fedavg_lr_eps1, dp_fedavg_lr_eps2, dp_fedavg_lr_eps4, dp_fedavg_lr_eps8, dp_fedavg_lr_epsinf]
+
+# Poisoning (Phase 4B). For each family: `ours` is the clean screened cell; an attacked cell is <ours>_<attack>, its
+# undefended twin <ours>_<attack>_noscreen; `undefended` is the clean pipeline without screening (learning-identical
+# to ours without the screen, tested).
+attack_tables:
+  attack_heart:
+    dataset: heart
+    metrics: [accuracy, f1, roc_auc]
+    families:
+      lr: {ours: ours_lr_eps4, undefended: dp_fedavg_lr_eps4, attacks: [sign_flip, scaling, label_flip]}
+      rf: {ours: ours_rf, undefended: chain_fed_rf, attacks: [label_flip_trees, random_trees]}
+      xgb: {ours: ours_xgb, undefended: chain_fedxgb_bagging, attacks: [label_flip_trees, random_trees]}
+  attack_tcga:
+    dataset: tcga
+    metrics: [c_index, roc_auc, f1]
+    families:
+      lr: {ours: ours_lr_eps4, undefended: dp_fedavg_lr_eps4, attacks: [sign_flip, scaling, label_flip]}
+      rf: {ours: ours_rf, undefended: chain_fed_rf, attacks: [label_flip_trees, random_trees]}
+      xgb: {ours: ours_xgb, undefended: chain_fedxgb_bagging, attacks: [label_flip_trees, random_trees]}
+  attack_tcga_survival:
+    dataset: tcga
+    metrics: [c_index]
+    families:
+      xgb: {ours: ours_xgb_aft, undefended: chain_fedxgb_bagging_aft, attacks: [label_flip_trees, random_trees],
+            label: "XGBoost AFT", short: "XGB AFT"}
+
+# Phase 7: a trivial baseline in every TCGA table and figure. "Predict all alive" gives every patient score 0 and
+# prediction 0, scored on the same out-of-fold patients as `cell` (any TCGA run: only its patients and outcomes are used).
+baselines:
+  tcga: {label: "Predict all alive (baseline)", cell: fedavg_lr}
+# Phase 9: a second reference row in every method table, next to "Predict all alive". "Site base rate only" scores
+# each patient by their hospital's event rate in the TRAINING folds of that fold-run (the other folds of the same
+# repeat), with no features and no model, on the out-of-fold patients of `cells[dataset]` (only its patients, folds
+# and outcomes are used). F1 and accuracy use the same threshold rule as every other row: the F1-maximising
+# threshold on the training rows' scores. Its ROC-AUC and C-index say how much the event rate differs by hospital.
+site_rate:
+  label: "Site base rate only (reference)"
+  cells: {heart: fedavg_lr, tcga: fedavg_lr}
+  # Which metrics of each method table the draft and the page compare against this row (rule: only a difference
+  # larger than both standard deviations is reported as exceeding it or falling below it).
+  compare_on: {methods_heart: [roc_auc], methods_tcga_binary: [roc_auc, f1], methods_tcga_survival: [c_index]}
+
+# Phase 9: extra rows that are diagnostics, not methods of the study. Each rule is fixed here BEFORE its runs exist.
+# central_step_matched (fixed on 2026-10-15, after the Phase 8 diagnosis and before any central_xgb_steps run):
+# centralized XGBoost on the pooled training rows with N trees per round, where N is xgb_trees_per_round, i.e. one
+# federated booster's worth of trees, so R rounds give N x R sequential boosting steps: the step count of
+# fedxgb_bagging (one averaged N-tree booster per round since Phase 7) and of local_xgb. Every other setting and seed
+# is that of the original centralized row (central_xgb), which stays unchanged next to it. Not blind on TCGA: the
+# Phase 8 diagnosis had already shown the original centralized model's held-out score at the same step count (read
+# from `diagnosis` below for the footnote). Heart was not diagnosed.
+diagnostic_rows:
+  central_step_matched:
+    method: central_xgb_steps
+    compares_with: central_xgb
+    diagnosis: diagnostics/central_xgb_tcga.json
+
+# Phase 11: within-hospital ROC-AUC and C-index (secondary columns of the method tables). Each hospital's own
+# out-of-fold patients, combined weighted by their numbers of comparable pairs; hospitals with fewer than min_count
+# patients of their rarer class are left out (the per-hospital tables' rule: TCGA A8, 4 deaths; heart Switzerland,
+# 1 negative). Computed by analysis/paired_stats.py from oof.jsonl.
+within_hospital: {min_count: 5}
+
+# Phase 11: the comparison rule. A outperforms B only if the patient-level bootstrap CI of their paired difference
+# excludes 0 (same folds and repeats; resamples stratified by hospital; fixed seed). No p-values: with 5 repeats an
+# exact test cannot go below 0.0625. Cached in <results>/statistics/paired_bootstrap.json.
+paired_bootstrap: {resamples: 2000, seed: 0, level: 0.95}
+# The key comparisons reported with their paired differences (table paired_comparisons, the draft and the page):
+# per method table and family, A vs B by row label; and every DP target against no DP.
+paired_comparisons:
+  tables:
+    methods_heart: roc_auc
+    methods_tcga_survival: c_index
+  pairs:
+    - ["Vanilla FL", "Local"]
+    - ["Vanilla FL", "Centralized"]
+    - ["Vanilla FL", "Centralized, step-matched (diagnostic)"]
+    - ["Ours", "Vanilla FL"]
+  dp_tables: {dp_sweep_heart: roc_auc, dp_sweep_tcga: c_index}
+
+# Phase 11.4: the report pack (<results>/report_pack/). Each file is named after the report section it belongs to:
+# the VIT report's chapter 4 (design, experiments and results), plus an appendix for the earlier MNIST study. Every
+# generated table must be listed here (make_report_pack fails otherwise). slides: the 13-slide deck's slides 8 and 11.
+report_pack:
+  sections:
+    - {id: "4.1", title: "System design",
+       diagrams: [architecture, dfd_level0, dfd_level1, use_case, class_diagram, sequence_round]}
+    - {id: "4.2", title: "Experimental setup", tables: [table_iii_settings, chain_attack_variants]}
+    - {id: "4.3.1", title: "Results: model performance",
+       tables: [methods_heart, methods_tcga_binary, methods_tcga_survival, paired_comparisons,
+                paired_comparisons_within],
+       figures: [fig5_accuracy_heart, fig5_accuracy_tcga, fig6_logloss_heart, fig6_logloss_tcga]}
+    - {id: "4.3.2", title: "Results: per hospital",
+       tables: [per_hospital_heart, per_hospital_tcga, per_hospital_methods_heart, per_hospital_methods_tcga]}
+    - {id: "4.3.3", title: "Results: differential privacy", tables: [dp_sweep_heart, dp_sweep_tcga],
+       figures: [figx_dp_heart, figx_dp_tcga]}
+    - {id: "4.3.4", title: "Results: blockchain overhead", tables: [overhead_chain, overhead_stages],
+       figures: [fig7_block_times, fig8_chain_overhead]}
+    - {id: "4.3.5", title: "Results: blockchain attacks", tables: [chain_resilience],
+       figures: [fig9_resilience, fig10_attack_success]}
+    - {id: "4.3.6", title: "Results: poisoning and screening", tables: [attack_heart, attack_tcga, attack_tcga_survival],
+       figures: [figx_detection_heart, figx_detection_tcga]}
+    - {id: "4.3.7", title: "Results: comparison with the reference paper", tables: [table_iv_results]}
+    - {id: "A", title: "Appendix: the earlier MNIST study (FedVerify core)",
+       tables: [table1, table2, table2b, table2_full, table3, table4, table5, table6]}
+  slides:
+    8: {title: "System design", diagrams: [architecture, sequence_round]}
+    11: {title: "Key results", tables: [paired_comparisons], figures: [fig9_resilience, figx_detection_heart]}
+
+# Never rank two results on accuracy when either lies within this distance of the majority-class rate.
+accuracy_majority_margin: 0.01
+# Where a screen excludes more than this share of honest hospital-rounds on a clean run, no gain of a screened run is
+# written as "outperforms": it may come from dropping a skewed hospital's updates, not from catching attackers.
+clean_false_exclusion_max: 0.05
+
+# The reference paper's three chain attacks (Phase 4A): <results>/chain_attacks/<attack>[_defence_off][_<dataset>]/
+chain_attacks:
+  attacks: [double_spending, malleability, endpoint_compromise]
+  labels: {double_spending: "Double spending", malleability: "Transaction malleability",
+           endpoint_compromise: "Endpoint compromise"}
+  reported_names: {double_spending: "Double Spending", malleability: "Transaction Malleability",
+                   endpoint_compromise: "Endpoint Compromise"}     # how Table IV of the reference names them
+  datasets: [heart, tcga]
+  # Variants NOT simulated (THREAT_MODEL.md section 2); the simulated ones are read from the results.
+  not_covered:
+    double_spending: ["forks and chain reorganisations (51% attacks)", "equivocation across several aggregators or ledgers",
+                      "re-use of an update from another run by its own hospital"]
+    malleability: ["reordering submissions in transit, before the root is built", "dropping or delaying submissions"]
+    endpoint_compromise: ["a stolen private key", "multi-factor authentication and firewalls (not simulated)",
+                          "key revocation and rotation"]
+  reference_block_time: "about 5 s per block (the baseline of its Fig 7)"
+
+overhead:
+  chain_cells:                 # mined (local proof-of-work) runs: blocks, latency, throughput, send rate
+    - {dataset: heart, cell: chain_fedavg_lr_local}
+    - {dataset: tcga, cell: chain_fedavg_lr_local}
+  stage_cells:                 # per-stage commit cost, mean over every committed round of the run
+    - {dataset: heart, cell: chain_fedavg_lr}
+    - {dataset: heart, cell: chain_fed_rf}
+    - {dataset: heart, cell: chain_fedxgb_bagging}
+    - {dataset: heart, cell: chain_fedavg_lr_local}
+    - {dataset: tcga, cell: chain_fedavg_lr}
+    - {dataset: tcga, cell: chain_fed_rf}
+    - {dataset: tcga, cell: chain_fedxgb_bagging}
+    - {dataset: tcga, cell: chain_fedavg_lr_local}
+  profile: chain/profile_top10.json
+  profile_top: 10
+
+figures:
+  per_hospital_methods: [fedxgb_bagging, fedavg_lr]    # Figs 5-6: one panel per method, for both datasets
+  dp: {heart: [accuracy, roc_auc], tcga: [c_index, roc_auc]}

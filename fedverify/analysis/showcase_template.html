@@ -1,0 +1,1271 @@
+<title>FedVerify-Survival</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">
+<style>
+/* Layout: a clinical ledger report. A sticky contents rail beside one reading column whose figure panels run the
+   full column width; the opening shows a real round's Merkle tree. Hashes are always mono and violet. */
+:root {
+  --paper: #f3f5f6; --surface: #ffffff; --sunk: #eaeef0; --ink: #122029; --ink-2: #485763; --ink-3: #6f7e89;
+  --rule: #d3dbe0; --rule-2: #e3e9ec; --accent: #1c5ea6; --accent-soft: #e1ebf6; --on-accent: #ffffff;
+  --hash: #5a4bb3; --good: #17784c; --good-soft: #dcf2e6; --bad: #b3410f; --bad-soft: #fae5da;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s1-soft: #d7e6f8; --s2-soft: #fbe1d6;
+  --font-display: "Newsreader", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --step--1: 0.8125rem; --step-0: 0.9375rem; --step-1: 1.0625rem; --step-2: 1.375rem; --step-3: 1.875rem; --step-4: 2.6rem;
+  --radius: 8px; --gutter: clamp(16px, 4vw, 40px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0d1418; --surface: #131d23; --sunk: #0f181d; --ink: #e3eaee; --ink-2: #a1b0ba; --ink-3: #7b8b96;
+    --rule: #26343c; --rule-2: #1b272e; --accent: #6ea7f5; --accent-soft: #162a3e; --on-accent: #0b1620;
+    --hash: #ab9fff; --good: #49c287; --good-soft: #12291f; --bad: #ff8d5f; --bad-soft: #2d1a12;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s1-soft: #15283d; --s2-soft: #2d1b12;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0d1418; --surface: #131d23; --sunk: #0f181d; --ink: #e3eaee; --ink-2: #a1b0ba; --ink-3: #7b8b96;
+  --rule: #26343c; --rule-2: #1b272e; --accent: #6ea7f5; --accent-soft: #162a3e; --on-accent: #0b1620;
+  --hash: #ab9fff; --good: #49c287; --good-soft: #12291f; --bad: #ff8d5f; --bad-soft: #2d1a12;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s1-soft: #15283d; --s2-soft: #2d1b12;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: var(--step-0);
+  line-height: 1.6; -webkit-font-smoothing: antialiased; }
+.wrap { padding-inline: var(--gutter); padding-block: 0 48px; max-width: 1280px; margin: 0 auto; }
+a { color: var(--accent); }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.15; text-wrap: balance; margin: 0; color: var(--ink); }
+h1 { font-size: var(--step-4); letter-spacing: -0.01em; }
+h2 { font-size: var(--step-3); }
+h3 { font-size: var(--step-2); font-weight: 500; }
+p { margin: 0; max-width: 68ch; }
+code, .mono { font-family: var(--font-mono); font-size: 0.92em; }
+.hash { font-family: var(--font-mono); color: var(--hash); word-break: break-all; }
+.eyebrow { font-size: var(--step--1); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+.muted { color: var(--ink-2); }
+.small { font-size: var(--step--1); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 56px);
+  align-items: center; padding-block: clamp(28px, 5vw, 56px) 28px; border-bottom: 1px solid var(--rule); }
+.hero-text { display: grid; gap: 18px; min-width: 0; }
+.hero-text .lead { font-size: var(--step-1); color: var(--ink-2); }
+.tree-card { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); padding: 16px 16px 12px; min-width: 0; }
+.tree-card svg { width: 100%; height: auto; display: block; }
+.tree-card .cap { font-size: var(--step--1); color: var(--ink-2); margin-top: 8px; max-width: none; }
+.ok { color: var(--good); font-weight: 600; }
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--rule);
+  border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; margin-top: 4px; }
+.tile { background: var(--surface); padding: 14px 16px; display: grid; gap: 2px; align-content: start; min-width: 0; }
+.tile .v { font-family: var(--font-display); font-size: var(--step-3); font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tile .l { font-size: var(--step--1); color: var(--ink-2); line-height: 1.35; }
+
+/* page grid */
+.page { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: clamp(24px, 4vw, 56px); padding-top: 28px; }
+.rail { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; display: grid; gap: 2px; }
+.rail .eyebrow { margin-bottom: 8px; }
+.rail a { color: var(--ink-2); text-decoration: none; font-size: var(--step--1); padding: 5px 10px; border-left: 2px solid var(--rule);
+  line-height: 1.35; }
+.rail a:hover { color: var(--ink); }
+.rail a.here { color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
+main { display: grid; gap: 64px; min-width: 0; }
+.sec { display: grid; gap: 18px; scroll-margin-top: 24px; min-width: 0; }
+.sec > header { display: grid; gap: 8px; }
+.sec > header p { color: var(--ink-2); }
+
+/* panels and controls */
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); padding: 18px; display: grid;
+  gap: 14px; min-width: 0; }
+.panel-head { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; justify-content: space-between; }
+.panel-head h3 { font-size: var(--step-1); font-family: var(--font-body); font-weight: 600; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; background: var(--sunk); }
+.seg button { font: inherit; font-size: var(--step--1); border: 0; background: transparent; color: var(--ink-2); padding: 5px 11px;
+  cursor: pointer; border-right: 1px solid var(--rule); }
+.seg button:last-child { border-right: 0; }
+.seg button:hover { color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+.chart { min-width: 0; width: 100%; }
+.chart svg { display: block; max-width: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: var(--step--1); color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.legend i.dot { width: 9px; height: 9px; border-radius: 50%; }
+.legend i.hollow { width: 9px; height: 9px; border-radius: 50%; background: transparent !important; border: 2px solid; }
+.legend i.dotted { background: repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 6px) !important; color: var(--ink-2); }
+.legend i.dash { background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 7px) !important; color: var(--ink-2); }
+.note { font-size: var(--step--1); color: var(--ink-2); max-width: none; }
+.verdicts { display: grid; gap: 6px; font-size: var(--step--1); }
+.verdicts p { max-width: none; }
+.verdicts b { font-weight: 600; }
+details.data summary { cursor: pointer; font-size: var(--step--1); color: var(--accent); width: max-content; }
+.table-wrap { overflow-x: auto; margin-top: 8px; }
+table { border-collapse: collapse; font-size: var(--step--1); font-variant-numeric: tabular-nums; min-width: 100%; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule-2); vertical-align: top; }
+th { color: var(--ink-2); font-weight: 600; background: var(--sunk); }
+td.num, th.num { text-align: right; white-space: nowrap; }
+tr.ours td { background: var(--accent-soft); }
+tr.base td { color: var(--ink-2); font-style: italic; }
+.caveats { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+.chip { display: inline-block; font-size: 0.75rem; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--rule); color: var(--ink-2);
+  background: var(--sunk); white-space: nowrap; }
+.chip.ours { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+/* chart text */
+svg text { font-family: var(--font-body); }
+.tick { font-size: 11px; fill: var(--ink-3); font-variant-numeric: tabular-nums; }
+.axis-label { font-size: 11.5px; fill: var(--ink-2); }
+.row-label { font-size: 12px; fill: var(--ink); }
+.row-sub { font-size: 10.5px; fill: var(--ink-3); }
+.grid { stroke: var(--rule-2); stroke-width: 1; }
+.base { stroke: var(--rule); stroke-width: 1; }
+.band { fill: var(--sunk); opacity: 0.55; }
+.val { font-size: 11px; fill: var(--ink-2); font-variant-numeric: tabular-nums; }
+.mark { cursor: default; outline: none; }
+.mark:focus-visible circle, .mark:focus-visible rect { stroke: var(--accent); stroke-width: 2; }
+.cross { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 3 3; }
+.tip { position: fixed; z-index: 20; pointer-events: none; background: var(--ink); color: var(--paper); font-size: 12px; line-height: 1.45;
+  padding: 7px 10px; border-radius: 6px; max-width: 280px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18); font-variant-numeric: tabular-nums; }
+.tip b { font-weight: 600; }
+
+/* datasets */
+.cards-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.ds { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); padding: 18px; display: grid; gap: 12px; min-width: 0; }
+.ds h3 { font-size: var(--step-2); }
+.ds .facts { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: var(--step--1); color: var(--ink-2); }
+.ds .facts b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.hbar { display: grid; grid-template-columns: minmax(84px, 120px) minmax(0, 1fr) 76px; gap: 10px; align-items: center; font-size: var(--step--1); }
+.hbar .track { height: 12px; background: var(--sunk); border-radius: 3px; position: relative; overflow: hidden; }
+.hbar .fill { position: absolute; inset: 0 auto 0 0; background: var(--s1-soft); border-radius: 3px; }
+.hbar .ev { position: absolute; inset: 0 auto 0 0; background: var(--s1); border-radius: 3px; }
+.hbar .n { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.glossary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+  border-radius: var(--radius); overflow: hidden; }
+.glossary div { background: var(--surface); padding: 12px 14px; display: grid; gap: 4px; align-content: start; }
+.glossary dt { font-weight: 600; font-size: var(--step--1); }
+.glossary dd { margin: 0; font-size: var(--step--1); color: var(--ink-2); }
+
+/* round tour */
+.tour { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.diagram svg { width: 100%; height: auto; display: block; }
+.dg-box { fill: var(--sunk); stroke: var(--rule); stroke-width: 1; transition: fill 0.25s, stroke 0.25s; }
+.dg-text { font-size: 12px; fill: var(--ink-2); }
+.dg-zone { font-size: 10.5px; fill: var(--ink-3); letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+.dg-arrow { stroke: var(--rule); stroke-width: 1.6; fill: none; transition: stroke 0.25s; }
+.dg-on .dg-box { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.6; }
+.dg-on .dg-text { fill: var(--ink); font-weight: 600; }
+.dg-arrow.dg-on { stroke: var(--accent); }
+.steps-wrap { display: grid; grid-template-columns: minmax(200px, 250px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; counter-reset: step; }
+.steps button { font: inherit; font-size: var(--step--1); width: 100%; text-align: left; background: transparent; border: 0; color: var(--ink-2);
+  padding: 7px 10px 7px 34px; border-radius: 6px; cursor: pointer; position: relative; line-height: 1.35; }
+.steps button::before { counter-increment: step; content: counter(step); position: absolute; left: 8px; top: 6px; width: 19px; height: 19px;
+  border-radius: 50%; border: 1px solid var(--rule); font-size: 11px; display: grid; place-items: center; color: var(--ink-3);
+  font-variant-numeric: tabular-nums; background: var(--surface); }
+.steps button:hover { background: var(--sunk); color: var(--ink); }
+.steps button[aria-current="step"] { background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+.steps button[aria-current="step"]::before { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.step-detail { display: grid; gap: 12px; min-width: 0; }
+.step-detail h3 { font-size: var(--step-2); }
+.record { background: var(--sunk); border: 1px solid var(--rule-2); border-radius: 6px; padding: 12px 14px; overflow-x: auto;
+  font-family: var(--font-mono); font-size: 12.5px; line-height: 1.55; margin: 0; white-space: pre; color: var(--ink); }
+.record .k { color: var(--ink-3); }
+.record .h { color: var(--hash); }
+.record .s { color: var(--good); }
+.play { font: inherit; font-size: var(--step--1); border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: 6px;
+  padding: 5px 12px; cursor: pointer; }
+.play[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+
+/* attacks */
+.cards-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.atk { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.atk h3 { font-size: var(--step-1); font-family: var(--font-body); font-weight: 600; }
+.atk p { font-size: var(--step--1); color: var(--ink-2); }
+.atk ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: var(--step--1); }
+.atk li { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dashed var(--rule-2); padding-bottom: 3px; }
+.atk li span:last-child { font-variant-numeric: tabular-nums; color: var(--good); font-weight: 600; white-space: nowrap; }
+.big-s { font-family: var(--font-display); font-size: var(--step-3); font-weight: 600; color: var(--good); line-height: 1; }
+
+/* threats */
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.list { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); padding: 16px 18px; display: grid; gap: 10px; align-content: start; }
+.list ul { margin: 0; padding-left: 18px; display: grid; gap: 7px; font-size: var(--step-0); }
+.list h3 { font-size: var(--step-1); font-family: var(--font-body); font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.badge { width: 20px; height: 20px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 12px; font-weight: 700; }
+.badge.yes { background: var(--good-soft); color: var(--good); }
+.badge.no { background: var(--bad-soft); color: var(--bad); }
+.cmds { display: grid; gap: 10px; }
+.cmd { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; background: var(--surface);
+  border: 1px solid var(--rule); border-radius: var(--radius); padding: 10px 12px; }
+.cmd code { overflow-x: auto; white-space: nowrap; display: block; font-size: 13px; }
+.cmd p { grid-column: 1 / -1; font-size: var(--step--1); color: var(--ink-2); max-width: none; }
+.copy { font: inherit; font-size: var(--step--1); border: 1px solid var(--rule); background: var(--sunk); color: var(--ink-2); border-radius: 6px;
+  padding: 3px 10px; cursor: pointer; }
+footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--rule); font-size: var(--step--1); color: var(--ink-3); display: grid; gap: 4px; }
+footer p { max-width: none; }
+
+@media (max-width: 1060px) {
+  .page { grid-template-columns: minmax(0, 1fr); padding-top: 0; }
+  .rail { top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--paper); display: flex; gap: 0; overflow-x: auto;
+    border-bottom: 1px solid var(--rule); margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); }
+  .rail .eyebrow { display: none; }
+  .rail a { border-left: 0; border-bottom: 2px solid transparent; white-space: nowrap; padding: 10px 10px; }
+  .rail a.here { border-bottom-color: var(--accent); }
+  main { padding-top: 28px; }
+}
+@media (max-width: 860px) {
+  .hero { grid-template-columns: minmax(0, 1fr); }
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cards-2, .cards-3, .two, .glossary { grid-template-columns: minmax(0, 1fr); }
+  .steps-wrap { grid-template-columns: minmax(0, 1fr); }
+  .diagram { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="hero-text">
+      <p class="eyebrow">Federated learning · signed updates · a proof-of-work ledger</p>
+      <h1>Hospitals train one model together, and every update leaves a signed trace on a ledger.</h1>
+      <p class="lead" id="hero-lead"></p>
+      <div class="tiles" id="tiles"></div>
+    </div>
+    <figure class="tree-card" style="margin:0">
+      <div id="hero-tree" class="chart"></div>
+      <figcaption class="cap" id="hero-tree-cap"></figcaption>
+    </figure>
+  </header>
+
+  <div class="page">
+    <nav class="rail" aria-label="Contents">
+      <p class="eyebrow">Contents</p>
+      <a href="#setup">Data and methods</a>
+      <a href="#round">One round, step by step</a>
+      <a href="#results">Does federation work?</a>
+      <a href="#hospitals">Hospital by hospital</a>
+      <a href="#privacy">The cost of privacy</a>
+      <a href="#ledger">The ledger</a>
+      <a href="#chain-attacks">Attacks on the ledger</a>
+      <a href="#poisoning">A malicious hospital</a>
+      <a href="#reference">The reference paper</a>
+      <a href="#threats">What it protects</a>
+      <a href="#reproduce">Reproduce</a>
+    </nav>
+
+    <main>
+      <section class="sec" id="setup">
+        <header>
+          <p class="eyebrow">Data and methods</p>
+          <h2>Two public datasets, split by the hospital that recorded each patient</h2>
+          <p id="setup-lead"></p>
+        </header>
+        <div class="cards-2" id="datasets"></div>
+        <dl class="glossary" id="glossary"></dl>
+      </section>
+
+      <section class="sec" id="round">
+        <header>
+          <p class="eyebrow">One round, step by step</p>
+          <h2>Follow a real round from training to the ledger</h2>
+          <p id="round-lead"></p>
+        </header>
+        <div class="panel tour">
+          <div class="panel-head">
+            <h3 id="round-title"></h3>
+            <button class="play" id="play" type="button" aria-pressed="false">Play the round</button>
+          </div>
+          <div class="diagram" id="diagram"></div>
+          <div class="steps-wrap">
+            <ol class="steps" id="steps"></ol>
+            <div class="step-detail" id="step-detail" aria-live="polite"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="sec" id="results">
+        <header>
+          <p class="eyebrow">Does federation work?</p>
+          <h2>Federated models against local and centralized training</h2>
+          <p>Each dot is a pooled out-of-fold result, averaged over repeated cross-validation; the bar spans one standard
+            deviation. Local models train on one hospital only; centralized training pools every patient, which real
+            hospitals cannot do.</p>
+        </header>
+        <div class="panel">
+          <div class="panel-head">
+            <h3 id="m-title"></h3>
+            <div class="controls"><div class="seg" id="m-ds"></div><div class="seg" id="m-metric"></div></div>
+          </div>
+          <div class="legend" id="m-legend"></div>
+          <div class="chart" id="m-chart"></div>
+          <div class="verdicts" id="m-verdicts"></div>
+          <details class="data"><summary>Show the numbers</summary><div class="table-wrap" id="m-table"></div></details>
+          <details class="data"><summary>Show the paired comparisons (differences and 95% intervals)</summary><div class="table-wrap" id="m-paired"></div><p class="note" id="m-paired-note"></p></details>
+          <details class="data"><summary>Show the same comparisons within hospital</summary><div class="table-wrap" id="m-paired-within"></div><p class="note" id="m-paired-within-note"></p></details>
+        </div>
+      </section>
+
+      <section class="sec" id="hospitals">
+        <header>
+          <p class="eyebrow">Hospital by hospital</p>
+          <h2>Who gains from federation, and how training evolves per hospital</h2>
+          <p>A hospital's own model only sees its own patients. The federated model is trained on everyone's updates
+            but scored here on the same hospital's patients.</p>
+        </header>
+        <div class="panel">
+          <div class="panel-head">
+            <h3 id="ph-title"></h3>
+            <div class="controls"><div class="seg" id="ph-ds"></div></div>
+          </div>
+          <div class="legend" id="ph-legend"></div>
+          <div class="chart" id="ph-chart"></div>
+          <p class="note" id="ph-note"></p>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h3 id="cv-title">Per-hospital performance over the training rounds</h3>
+            <div class="controls">
+              <div class="seg" id="cv-ds"></div><div class="seg" id="cv-method"></div><div class="seg" id="cv-measure"></div><div class="seg" id="cv-split"></div>
+            </div>
+          </div>
+          <div class="legend" id="cv-legend"></div>
+          <div class="chart" id="cv-chart"></div>
+          <p class="note" id="cv-note"></p>
+        </div>
+      </section>
+
+      <section class="sec" id="privacy">
+        <header>
+          <p class="eyebrow">The cost of privacy</p>
+          <h2>Differential privacy for the logistic model</h2>
+          <p id="dp-lead"></p>
+        </header>
+        <div class="panel">
+          <div class="panel-head">
+            <h3 id="dp-title"></h3>
+            <div class="controls"><div class="seg" id="dp-ds"></div><div class="seg" id="dp-metric"></div></div>
+          </div>
+          <div class="chart" id="dp-chart"></div>
+          <p class="note" id="dp-note"></p>
+        </div>
+      </section>
+
+      <section class="sec" id="ledger">
+        <header>
+          <p class="eyebrow">The ledger</p>
+          <h2>What committing every round costs</h2>
+          <p>Every round's root is mined into a block on BlockVerify's own proof-of-work chain. Latency, throughput and
+            send rate are measured the way the reference paper defines them.</p>
+        </header>
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Blocks mined during one run</h3>
+            <div class="controls"><div class="seg" id="lg-ds"></div></div>
+          </div>
+          <div class="tiles" id="lg-tiles"></div>
+          <div class="chart" id="lg-chart"></div>
+          <p class="note" id="lg-note"></p>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Time to commit one round, by stage</h3></div>
+          <div class="legend" id="st-legend"></div>
+          <div class="chart" id="st-chart"></div>
+          <p class="note" id="st-note"></p>
+        </div>
+      </section>
+
+      <section class="sec" id="chain-attacks">
+        <header>
+          <p class="eyebrow">Attacks on the ledger</p>
+          <h2>The reference paper's three attacks, run against this commit layer</h2>
+          <p>Each simulated round is a real commit round plus one attack attempt. Resilience is the share of rounds in
+            which the defence held. With the defences switched off, the same attempts succeed, which shows each check
+            is doing the work.</p>
+        </header>
+        <div class="cards-3" id="atk-cards"></div>
+        <div class="panel">
+          <div class="panel-head">
+            <h3 id="atk-title"></h3>
+            <div class="controls"><div class="seg" id="atk-ds"></div></div>
+          </div>
+          <div class="legend" id="atk-legend"></div>
+          <div class="chart" id="atk-chart"></div>
+          <div class="note" id="atk-note"></div>
+        </div>
+      </section>
+
+      <section class="sec" id="poisoning">
+        <header>
+          <p class="eyebrow">A malicious hospital</p>
+          <h2>Screening poisoned updates before they reach the model</h2>
+          <p id="po-lead"></p>
+        </header>
+        <div class="panel">
+          <div class="panel-head">
+            <h3 id="po-title"></h3>
+            <div class="controls"><div class="seg" id="po-view"></div></div>
+          </div>
+          <div class="legend" id="po-legend"></div>
+          <div class="chart" id="po-chart"></div>
+          <div class="table-wrap" id="po-table"></div>
+          <p class="note" id="po-note"></p>
+        </div>
+      </section>
+
+      <section class="sec" id="reference">
+        <header>
+          <p class="eyebrow">The reference paper</p>
+          <h2>Where this sits next to Myrzashova et al.</h2>
+          <p>Rows from other studies are copied from the reference paper's Tables III and IV, as reported. They use other
+            datasets and models, so they are context, not a contest.</p>
+        </header>
+        <div class="panel">
+          <div class="panel-head">
+            <h3 id="ref-title"></h3>
+            <div class="controls"><div class="seg" id="ref-t"></div></div>
+          </div>
+          <div class="table-wrap" id="ref-table"></div>
+          <p class="note" id="ref-note"></p>
+        </div>
+      </section>
+
+      <section class="sec" id="threats">
+        <header>
+          <p class="eyebrow">What it protects</p>
+          <h2>Covered, and not covered</h2>
+          <p>The full threat model, with every case spelled out, is in THREAT_MODEL.md next to the code.</p>
+        </header>
+        <div class="two">
+          <div class="list">
+            <h3><span class="badge yes" aria-hidden="true">✓</span>Covered</h3>
+            <ul>
+              <li>A hospital cannot change, replay or re-spend an update after signing it.</li>
+              <li>Nobody can submit as a hospital without that hospital's registered key.</li>
+              <li>The server cannot misreport which updates entered a round: each round root is anchored and every
+                hospital can check its inclusion proof.</li>
+              <li>Updates with NaN, infinite or extreme values are rejected before aggregation.</li>
+              <li>One poisoned hospital is screened with a threshold calibrated from data, never set by hand.</li>
+              <li>The logistic model's training examples are protected by differential privacy.</li>
+            </ul>
+          </div>
+          <div class="list">
+            <h3><span class="badge no" aria-hidden="true">✕</span>Not covered</h3>
+            <ul>
+              <li>Adaptive attackers, and more than one colluding hospital.</li>
+              <li>A server that computes the average wrongly: aggregation is not proven.</li>
+              <li>Privacy of the tree models: random forest and XGBoost have no differential privacy.</li>
+              <li>Stolen keys, multi-factor authentication and firewalls (not simulated).</li>
+              <li>Forks of the chain, several aggregators, and dropped submissions.</li>
+              <li>A real network: the chain runs as one local node.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="sec" id="reproduce">
+        <header>
+          <p class="eyebrow">Reproduce</p>
+          <h2>Three commands rebuild everything on this page</h2>
+        </header>
+        <div class="cmds">
+          <div class="cmd"><code>python3 -m fedverify.survival.experiments all --jobs 4</code><button class="copy" type="button">Copy</button>
+            <p>Runs every experiment: methods, privacy sweep, chain runs, calibration, ledger attacks and poisoning.</p></div>
+          <div class="cmd"><code>python3 -m fedverify.analysis.make_fl_healthcare_all</code><button class="copy" type="button">Copy</button>
+            <p>Rebuilds every table, figure and the results draft from the results files.</p></div>
+          <div class="cmd"><code>python3 -m fedverify.analysis.make_showcase</code><button class="copy" type="button">Copy</button>
+            <p>Rebuilds this page from the same results files.</p></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer id="foot"></footer>
+</div>
+<div id="tip" class="tip" role="status" hidden></div>
+<script type="application/json" id="showcase-data">__SHOWCASE_DATA__</script>
+<script>
+(function () {
+  'use strict';
+  var D = JSON.parse(document.getElementById('showcase-data').textContent);
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var uid = 0;
+
+  // ── tiny DOM helpers ─────────────────────────────────────────────────────────
+  function put(e, a) {
+    for (var k in (a || {})) {
+      var v = a[k];
+      if (v == null || v === false) continue;
+      if (k === 'style' && typeof v === 'object') { for (var p in v) e.style.setProperty(p, v[p]); }
+      else if (k.slice(0, 2) === 'on' && typeof v === 'function') e.addEventListener(k.slice(2), v);
+      else if (k === 'text') e.textContent = v;
+      else if (k === 'html') e.innerHTML = v;
+      else e.setAttribute(k, v === true ? '' : v);
+    }
+    return e;
+  }
+  function kids(e, list) {
+    list.forEach(function (k) {
+      if (Array.isArray(k)) return kids(e, k);
+      if (k == null || k === false) return;
+      e.append(k.nodeType ? k : document.createTextNode(String(k)));
+    });
+    return e;
+  }
+  function h(tag, a) { return kids(put(document.createElement(tag), a), [].slice.call(arguments, 2)); }
+  function s(tag, a) { return kids(put(document.createElementNS(SVGNS, tag), a), [].slice.call(arguments, 2)); }
+  function $(id) { return document.getElementById(id); }
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function f3(v) { return v == null ? '—' : v.toFixed(3); }
+  function pct(v, d) { return v == null ? 'n/a' : (100 * v).toFixed(d == null ? 1 : d) + '%'; }
+  function num(v, d) { return v == null ? '—' : Number(v).toLocaleString('en', { maximumFractionDigits: d || 0, minimumFractionDigits: d || 0 }); }
+  function short(x, n) { return x ? x.slice(0, n || 10) + '…' : '—'; }
+  function fit(t, px, size) { t = String(t); var max = Math.max(4, Math.floor(px / ((size || 11) * 0.56))); return t.length > max ? t.slice(0, max - 1) + '…' : t; }
+  function dsShort(id) { var d = D.datasets.find(function (x) { return x.id === id; }); return d && d.short ? d.short : id; }
+  function dsLabel(id) { var d = D.datasets.find(function (x) { return x.id === id; }); return d ? d.label : id; }
+  var SERIES = ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)', 'var(--s5)'];
+  var MARKERS = ['circle', 'square', 'diamond', 'triangle', 'circle'];
+
+  // ── scales and ticks ─────────────────────────────────────────────────────────
+  function scale(d0, d1, r0, r1) { var k = (r1 - r0) / ((d1 - d0) || 1); return function (v) { return r0 + (v - d0) * k; }; }
+  function ticks(lo, hi, n) {
+    var span = (hi - lo) || 1, raw = span / (n || 5), mag = Math.pow(10, Math.floor(Math.log10(raw))), e = raw / mag;
+    var step = (e >= 7.5 ? 10 : e >= 3.5 ? 5 : e >= 1.5 ? 2 : 1) * mag, out = [];
+    for (var v = Math.ceil(lo / step - 1e-9) * step; v <= hi + step * 1e-9; v += step) out.push(+v.toFixed(10));
+    return { t: out, step: step };
+  }
+  function niceDomain(lo, hi, pad) {
+    if (!isFinite(lo) || !isFinite(hi)) return [0, 1];
+    var span = (hi - lo) || Math.abs(hi) || 1; lo -= span * (pad || 0.06); hi += span * (pad || 0.06);
+    var st = ticks(lo, hi, 5).step; return [Math.floor(lo / st) * st, Math.ceil(hi / st) * st];
+  }
+  function decimals(step) { return Math.max(0, Math.min(4, -Math.floor(Math.log10(step) + 1e-9))); }
+
+  // ── tooltip ──────────────────────────────────────────────────────────────────
+  var tip = $('tip');
+  function place(x, y) {
+    var r = tip.getBoundingClientRect(), pad = 14, X = x + pad, Y = y + pad;
+    if (X + r.width > window.innerWidth - 8) X = x - r.width - pad;
+    if (Y + r.height > window.innerHeight - 8) Y = y - r.height - pad;
+    tip.style.left = Math.max(8, X) + 'px'; tip.style.top = Math.max(8, Y) + 'px';
+  }
+  function showTip(html, x, y) { tip.innerHTML = html; tip.hidden = false; place(x, y); }
+  function hideTip() { tip.hidden = true; }
+  function bindTip(node, html) {
+    node.addEventListener('pointerenter', function (ev) { showTip(html, ev.clientX, ev.clientY); });
+    node.addEventListener('pointermove', function (ev) { place(ev.clientX, ev.clientY); });
+    node.addEventListener('pointerleave', hideTip);
+    node.addEventListener('focus', function () { var b = node.getBoundingClientRect(); showTip(html, b.right, b.top); });
+    node.addEventListener('blur', hideTip);
+  }
+
+  // ── controls ─────────────────────────────────────────────────────────────────
+  function segmented(box, options, value, onChange, label) {
+    box.textContent = '';
+    if (label) box.setAttribute('aria-label', label);
+    box.setAttribute('role', 'group');
+    options.forEach(function (o) {
+      box.append(h('button', { type: 'button', 'aria-pressed': String(o.value === value), onclick: function () {
+        [].forEach.call(box.children, function (b) { b.setAttribute('aria-pressed', 'false'); });
+        this.setAttribute('aria-pressed', 'true'); onChange(o.value);
+      } }, o.label));
+    });
+  }
+  function legend(box, items) {
+    box.textContent = '';
+    items.forEach(function (it) {
+      var sw = h('i', { class: it.kind || '', style: it.kind === 'hollow' ? { 'border-color': it.color } : { background: it.color } });
+      box.append(h('span', null, sw, it.label));
+    });
+  }
+  function table(box, header, rows, opts) {
+    box.textContent = '';
+    var t = h('table'), thead = h('thead'), tr = h('tr');
+    header.forEach(function (c, i) { tr.append(h('th', { class: (opts && opts.num && opts.num.indexOf(i) >= 0) ? 'num' : null }, c)); });
+    thead.append(tr); t.append(thead);
+    var tb = h('tbody');
+    rows.forEach(function (r) {
+      var row = h('tr', { class: r.cls || null });
+      (r.cells || r).forEach(function (c, i) {
+        row.append(h('td', { class: (opts && opts.num && opts.num.indexOf(i) >= 0) ? 'num' : null }, c));
+      });
+      tb.append(row);
+    });
+    t.append(tb); box.append(t);
+  }
+
+  // ── chart frame and marks ────────────────────────────────────────────────────
+  function frame(box, height, aria) {
+    box.textContent = '';
+    var W = Math.max(280, Math.floor(box.clientWidth || 600));
+    var svg = s('svg', { viewBox: '0 0 ' + W + ' ' + height, width: W, height: height, role: 'img', 'aria-label': aria || '' });
+    box.append(svg);
+    return { svg: svg, W: W, H: height };
+  }
+  function marker(kind, x, y, r, color, hollow) {
+    var st = { fill: hollow ? 'var(--surface)' : color, stroke: hollow ? color : 'var(--surface)', 'stroke-width': hollow ? '2' : '1.5' };
+    if (kind === 'square') return s('rect', { x: x - r, y: y - r, width: 2 * r, height: 2 * r, rx: 1.5, style: st });
+    if (kind === 'diamond') return s('path', { d: 'M' + x + ' ' + (y - r - 1) + ' L' + (x + r + 1) + ' ' + y + ' L' + x + ' ' + (y + r + 1) + ' L' + (x - r - 1) + ' ' + y + ' Z', style: st });
+    if (kind === 'triangle') return s('path', { d: 'M' + x + ' ' + (y - r - 1) + ' L' + (x + r + 1) + ' ' + (y + r) + ' L' + (x - r - 1) + ' ' + (y + r) + ' Z', style: st });
+    return s('circle', { cx: x, cy: y, r: r, style: st });
+  }
+  function xAxis(svg, x, tk, y0, y1, fmt, label, W) {
+    tk.forEach(function (v) {
+      svg.append(s('line', { x1: x(v), x2: x(v), y1: y0, y2: y1, class: 'grid' }));
+      svg.append(s('text', { x: x(v), y: y1 + 16, class: 'tick', 'text-anchor': 'middle' }, fmt(v)));
+    });
+    if (label) svg.append(s('text', { x: W / 2, y: y1 + 33, class: 'axis-label', 'text-anchor': 'middle' }, label));
+  }
+
+  // Dot and whisker: rows of labelled values, one marker per series, whisker = mean ± std.
+  function dotWhisker(box, cfg) {
+    var n = cfg.series.length, rowH = Math.max(34, 18 + 11 * n), top = 6, bottom = 44;
+    var W0 = Math.max(280, Math.floor(box.clientWidth || 600));
+    var labelW = Math.round(Math.min(200, Math.max(104, W0 * 0.27)));
+    var H = top + rowH * cfg.rows.length + bottom;
+    var f = frame(box, H, cfg.aria), svg = f.svg, W = f.W, vals = [];
+    cfg.rows.forEach(function (r) { cfg.series.forEach(function (se) { var c = r.cells[se.key]; if (c) vals.push(c[0] - c[1], c[0] + c[1]); }); });
+    var dom = cfg.domain || niceDomain(Math.min.apply(null, vals), Math.max.apply(null, vals), 0.04);
+    var x0 = labelW + 14, x1 = W - 14, x = scale(dom[0], dom[1], x0, x1), tk = ticks(dom[0], dom[1], W < 520 ? 3 : 5);
+    var dec = decimals(tk.step);
+    cfg.rows.forEach(function (r, i) { if (i % 2 === 0) svg.append(s('rect', { x: 0, y: top + rowH * i, width: W, height: rowH, class: 'band' })); });
+    xAxis(svg, x, tk.t, top, H - bottom + 2, function (v) { return v.toFixed(dec); }, cfg.axisLabel, (x0 + x1));
+    cfg.rows.forEach(function (r, i) {
+      var yc = top + rowH * i + rowH / 2, label = s('text', { x: labelW, y: yc + (r.sub ? -1 : 4), class: 'row-label', 'text-anchor': 'end' }, fit(r.label, labelW - 4, 12));
+      svg.append(label);
+      if (r.sub) svg.append(s('text', { x: labelW, y: yc + 12, class: 'row-sub', 'text-anchor': 'end' }, fit(r.sub, labelW - 4, 10.5)));
+      cfg.series.forEach(function (se, j) {
+        var c = r.cells[se.key]; if (!c) return;
+        var y = yc + (j - (n - 1) / 2) * 10, g = s('g', { class: 'mark', tabindex: '0' });
+        g.append(s('line', { x1: x(c[0] - c[1]), x2: x(c[0] + c[1]), y1: y, y2: y, style: { stroke: se.color, 'stroke-width': '2', 'stroke-linecap': 'round' } }));
+        g.append(marker(se.marker, x(c[0]), y, 4.5, se.color, se.hollow));
+        bindTip(g, '<b>' + esc(r.label) + '</b><br>' + esc(se.label) + ': ' + cfg.fmt(c[0]) + ' ± ' + cfg.fmt(c[1]));
+        svg.append(g);
+      });
+    });
+  }
+
+  // Line chart with hover crosshair. xs: x values; series: {label, color, dash, marker, ys, err}
+  function lineChart(box, cfg) {
+    var H = cfg.height || 300, f = frame(box, H, cfg.aria), svg = f.svg, W = f.W;
+    var m = { l: 56, r: 14, t: 12, b: 46 }, all = [];
+    cfg.series.forEach(function (se) { se.ys.forEach(function (v, i) { if (v != null) { var e = se.err ? (se.err[i] || 0) : 0; all.push(v - e, v + e); } }); });
+    var dom = cfg.yDomain || niceDomain(Math.min.apply(null, all), Math.max.apply(null, all), 0.05);
+    if (cfg.zeroBase && Math.min.apply(null, all) >= 0) dom = [0, dom[1]];
+    var y = scale(dom[0], dom[1], H - m.b, m.t), n = cfg.xs.length;
+    var xp = cfg.categorical ? function (i) { return m.l + (W - m.l - m.r) * ((i + 0.5) / n); }
+                             : function (i) { return scale(cfg.xs[0], cfg.xs[n - 1], m.l, W - m.r)(cfg.xs[i]); };
+    var yt = ticks(dom[0], dom[1], 5), dec = decimals(yt.step);
+    yt.t.forEach(function (v) {
+      svg.append(s('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), class: 'grid' }));
+      svg.append(s('text', { x: m.l - 8, y: y(v) + 4, class: 'tick', 'text-anchor': 'end' }, (cfg.fmtY || function (q) { return q.toFixed(dec); })(v)));
+    });
+    var xticks = cfg.categorical ? cfg.xs.map(function (_, i) { return i; }) : ticks(cfg.xs[0], cfg.xs[n - 1], W < 520 ? 4 : 8).t.map(function (v) { return cfg.xs.indexOf(v); }).filter(function (i) { return i >= 0; });
+    xticks.forEach(function (i) { svg.append(s('text', { x: xp(i), y: H - m.b + 17, class: 'tick', 'text-anchor': 'middle' }, cfg.fmtX ? cfg.fmtX(cfg.xs[i]) : cfg.xs[i])); });
+    svg.append(s('line', { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, class: 'base' }));
+    svg.append(s('text', { x: (m.l + W - m.r) / 2, y: H - 8, class: 'axis-label', 'text-anchor': 'middle' }, cfg.xLabel));
+    svg.append(s('text', { x: 14, y: (m.t + H - m.b) / 2, class: 'axis-label', 'text-anchor': 'middle', transform: 'rotate(-90 14 ' + ((m.t + H - m.b) / 2) + ')' }, cfg.yLabel));
+    cfg.series.forEach(function (se) {
+      var d = '', pen = false;
+      se.ys.forEach(function (v, i) { if (v == null) { pen = false; return; } d += (pen ? 'L' : 'M') + xp(i).toFixed(1) + ' ' + y(v).toFixed(1); pen = true; });
+      if (se.err) se.ys.forEach(function (v, i) {
+        if (v == null || !se.err[i]) return;
+        svg.append(s('line', { x1: xp(i), x2: xp(i), y1: y(v - se.err[i]), y2: y(v + se.err[i]), style: { stroke: se.color, 'stroke-width': '1.6' } }));
+        svg.append(s('line', { x1: xp(i) - 4, x2: xp(i) + 4, y1: y(v - se.err[i]), y2: y(v - se.err[i]), style: { stroke: se.color, 'stroke-width': '1.6' } }));
+        svg.append(s('line', { x1: xp(i) - 4, x2: xp(i) + 4, y1: y(v + se.err[i]), y2: y(v + se.err[i]), style: { stroke: se.color, 'stroke-width': '1.6' } }));
+      });
+      svg.append(s('path', { d: d, style: { fill: 'none', stroke: se.color, 'stroke-width': se.width || '2', 'stroke-dasharray': se.dash === 'dot' ? '1.5 4' : se.dash ? '5 4' : 'none', 'stroke-linecap': se.dash === 'dot' ? 'round' : 'butt', 'stroke-linejoin': 'round' } }));
+      if (se.marker) {
+        var every = se.markEvery || 1;
+        se.ys.forEach(function (v, i) { if (v != null && (i % every === 0 || i === se.ys.length - 1)) svg.append(marker(se.marker, xp(i), y(v), 3.6, se.color, se.dash)); });
+      }
+    });
+    // hover layer: nearest x
+    var cross = s('line', { y1: m.t, y2: H - m.b, class: 'cross', visibility: 'hidden' });
+    svg.append(cross);
+    var hit = s('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, style: { fill: 'transparent' } });
+    hit.addEventListener('pointermove', function (ev) {
+      var r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) * (W / r.width), best = 0, bd = 1e9;
+      for (var i = 0; i < n; i++) { var dd = Math.abs(xp(i) - px); if (dd < bd) { bd = dd; best = i; } }
+      cross.setAttribute('x1', xp(best)); cross.setAttribute('x2', xp(best)); cross.setAttribute('visibility', 'visible');
+      var rows = cfg.series.filter(function (se) { return se.ys[best] != null; }).map(function (se) { return [se, se.ys[best]]; });
+      rows.sort(function (a, b) { return b[1] - a[1]; });
+      var fy = cfg.fmtTip || f3;
+      showTip('<b>' + esc(cfg.xTip ? cfg.xTip(cfg.xs[best]) : cfg.xLabel + ' ' + cfg.xs[best]) + '</b><br>' + rows.map(function (q) {
+        return '<span style="color:' + q[0].color + '">●</span> ' + esc(q[0].label) + ': ' + fy(q[1]) + (q[0].err && q[0].err[best] ? ' ± ' + fy(q[0].err[best]) : '');
+      }).join('<br>'), ev.clientX, ev.clientY);
+    });
+    hit.addEventListener('pointerleave', function () { cross.setAttribute('visibility', 'hidden'); hideTip(); });
+    svg.append(hit);
+  }
+
+  // Vertical grouped bars on a 0-100 scale.
+  function groupedBars(box, cfg) {
+    var H = cfg.height || 270, f = frame(box, H, cfg.aria), svg = f.svg, W = f.W, m = { l: 48, r: 10, t: 22, b: 48 };
+    var y = scale(0, 100, H - m.b, m.t), gW = (W - m.l - m.r) / cfg.groups.length, nb = cfg.groups[0].bars.length;
+    var bw = Math.min(54, (gW * 0.72) / nb), id = 'hatch' + (++uid);
+    var defs = s('defs'), pat = s('pattern', { id: id, patternUnits: 'userSpaceOnUse', width: '7', height: '7', patternTransform: 'rotate(45)' },
+      s('rect', { width: '7', height: '7', style: { fill: 'var(--s2-soft)' } }), s('line', { x1: '0', y1: '0', x2: '0', y2: '7', style: { stroke: 'var(--s2)', 'stroke-width': '3' } }));
+    defs.append(pat); svg.append(defs);
+    [0, 25, 50, 75, 100].forEach(function (v) {
+      svg.append(s('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), class: 'grid' }));
+      svg.append(s('text', { x: m.l - 8, y: y(v) + 4, class: 'tick', 'text-anchor': 'end' }, v + '%'));
+    });
+    svg.append(s('text', { x: 14, y: (m.t + H - m.b) / 2, class: 'axis-label', 'text-anchor': 'middle', transform: 'rotate(-90 14 ' + ((m.t + H - m.b) / 2) + ')' }, cfg.yLabel));
+    cfg.groups.forEach(function (g, gi) {
+      var cx = m.l + gW * (gi + 0.5);
+      g.bars.forEach(function (b, bi) {
+        if (b.value == null) return;
+        var x = cx + (bi - nb / 2) * (bw + 4) + 2, top = y(b.value), base = y(0), r = Math.min(4, (base - top) / 2);
+        var d = 'M' + x + ' ' + base + ' V' + (top + r) + ' Q' + x + ' ' + top + ' ' + (x + r) + ' ' + top + ' H' + (x + bw - r) + ' Q' + (x + bw) + ' ' + top + ' ' + (x + bw) + ' ' + (top + r) + ' V' + base + ' Z';
+        var gr = s('g', { class: 'mark', tabindex: '0' });
+        gr.append(s('path', { d: d, style: { fill: b.hatch ? 'url(#' + id + ')' : b.color } }));
+        gr.append(s('text', { x: x + bw / 2, y: top - 6, class: 'val', 'text-anchor': 'middle' }, b.text));
+        bindTip(gr, '<b>' + esc(g.label) + '</b><br>' + esc(b.label) + ': ' + esc(b.text) + (b.extra ? '<br>' + b.extra : ''));
+        svg.append(gr);
+      });
+      var words = g.label.split(' '), mid = Math.ceil(words.length / 2);
+      svg.append(s('text', { x: cx, y: H - m.b + 17, class: 'row-label', 'text-anchor': 'middle' }, words.slice(0, mid).join(' ')));
+      if (words.length > 1) svg.append(s('text', { x: cx, y: H - m.b + 31, class: 'row-label', 'text-anchor': 'middle' }, words.slice(mid).join(' ')));
+    });
+    svg.append(s('line', { x1: m.l, x2: W - m.r, y1: y(0), y2: y(0), class: 'base' }));
+  }
+
+  // Horizontal stacked bars (ms), 2px surface gap between segments.
+  function stackedBars(box, cfg) {
+    var rowH = 38, top = 6, bottom = 44, H = top + rowH * cfg.rows.length + bottom;
+    var W0 = Math.max(280, Math.floor(box.clientWidth || 600)), labelW = Math.round(Math.min(220, Math.max(120, W0 * 0.3)));
+    var f = frame(box, H, cfg.aria), svg = f.svg, W = f.W;
+    var max = Math.max.apply(null, cfg.rows.map(function (r) { return r.total; }));
+    var dom = [0, niceDomain(0, max, 0.02)[1]], x0 = labelW + 14, x1 = W - 56, x = scale(dom[0], dom[1], x0, x1), tk = ticks(0, dom[1], W < 520 ? 3 : 5);
+    var dec = decimals(tk.step);
+    xAxis(svg, x, tk.t, top, H - bottom + 2, function (v) { return v.toFixed(dec); }, cfg.axisLabel, x0 + x1);
+    cfg.rows.forEach(function (r, i) {
+      var yc = top + rowH * i + rowH / 2, acc = 0;
+      svg.append(s('text', { x: labelW, y: yc - 1, class: 'row-label', 'text-anchor': 'end' }, fit(r.label, labelW - 4, 12)));
+      svg.append(s('text', { x: labelW, y: yc + 12, class: 'row-sub', 'text-anchor': 'end' }, fit(r.sub, labelW - 4, 10.5)));
+      cfg.parts.forEach(function (p) {
+        var v = r.parts[p.key] || 0; if (v <= 0) return;
+        var a = x(acc), b = x(acc + v), g = s('g', { class: 'mark', tabindex: '0' });
+        g.append(s('rect', { x: a, y: yc - 9, width: Math.max(1, b - a - 2), height: 18, rx: 2, style: { fill: p.color } }));
+        bindTip(g, '<b>' + esc(r.label) + '</b> · ' + esc(r.sub) + '<br>' + esc(p.label) + ': ' + v.toFixed(3) + ' ms');
+        svg.append(g); acc += v;
+      });
+      svg.append(s('text', { x: x(acc) + 6, y: yc + 4, class: 'val' }, r.total.toFixed(2) + ' ms'));
+    });
+  }
+
+  // Dumbbell: unscreened (hollow) to screened (filled), each with its std whisker.
+  function dumbbell(box, cfg) {
+    var rowH = 40, top = 6, bottom = 44, H = top + rowH * cfg.rows.length + bottom;
+    var W0 = Math.max(280, Math.floor(box.clientWidth || 600)), labelW = Math.round(Math.min(220, Math.max(118, W0 * 0.3)));
+    var f = frame(box, H, cfg.aria), svg = f.svg, W = f.W, vals = [];
+    cfg.rows.forEach(function (r) { [r.off, r.on].forEach(function (c) { if (c) vals.push(c[0] - c[1], c[0] + c[1]); }); });
+    if (cfg.ref != null) vals.push(cfg.ref);
+    var dom = niceDomain(Math.min.apply(null, vals), Math.max.apply(null, vals), 0.04);
+    var x0 = labelW + 14, x1 = W - 14, x = scale(dom[0], dom[1], x0, x1), tk = ticks(dom[0], dom[1], W < 520 ? 3 : 5), dec = decimals(tk.step);
+    cfg.rows.forEach(function (r, i) { if (r.head) svg.append(s('rect', { x: 0, y: top + rowH * i, width: W, height: rowH, class: 'band' })); });
+    xAxis(svg, x, tk.t, top, H - bottom + 2, function (v) { return v.toFixed(dec); }, cfg.axisLabel, x0 + x1);
+    if (cfg.ref != null) svg.append(s('line', { x1: x(cfg.ref), x2: x(cfg.ref), y1: top, y2: H - bottom + 2, style: { stroke: 'var(--ink-2)', 'stroke-width': '1.6', 'stroke-dasharray': '1.5 4', 'stroke-linecap': 'round' } }));
+    cfg.rows.forEach(function (r, i) {
+      var yc = top + rowH * i + rowH / 2;
+      svg.append(s('text', { x: labelW, y: yc - 1, class: 'row-label', 'text-anchor': 'end' }, fit(r.label, labelW - 4, 12)));
+      if (r.sub) svg.append(s('text', { x: labelW, y: yc + 12, class: 'row-sub', 'text-anchor': 'end' }, fit(r.sub, labelW - 4, 10.5)));
+      if (r.off && r.on) svg.append(s('line', { x1: x(r.off[0]), x2: x(r.on[0]), y1: yc, y2: yc, style: { stroke: 'var(--rule)', 'stroke-width': '5', 'stroke-linecap': 'round' } }));
+      [['off', 'var(--s2)', true, -6], ['on', 'var(--s1)', false, 6]].forEach(function (q) {
+        var c = r[q[0]]; if (!c) return;
+        var y = yc + q[3], g = s('g', { class: 'mark', tabindex: '0' });
+        g.append(s('line', { x1: x(c[0] - c[1]), x2: x(c[0] + c[1]), y1: y, y2: y, style: { stroke: q[1], 'stroke-width': '1.8' } }));
+        g.append(marker('circle', x(c[0]), y, 4.8, q[1], q[2]));
+        bindTip(g, '<b>' + esc(r.label) + (r.sub ? ' · ' + esc(r.sub) : '') + '</b><br>' + (q[0] === 'on' ? 'Screening on' : 'Screening off') + ': ' + f3(c[0]) + ' ± ' + f3(c[1]) + (r.verdict && q[0] === 'on' ? '<br>Screened ' + esc(r.verdict) + ' unscreened' : ''));
+        svg.append(g);
+      });
+    });
+  }
+
+  // ── hero: a real round's Merkle tree ─────────────────────────────────────────
+  function merkleTree(box, R) {
+    box.textContent = '';
+    var levels = R.levels, nLeaves = levels[0].length, W = 560, rowY = [], H = 92 + 74 * (levels.length - 1) + 60;
+    for (var l = 0; l < levels.length; l++) rowY.push(H - 60 - 74 * l);
+    var svg = s('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Merkle tree of round ' + R.round + ': ' + nLeaves + ' leaves fold into the anchored root' });
+    var pos = levels.map(function (lv) { var n = lv.length; return lv.map(function (_, i) { return 20 + (W - 40) * (i + 0.5) / n; }); });
+    var bw = Math.min(118, (W - 40) / nLeaves - 10), bh = 30;
+    for (var lv = 1; lv < levels.length; lv++) {
+      pos[lv].forEach(function (px, j) {
+        [2 * j, 2 * j + 1].forEach(function (c) {
+          var cx = pos[lv - 1][Math.min(c, pos[lv - 1].length - 1)];
+          svg.append(s('path', { d: 'M' + cx + ' ' + (rowY[lv - 1] - bh / 2) + ' C' + cx + ' ' + (rowY[lv - 1] - 40) + ' ' + px + ' ' + (rowY[lv] + 40) + ' ' + px + ' ' + (rowY[lv] + bh / 2), style: { fill: 'none', stroke: 'var(--rule)', 'stroke-width': '1.4' } }));
+        });
+      });
+    }
+    var top = levels.length - 1, rx = pos[top][0], ry = rowY[top];
+    svg.append(s('path', { d: 'M' + rx + ' ' + (ry - bh / 2) + ' V' + (ry - 34), style: { fill: 'none', stroke: 'var(--accent)', 'stroke-width': '1.6', 'stroke-dasharray': '3 3' } }));
+    levels.forEach(function (lvl, l) {
+      lvl.forEach(function (hash, i) {
+        var cx = pos[l][i], cy = rowY[l], root = l === top, w = root ? 168 : bw;
+        var g = s('g', { class: 'mark', tabindex: '0' });
+        g.append(s('rect', { x: cx - w / 2, y: cy - bh / 2, width: w, height: bh, rx: 6, style: { fill: root ? 'var(--accent-soft)' : 'var(--sunk)', stroke: root ? 'var(--accent)' : 'var(--rule)', 'stroke-width': root ? '1.6' : '1' } }));
+        g.append(s('text', { x: cx, y: cy + 4.5, 'text-anchor': 'middle', style: { 'font-family': 'var(--font-mono)', 'font-size': root ? '12.5px' : '11.5px', fill: 'var(--hash)' } }, hash.slice(0, root ? 16 : 10)));
+        var what = l === 0 ? 'Leaf ' + i + ' = SHA-256([' + i + ', "' + R.leaves[i].hospital + '", digest])' : root ? 'Round root (recomputed from the leaves)' : 'Parent = SHA-256(left ‖ right)';
+        bindTip(g, '<b>' + esc(what) + '</b><br><span style="font-family:var(--font-mono);word-break:break-all">' + esc(hash) + '</span>');
+        svg.append(g);
+        if (l === 0) svg.append(s('text', { x: cx, y: cy + bh / 2 + 16, 'text-anchor': 'middle', class: 'row-label' }, R.leaves[i].hospital));
+      });
+    });
+    var blk = R.block, bx = rx, by = ry - 34 - 26;
+    var g = s('g', { class: 'mark', tabindex: '0' });
+    g.append(s('rect', { x: bx - 150, y: by - 2, width: 300, height: 28, rx: 6, style: { fill: 'var(--surface)', stroke: 'var(--accent)', 'stroke-width': '1.6' } }));
+    var zeros = blk.hash.match(/^0*/)[0];
+    g.append(s('text', { x: bx, y: by + 16.5, 'text-anchor': 'middle', style: { 'font-size': '12px', fill: 'var(--ink)' } },
+      'Block #' + blk.index + '  ', s('tspan', { style: { 'font-family': 'var(--font-mono)', fill: 'var(--good)', 'font-weight': '600' } }, zeros),
+      s('tspan', { style: { 'font-family': 'var(--font-mono)', fill: 'var(--hash)' } }, blk.hash.slice(zeros.length, 22) + '…')));
+    bindTip(g, '<b>Anchored in block #' + blk.index + '</b><br>' + blk.transactions + ' transactions, ' + num(blk.bytes) + ' bytes, mined in ' + blk.mine_ms.toFixed(2) + ' ms<br>Proof of work: the hash starts with ' + zeros.length + ' zero' + (zeros.length === 1 ? '' : 's') + ' (difficulty ' + blk.difficulty + ')');
+    svg.append(g);
+    box.append(svg);
+  }
+
+  // ── hero text and tiles ──────────────────────────────────────────────────────
+  function hero() {
+    var T = D.tiles, P = D.protocol, ds = D.datasets;
+    $('hero-lead').textContent = 'FedVerify-Survival trains models across ' + T.hospitals + ' hospitals in ' + T.datasets +
+      ' public datasets without moving a patient record. Each round, every hospital signs its update; the aggregator verifies it, screens out poisoned updates and commits the round as a Merkle root on a proof-of-work chain.';
+    var tiles = [
+      [num(T.patients), 'patients, from ' + ds.map(function (d) { return d.hospitals.length + ' ' + (d.id === 'heart' ? 'heart' : 'TCGA') + ' sites'; }).join(' and ')],
+      [T.attack_rounds_held + '/' + T.attack_rounds, 'simulated ledger attack rounds stopped'],
+      [T.commit_ms == null ? '—' : T.commit_ms.toFixed(1) + ' ms', 'to commit a round, against ' + (T.train_ms == null ? '—' : Math.round(T.train_ms)) + ' ms of training'],
+      [P.repeats + '×' + P.folds, 'cross-validation, seeds ' + P.seeds + ', ' + P.rounds + ' rounds']
+    ];
+    var box = $('tiles'); box.textContent = '';
+    tiles.forEach(function (t) { box.append(h('div', { class: 'tile' }, h('span', { class: 'v' }, t[0]), h('span', { class: 'l' }, t[1]))); });
+    var R = D.round;
+    if (R) {
+      merkleTree($('hero-tree'), R);
+      $('hero-tree-cap').innerHTML = 'A real round: ' + esc(R.dataset_label) + ', <code>' + esc(R.run) + '</code>, fold ' + R.fold + ', round ' + R.round +
+        '. Each leaf binds its position, hospital and update digest. ' + (R.root_ok ? '<span class="ok">Recomputing the root from the stored leaves gives the anchored root.</span>' : '<span style="color:var(--bad)">The recomputed root does not match.</span>');
+    }
+  }
+
+  // ── data and methods ─────────────────────────────────────────────────────────
+  function setup() {
+    var P = D.protocol;
+    $('setup-lead').textContent = 'Every hospital trains only on its own patients. Results are pooled out-of-fold predictions from ' +
+      P.repeats + ' repeats of stratified ' + P.folds + '-fold cross-validation (seeds ' + P.seeds + '), with ' + P.rounds + ' federated rounds per fold.';
+    var box = $('datasets'); box.textContent = '';
+    D.datasets.forEach(function (d) {
+      var max = Math.max.apply(null, d.hospitals.map(function (x) { return x.patients; }));
+      var card = h('article', { class: 'ds' },
+        h('p', { class: 'eyebrow' }, d.id === 'heart' ? 'Diagnosis · binary' : 'Survival · binary and time-to-event'),
+        h('h3', null, d.label),
+        h('div', { class: 'facts' },
+          h('span', null, h('b', null, num(d.raw)), d.id === 'heart' ? ' rows in the file' : ' cases in the workbook'),
+          h('span', null, h('b', null, num(d.patients)), ' analysed'),
+          h('span', null, h('b', null, num(d.events)), ' ' + d.event_word),
+          h('span', null, h('b', null, d.features), ' encoded features')));
+      d.hospitals.forEach(function (x) {
+        card.append(h('div', { class: 'hbar' }, h('span', null, x.name),
+          h('span', { class: 'track', title: x.patients + ' patients, ' + x.events + ' ' + d.event_short },
+            h('span', { class: 'fill', style: { width: (100 * x.patients / max) + '%' } }),
+            h('span', { class: 'ev', style: { width: (100 * x.events / max) + '%' } })),
+          h('span', { class: 'n' }, x.patients + ' · ' + x.events)));
+      });
+      card.append(h('p', { class: 'note' }, 'Bars: patients (light) and ' + (d.id === 'heart' ? 'patients with heart disease' : 'deaths') + ' (dark).' +
+        (d.local_excluded && d.local_excluded.length ? ' ' + d.local_excluded.join(', ') + ' has too few negatives for a model of its own, so it joins only the federated runs.' : '')));
+      box.append(card);
+    });
+    var g = $('glossary'); g.textContent = '';
+    [['Local', 'Each hospital trains alone and scores only its own patients.'],
+     ['Centralized', 'All patients pooled in one place. The upper bound real hospitals cannot reach.'],
+     ['Vanilla FL', 'FedAvg for logistic regression, tree bagging for random forests, FedXGBBagging for XGBoost.'],
+     ['DP-FL', 'Vanilla FL with differentially private training (logistic regression only).'],
+     ['Blockchain-FL', 'Vanilla FL where every update is signed, committed and anchored. Learning is unchanged.'],
+     ['Ours', 'Blockchain-FL plus screening of poisoned updates, and differential privacy for logistic regression.']
+    ].forEach(function (p) { g.append(h('div', null, h('dt', null, p[0]), h('dd', null, p[1]))); });
+  }
+
+  // ── one round, step by step ──────────────────────────────────────────────────
+  function rec(lines) {
+    return h('pre', { class: 'record', html: lines.join('\n') });
+  }
+  function kv(k, v, cls) { return '<span class="k">' + esc(k) + ':</span> ' + (cls ? '<span class="' + cls + '">' + esc(v) + '</span>' : esc(v)); }
+  function round() {
+    var R = D.round;
+    if (!R) { $('round').hidden = true; return; }
+    var hosp = Object.keys(R.train_rows), sub = R.submission, first = hosp[0], scr = R.screen;
+    $('round-lead').textContent = 'These are the records of one committed round (' + R.dataset_label + ', fold ' + R.fold + ', round ' + R.round +
+      ') from the run on the mined chain. Step through it, or press play.';
+    $('round-title').textContent = R.dataset_label + ' · round ' + R.round + ' · ' + hosp.length + ' hospitals';
+    var steps = [
+      { id: 'train', t: 'Train locally', on: ['hosp'], body: 'Each hospital trains the shared logistic model on its own training rows for this fold. Only the change to the ' + R.numel + ' model parameters leaves the hospital.',
+        rec: hosp.map(function (x) { return kv(x, R.train_rows[x] + ' training rows'); }) },
+      { id: 'serialize', t: 'Serialize the update', on: ['b-ser', 'a1'], body: 'The update becomes canonical bytes with no pickle: a header that binds run, round and hospital, then the values as little-endian float32. This round committed ' + num(R.bytes_committed) + ' bytes from ' + hosp.length + ' hospitals.',
+        rec: ['<span class="k">header of ' + esc(first) + "'s update</span>"].concat(Object.keys(R.header).map(function (k) { return kv(k, JSON.stringify(R.header[k])); })) },
+      { id: 'fingerprint', t: 'Fingerprint it', on: ['b-fp'], body: 'A SHA-256 digest of the bytes, and a content ID in the CIDv1 format: anyone holding the bytes can check both.',
+        rec: [kv('hospital', sub.hospital_id), kv('digest', sub.digest, 'h'), kv('content ID', sub.cid, 'h')] },
+      { id: 'sign', t: 'Sign the submission', on: ['b-sig', 'a2'], body: 'The hospital signs every field with its Ed25519 key (test keys in this study). The transaction id hashes the hospital, a counter and the timestamp.',
+        rec: ['run_id', 'round', 'hospital_id', 'cid', 'digest', 'timestamp', 'txn_id', 'signature'].map(function (k) {
+          var v = sub[k]; var hashy = ['cid', 'digest', 'txn_id', 'signature'].indexOf(k) >= 0;
+          return kv(k, hashy ? short(String(v), 28) : JSON.stringify(v), hashy ? 'h' : null);
+        }) },
+      { id: 'verify', t: 'Verify every submission', on: ['c-ver'], body: 'The aggregator checks the registered key and the signature, an unused transaction counter, that both the submission and the bytes name this round, and that each hospital sends one digest per round.',
+        rec: [kv('accepted', R.accepted + ' of ' + hosp.length, 's'), kv('rejected', String(R.rejected))] },
+      { id: 'screen', t: 'Screen for poisoned updates', on: ['c-scr'], body: scr ? 'In the screened pipeline, each update gets a robust z-score against the others and is dropped above the calibrated threshold. These are the real scores of the same round in the screened run (ε = ' + scr.epsilon + ').' : 'In the screened pipeline, each update is scored against the others before aggregation.',
+        rec: scr ? Object.keys(scr.scores).map(function (x) { return kv(x, 'z = ' + scr.scores[x].toFixed(3) + (scr.rejected.indexOf(x) >= 0 ? '  rejected' : '  kept')); }).concat([kv('threshold', 'τ = ' + scr.tau.toFixed(3))]) : ['—'] },
+      { id: 'aggregate', t: 'Aggregate', on: ['c-agg'], body: 'FedAvg weights each kept update by the hospital\'s number of training rows. The server only ever uses the bytes it committed.',
+        rec: scr && Object.keys(scr.weights).length ? Object.keys(scr.weights).map(function (x) { return kv(x, 'weight ' + (100 * scr.weights[x]).toFixed(1) + '%'); }) : hosp.map(function (x) { return kv(x, R.train_rows[x] + ' rows'); }) },
+      { id: 'merkle', t: 'Commit the round', on: ['d-mk', 'a3'], body: 'Each leaf is a SHA-256 of [position, hospital, digest], and pairs fold up to one root. Every hospital receives the proof that its leaf is in the root.',
+        rec: R.leaves.map(function (l) { return kv('leaf ' + l.i + ' · ' + l.hospital, short(l.leaf, 24), 'h'); }).concat([kv('root', short(R.root, 32), 'h'), kv('recomputed root matches', R.root_ok ? 'yes' : 'no', R.root_ok ? 's' : null)]) },
+      { id: 'anchor', t: 'Anchor it in a block', on: ['d-blk'], body: 'The root goes into a block on the proof-of-work chain. Mining means finding a hash that starts with ' + R.block.difficulty + ' zeros.',
+        rec: [kv('block', '#' + R.block.index), kv('hash', short(R.block.hash, 32), 'h'), kv('transactions', R.block.transactions + ' (' + R.block.first_block_tx.keys + ' key registrations, ' + R.block.first_block_tx.updates + ' updates, 1 round root)'), kv('size', num(R.block.bytes) + ' bytes'), kv('mined in', R.block.mine_ms.toFixed(2) + ' ms')] },
+      { id: 'check', t: 'Check before the next round', on: ['a4', 'hosp'], body: 'Before training again, every hospital verifies that the chain is intact and still holds this root under that block. A hospital whose check fails skips the round, and the skip is recorded.',
+        rec: [kv('next round', String(R.round + 1)), kv('previous root', short(R.root, 24), 'h'), kv('previous block', short(R.block.hash, 24), 'h')] }
+    ];
+    // diagram
+    var dg = $('diagram'); dg.textContent = '';
+    var svg = s('svg', { viewBox: '0 0 760 262', role: 'img', 'aria-label': 'Hospitals send signed updates to the aggregator, which commits each round to the ledger' });
+    function box(id, x, y, w, hh, text) { var g = s('g', { id: id }); g.append(s('rect', { x: x, y: y, width: w, height: hh, rx: 6, class: 'dg-box' })); g.append(s('text', { x: x + w / 2, y: y + hh / 2 + 4, 'text-anchor': 'middle', class: 'dg-text' }, text)); return g; }
+    [['Hospitals', 18], ['Each update', 216], ['Aggregator', 416], ['Ledger', 612]].forEach(function (z) { svg.append(s('text', { x: z[1], y: 16, class: 'dg-zone' }, z[0])); });
+    var hg = s('g', { id: 'hosp' });
+    hosp.forEach(function (x, i) { hg.append(box('h' + i, 18, 28 + i * 46, 160, 36, x)); });
+    svg.append(hg);
+    svg.append(box('b-ser', 216, 40, 160, 38, 'Serialize'));
+    svg.append(box('b-fp', 216, 98, 160, 38, 'Digest + content ID'));
+    svg.append(box('b-sig', 216, 156, 160, 38, 'Sign'));
+    svg.append(box('c-ver', 416, 40, 160, 38, 'Verify'));
+    svg.append(box('c-scr', 416, 98, 160, 38, 'Screen'));
+    svg.append(box('c-agg', 416, 156, 160, 38, 'Aggregate'));
+    svg.append(box('d-mk', 612, 40, 130, 38, 'Merkle root'));
+    var bg = s('g', { id: 'd-blk' });
+    [0, 1, 2].forEach(function (i) { bg.append(s('rect', { x: 612 + i * 46, y: 120, width: 38, height: 38, rx: 5, class: 'dg-box' })); if (i < 2) bg.append(s('line', { x1: 650 + i * 46, x2: 658 + i * 46, y1: 139, y2: 139, class: 'dg-arrow' })); });
+    bg.append(s('text', { x: 677, y: 178, 'text-anchor': 'middle', class: 'dg-text' }, 'Block #' + R.block.index));
+    svg.append(bg);
+    function arrow(id, d) { svg.append(s('path', { id: id, d: d, class: 'dg-arrow', 'marker-end': 'url(#arr)' })); }
+    var defs = s('defs'); defs.append(s('marker', { id: 'arr', viewBox: '0 0 10 10', refX: '8', refY: '5', markerWidth: '7', markerHeight: '7', orient: 'auto-start-reverse' }, s('path', { d: 'M0 0 L10 5 L0 10 Z', style: { fill: 'var(--ink-3)' } })));
+    svg.append(defs);
+    arrow('a1', 'M180 110 C196 110 198 59 212 59');
+    arrow('a2', 'M378 175 C396 175 396 59 412 59');
+    arrow('a3', 'M578 175 C596 175 592 59 608 59');
+    arrow('a4', 'M677 200 C677 250 100 250 98 214');
+    svg.append(s('text', { x: 388, y: 244, 'text-anchor': 'middle', class: 'dg-text' }, 'Next round: every hospital checks the previous block'));
+    dg.append(svg);
+    // steps
+    var list = $('steps'), detail = $('step-detail'), cur = 0, timer = null;
+    steps.forEach(function (st, i) { list.append(h('li', null, h('button', { type: 'button', onclick: function () { stop(); show(i); } }, st.t))); });
+    function show(i) {
+      cur = i; var st = steps[i];
+      [].forEach.call(list.querySelectorAll('button'), function (b, j) { if (j === i) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+      [].forEach.call(svg.querySelectorAll('.dg-on'), function (e) { e.classList.remove('dg-on'); });
+      st.on.forEach(function (id) { var e = svg.getElementById ? svg.getElementById(id) : svg.querySelector('#' + id); if (e) e.classList.add('dg-on'); });
+      detail.textContent = '';
+      detail.append(h('p', { class: 'eyebrow' }, 'Step ' + (i + 1) + ' of ' + steps.length), h('h3', null, st.t), h('p', { class: 'muted' }, st.body), rec(st.rec));
+    }
+    var play = $('play');
+    function stop() { if (timer) { clearInterval(timer); timer = null; } play.setAttribute('aria-pressed', 'false'); play.textContent = 'Play the round'; }
+    play.addEventListener('click', function () {
+      if (timer) { stop(); return; }
+      play.setAttribute('aria-pressed', 'true'); play.textContent = 'Pause';
+      if (cur >= steps.length - 1) show(0);
+      timer = setInterval(function () { if (cur >= steps.length - 1) { stop(); return; } show(cur + 1); }, REDUCED ? 4500 : 3200);
+    });
+    show(0);
+  }
+
+  // ── results: methods ─────────────────────────────────────────────────────────
+  var mState = { ds: 'heart', metric: null };
+  function methods() {
+    var views = D.methods;
+    segmented($('m-ds'), Object.keys(views).map(function (k) { return { value: k, label: views[k].label }; }), mState.ds, function (v) { mState.ds = v; mState.metric = null; drawMethods(); }, 'Dataset');
+    drawMethods();
+  }
+  function drawMethods() {
+    var V = D.methods[mState.ds], metric = V.metrics.find(function (m) { return m.key === mState.metric; }) || V.metrics[0];
+    mState.metric = metric.key;
+    segmented($('m-metric'), V.metrics.map(function (m) { return { value: m.key, label: m.label }; }), metric.key, function (v) { mState.metric = v; drawMethods(); }, 'Metric');
+    $('m-title').textContent = V.label + ': ' + metric.label;
+    var series = metric.families.map(function (f, i) { return { key: f.key, label: f.label, color: SERIES[i], marker: MARKERS[i] }; });
+    legend($('m-legend'), series.map(function (se) { return { label: se.label, color: se.color, kind: 'dot' }; }).concat([{ label: 'mean ± std over repeats', color: 'var(--ink-3)' }]));
+    var rows = metric.rows.map(function (r) {
+      var lab = r.label, paren = null, cut = lab.indexOf(' (');            // "(baseline)", "(diagnostic)": onto the sub-line
+      if ((r.baseline || /\(diagnostic\)$/.test(lab)) && cut > 0) { paren = lab.slice(cut + 2, -1); lab = lab.slice(0, cut); }
+      if (r.baseline) return { label: lab, cells: r.cells, sub: (paren || 'reference') + ' · ' + (r.note || 'every patient predicted alive') };
+      if (paren) return { label: lab, cells: r.cells, sub: paren + ' · ' + metric.families.filter(function (f) { return r.na.indexOf(f.key) < 0; }).map(function (f) { return f.label; }).join(', ') + ' only' };
+      return { label: r.label, cells: r.cells, sub: r.na && r.na.length ? r.na.map(function (k) { return metric.families.find(function (f) { return f.key === k; }).label; }).join(', ') + ': n/a' : null };
+    });
+    dotWhisker($('m-chart'), { rows: rows, series: series, fmt: f3, axisLabel: metric.label + ' (pooled out-of-fold)', aria: V.label + ' ' + metric.label + ' by method and model' });
+    var vb = $('m-verdicts'); vb.textContent = '';
+    metric.families.forEach(function (f) {
+      var v = metric.verdicts[f.key] || {}; if (!v.central && !v.local) return;
+      vb.append(h('p', null, h('b', null, f.label + ': '), 'federated training ' + (v.central || '—') + ' centralized training' + (v.central_caveat ? ' — ' + v.central_caveat + ' —' : '') + ' and ' + (v.local || '—') + ' local models; ours ' + (v.ours || '—') + ' vanilla FL' + (v.ours_caveat ? '; ' + v.ours_caveat : '') + '.'));
+    });
+    if (metric.site_verdict) vb.append(h('p', null, h('b', null, 'Against the site base rate (' + f3(metric.site_verdict.value[0]) + '): '), metric.site_verdict.text));
+    (V.notes || []).forEach(function (t) { vb.append(h('p', null, t)); });
+    var Q = D.audit, maj = Q.majority[mState.ds];
+    vb.append(h('p', { class: 'note' }, D.paired.rule +
+      (metric.key === 'accuracy' && maj != null ? ' Accuracy is never ranked when either side lies within ' + Q.margin + ' of the majority-class rate (' + f3(maj) + ' here), which predicting the larger class for everyone already reaches.' : '') +
+      (metric.key === 'accuracy' || metric.key === 'f1' ? ' Accuracy and F1 use one threshold: ' + Q.accuracy_rule + '.' : '')));
+    table($('m-table'), ['Method'].concat(metric.families.map(function (f) { return f.label; })), metric.rows.map(function (r) {
+      return { cls: r.label === 'Ours' ? 'ours' : (r.baseline ? 'base' : null), cells: [r.label].concat(metric.families.map(function (f) { var c = r.cells[f.key]; return c ? f3(c[0]) + ' ± ' + f3(c[1]) : (r.na.indexOf(f.key) >= 0 ? 'n/a' : '—'); })) };
+    }), { num: metric.families.map(function (_, i) { return i + 1; }) });
+    var P = D.paired, dsName = V.label;                // Phase 11: this dataset's key comparisons
+    var mine = P.rows.filter(function (r) { return r[0] === dsName; });
+    var drop = function (r) { return r.slice(1, 3).concat(r.slice(4)); };          // dataset and metric columns
+    table($('m-paired'), drop(P.header), mine.map(function (r) { return { cells: drop(r) }; }), { num: [2, 3, 4, 5] });
+    var used = mine.map(function (r) { return r[3]; }).filter(function (x, i, a) { return a.indexOf(x) === i; });
+    $('m-paired-note').textContent = 'Metric: ' + used.join(', ') + '. ' + P.notes.join(' ');
+    var W = P.within, wmine = W.rows.filter(function (r) { return r[0] === dsName; });   // Phase 12: within hospital
+    table($('m-paired-within'), drop(W.header), wmine.map(function (r) { return { cells: drop(r) }; }), { num: [2, 3, 4, 5] });
+    var wused = wmine.map(function (r) { return r[3]; }).filter(function (x, i, a) { return a.indexOf(x) === i; });
+    $('m-paired-within-note').textContent = 'Metric: ' + wused.join(', ') + '. ' + W.notes.join(' ');
+  }
+
+  // ── hospitals ────────────────────────────────────────────────────────────────
+  var phState = { ds: 'heart' }, cvState = { ds: 'heart', method: 0, measure: 'acc', split: 'both' };
+  function hospitals() {
+    var P = D.per_hospital;
+    segmented($('ph-ds'), Object.keys(P).map(function (k) { return { value: k, label: dsLabel(k) }; }), phState.ds, function (v) { phState.ds = v; drawPH(); }, 'Dataset');
+    drawPH();
+    segmented($('cv-ds'), Object.keys(D.curves).map(function (k) { return { value: k, label: dsLabel(k) }; }), cvState.ds, function (v) { cvState.ds = v; drawCV(); }, 'Dataset');
+    segmented($('cv-measure'), [{ value: 'acc', label: 'Accuracy' }, { value: 'logloss', label: 'Log-loss' }], cvState.measure, function (v) { cvState.measure = v; drawCV(); }, 'Measure');
+    segmented($('cv-split'), [{ value: 'both', label: 'Both' }, { value: 'train', label: 'Training' }, { value: 'test', label: 'Held-out' }], cvState.split, function (v) { cvState.split = v; drawCV(); }, 'Rows');
+    drawCV();
+  }
+  function drawPH() {
+    var P = D.per_hospital[phState.ds];
+    $('ph-title').textContent = dsLabel(phState.ds) + ': ' + P.metric_label + ' per hospital';
+    var fams = {}, base = P.rows.find(function (r) { return r.baseline; });
+    P.rows.filter(function (r) { return !r.baseline; }).forEach(function (r) { var fam = r.label.split(',')[0]; (fams[fam] = fams[fam] || []).push(r); });
+    var famNames = Object.keys(fams), series = [], rows = [], kinds = [];
+    famNames.forEach(function (fam) { fams[fam].forEach(function (r, ki) {        // "local", "FedAvg / FedXGBBagging", "ours"
+      var k = r.label.split(', ')[1]; kinds[ki] = kinds[ki] ? (kinds[ki].split(' / ').indexOf(k) >= 0 ? kinds[ki] : kinds[ki] + ' / ' + k) : k; }); });
+    famNames.forEach(function (fam, fi) {
+      fams[fam].forEach(function (r, ki) { series.push({ key: fam + ki, label: r.label, color: SERIES[ki], marker: MARKERS[fi], hollow: fi > 0 }); });
+    });
+    if (base) series.push({ key: 'base', label: base.label, color: 'var(--ink-3)', marker: 'diamond' });
+    P.hospitals.forEach(function (hname) {
+      var cells = {};
+      famNames.forEach(function (fam) { fams[fam].forEach(function (r, ki) { cells[fam + ki] = r.values[hname]; }); });
+      if (base) cells.base = base.values[hname];
+      var ex = P.rows.filter(function (r) { return r.excluded.indexOf(hname) >= 0; }).map(function (r) { return r.label; });
+      rows.push({ label: hname, cells: cells, sub: ex.length ? 'no local model' : null });
+    });
+    legend($('ph-legend'), kinds.map(function (k, i) { return { label: k, color: SERIES[i], kind: 'dot' }; }).concat(famNames.map(function (fam, fi) {
+      return { label: fam + ': ' + (fi > 0 ? 'hollow squares' : 'filled circles'), color: 'var(--ink-3)', kind: fi > 0 ? 'hollow' : 'dot' }; })).concat(
+      base ? [{ label: base.label + ': grey diamonds', color: 'var(--ink-3)', kind: 'dot' }] : []));
+    dotWhisker($('ph-chart'), { rows: rows, series: series, fmt: f3, axisLabel: P.metric_label + ' on that hospital\'s patients', aria: 'Per-hospital ' + P.metric_label });
+    $('ph-note').textContent = 'Each hospital\'s patients are scored by the method named in the legend; for local models, by their own hospital\'s model. A missing mark means the metric is undefined there (too few patients of one class) or the hospital has no local model.';
+  }
+  function drawCV() {
+    var C = D.curves[cvState.ds];
+    if (cvState.method >= C.methods.length) cvState.method = 0;
+    segmented($('cv-method'), C.methods.map(function (m, i) { return { value: i, label: m.label }; }), cvState.method, function (v) { cvState.method = v; drawCV(); }, 'Method');
+    var M = C.methods[cvState.method], hs = Object.keys(M.hospitals), series = [];
+    hs.forEach(function (hname, i) {
+      ['train', 'test'].forEach(function (sp) {
+        if (cvState.split !== 'both' && cvState.split !== sp) return;
+        var ys = M.hospitals[hname][sp + '_' + cvState.measure];
+        series.push({ label: hname + (sp === 'train' ? ' (training)' : ' (held-out)'), color: SERIES[i % 5], dash: sp === 'test', marker: MARKERS[i % 5], markEvery: 5, ys: ys });
+      });
+    });
+    var n = series.length ? series[0].ys.length : 0, xs = [];
+    for (var i = 1; i <= n; i++) xs.push(i);
+    var showMaj = C.baseline && cvState.measure === 'acc';
+    if (showMaj) hs.forEach(function (hname, i) {
+      var v = C.majority[hname]; if (v == null) return;
+      series.push({ label: hname + ' (predict all alive)', color: SERIES[i % 5], dash: 'dot', width: '1.6', ys: xs.map(function () { return v; }) });
+    });
+    legend($('cv-legend'), hs.map(function (hn, i) { return { label: hn, color: SERIES[i % 5], kind: 'dot' }; }).concat(
+      cvState.split === 'both' ? [{ label: 'training: solid, held-out: dashed', color: 'var(--ink-3)', kind: 'dash' }] : []).concat(
+      showMaj ? [{ label: 'predict all alive (majority rate): dotted', color: 'var(--ink-3)', kind: 'dotted' }] : []));
+    lineChart($('cv-chart'), { xs: xs, series: series, xLabel: 'Round', yLabel: cvState.measure === 'acc' ? 'Accuracy' : 'Log-loss', height: 320, xTip: function (x) { return 'Round ' + x; }, aria: 'Per-hospital ' + cvState.measure + ' per round' });
+    $('cv-note').textContent = 'Mean over the ' + M.fold_runs + ' fold-runs (' + D.protocol.repeats + ' repeats × ' + D.protocol.folds + ' folds). Accuracy and F1 use one threshold: ' + D.audit.accuracy_rule + '. A held-out curve that falls while training keeps rising is over-fitting.' +
+      (M.cell.indexOf('xgb') >= 0 ? ' FedXGBBagging adds the average of each round\'s new boosters over the contributing hospitals; an earlier version summed them, and its held-out log-loss rose every round.' : '') +
+      (showMaj ? ' Dotted: the accuracy of predicting every patient alive at that hospital (its majority-class rate).' : '');
+  }
+
+  // ── privacy ──────────────────────────────────────────────────────────────────
+  var dpState = { ds: 'heart', metric: null };
+  function privacy() {
+    $('dp-lead').textContent = 'Each hospital trains with DP-SGD: per-example gradients are clipped and noised so that any single training example has a bounded effect. Smaller ε means stronger privacy. Random forest and XGBoost have no DP here.';
+    segmented($('dp-ds'), Object.keys(D.dp).map(function (k) { return { value: k, label: dsLabel(k) }; }), dpState.ds, function (v) { dpState.ds = v; dpState.metric = null; drawDP(); }, 'Dataset');
+    drawDP();
+  }
+  function drawDP() {
+    var P = D.dp[dpState.ds], metric = P.metrics.find(function (m) { return m.key === dpState.metric; }) || P.metrics[0];
+    dpState.metric = metric.key;
+    segmented($('dp-metric'), P.metrics.map(function (m) { return { value: m.key, label: m.label }; }), metric.key, function (v) { dpState.metric = v; drawDP(); }, 'Metric');
+    $('dp-title').textContent = dsLabel(dpState.ds) + ': ' + metric.label + ' against the privacy budget';
+    var xs = P.points.map(function (p) { return p.eps; }), bv = P.baseline && P.baseline[metric.key];
+    var dps = [{ label: metric.label, color: 'var(--s1)', marker: 'circle', ys: P.points.map(function (p) { var v = p.values[metric.key]; return v ? v[0] : null; }), err: P.points.map(function (p) { var v = p.values[metric.key]; return v ? v[1] : null; }) }];
+    if (bv) dps.push({ label: D.audit.baseline[dpState.ds], color: 'var(--ink-2)', dash: 'dot', width: '1.6', ys: xs.map(function () { return bv[0]; }) });
+    lineChart($('dp-chart'), { xs: xs, categorical: true, series: dps,
+      xLabel: 'Target ε (∞ = no differential privacy)', yLabel: metric.label, height: 280, xTip: function (x) { return 'ε = ' + x; }, aria: 'DP sweep' });
+    $('dp-note').textContent = 'Mean ± std over repeats. δ = ' + P.delta + ', clipping norm ' + P.clip + '. Largest realised ε over every hospital, fold and repeat: ' +
+      P.points.filter(function (p) { return p.realised != null; }).map(function (p) { return p.realised.toFixed(2) + ' (target ' + p.eps + ')'; }).join(', ') + '.' +
+      (bv ? ' Dotted: ' + D.audit.baseline[dpState.ds] + ', ' + f3(bv[0]) + '.' : '');
+  }
+
+  // ── ledger ───────────────────────────────────────────────────────────────────
+  var lgState = { ds: 'heart' };
+  function ledger() {
+    var L = D.ledger;
+    segmented($('lg-ds'), Object.keys(L.blocks).map(function (k) { return { value: k, label: dsLabel(k) }; }), lgState.ds, function (v) { lgState.ds = v; drawLedger(); }, 'Dataset');
+    drawLedger();
+    var parts = [{ key: 'serialize', label: 'Serialize', color: 'var(--s1)' }, { key: 'fingerprint', label: 'Digest + content ID', color: 'var(--s2)' },
+                 { key: 'sign_verify', label: 'Sign + verify', color: 'var(--s3)' }, { key: 'merkle', label: 'Merkle root', color: 'var(--s4)' }, { key: 'anchor', label: 'Anchor', color: 'var(--s5)' }];
+    legend($('st-legend'), parts.map(function (p) { return { label: p.label, color: p.color }; }));
+    var names = { chain_fedavg_lr: 'Logistic (FedAvg)', chain_fed_rf: 'Random forest', chain_fedxgb_bagging: 'XGBoost', chain_fedavg_lr_local: 'Logistic, mined chain' };
+    stackedBars($('st-chart'), { parts: parts, axisLabel: 'Milliseconds per round (mean over every committed round)', aria: 'Commit cost per round by stage',
+      rows: L.stages.map(function (st) { return { label: names[st.run] || st.run, sub: dsShort(st.dataset) + ' · ' + st.backend + ' anchor · training ' + Math.round(st.train_ms) + ' ms', parts: st.parts, total: st.total }; }) });
+    $('st-note').textContent = 'Measured separately from training, on one laptop. The mock anchor does no I/O; the mined runs append the round to the chain and mine a block, which is most of their cost.';
+  }
+  function drawLedger() {
+    var L = D.ledger, b = L.blocks[lgState.ds] || [], m = L.metrics[lgState.ds] || {};
+    var tiles = $('lg-tiles'); tiles.textContent = '';
+    [[m.latency_ms != null ? m.latency_ms.toFixed(1) + ' ms' : '—', 'latency: mean time between blocks'],
+     [m.throughput_bytes_per_s != null ? num(m.throughput_bytes_per_s / 1024, 1) + ' KB/s' : '—', 'throughput: block bytes per second'],
+     [m.send_rate_tx_per_min != null ? num(m.send_rate_tx_per_min) : '—', 'transactions per minute'],
+     [m.blocks != null ? num(m.blocks) : '—', 'blocks, difficulty ' + (m.difficulty != null ? m.difficulty : '—')]
+    ].forEach(function (t) { tiles.append(h('div', { class: 'tile' }, h('span', { class: 'v' }, t[0]), h('span', { class: 'l' }, t[1]))); });
+    lineChart($('lg-chart'), { xs: b.map(function (r) { return r[0]; }), series: [{ label: 'Creation time', color: 'var(--s1)', width: '1.4', ys: b.map(function (r) { return r[1]; }) }],
+      xLabel: 'Block index', yLabel: 'Creation time (ms)', height: 240, zeroBase: true, xTip: function (x) { return 'Block #' + x; }, fmtTip: function (v) { return v.toFixed(2) + ' ms'; }, aria: 'Block creation time per block' });
+    $('lg-note').textContent = 'One run, every fold-run on one shared chain: ' + b.length + ' blocks, one per committed round. Wall-clock time on one machine; the reference paper reports seconds per block on its own setup.';
+  }
+
+  // ── attacks on the ledger ────────────────────────────────────────────────────
+  var atkState = { ds: 'heart' };
+  var ATK_TEXT = {
+    double_spending: ['A hospital spends an update twice: two conflicting updates in one round, an old submission replayed, an old update re-signed, or the same one sent twice.',
+      'One digest per hospital per round; the submission and the bytes must name the current round; each transaction counter is used once.'],
+    malleability: ['Someone changes the transaction around an update without touching the model: a new timestamp, a different transaction id, or reordered leaves in the stored round.',
+      'The signature covers every field, and each Merkle leaf binds its position, so a reordered record no longer folds to the anchored root.'],
+    endpoint_compromise: ['Someone submits as a hospital they are not: an unregistered key, a forged signature, a real key of another hospital, or a second key for the same hospital.',
+      'Signatures must verify under the key registered for that hospital, and registration is write-once.']
+  };
+  function chainAttacks() {
+    var A = D.chain_attacks;
+    segmented($('atk-ds'), Object.keys(A.datasets).map(function (k) { return { value: k, label: A.datasets[k].label }; }), atkState.ds, function (v) { atkState.ds = v; drawAtk(); }, 'Dataset');
+    drawAtk();
+  }
+  function drawAtk() {
+    var A = D.chain_attacks, X = A.datasets[atkState.ds], cards = $('atk-cards'); cards.textContent = '';
+    A.order.forEach(function (key) {
+      var a = X.attacks[key]; if (!a) return;
+      var ul = h('ul');
+      a.variants.forEach(function (v) { ul.append(h('li', null, h('span', null, v.name.replace(/_/g, ' ')), h('span', null, v.on[0] + '/' + v.on[1] + ' held'))); });
+      cards.append(h('article', { class: 'atk' }, h('p', { class: 'eyebrow' }, a.metric), h('h3', null, a.label), h('span', { class: 'big-s' }, a.on.toFixed(0) + '%'),
+        h('p', null, h('b', null, 'Attack. '), ATK_TEXT[key][0]), h('p', null, h('b', null, 'Defence. '), ATK_TEXT[key][1]), ul));
+    });
+    $('atk-title').textContent = 'Resilience with the defences on and switched off: ' + X.label + ' (K = ' + X.K + ')';
+    legend($('atk-legend'), [{ label: 'defences on', color: 'var(--s1)' }, { label: 'defences off', color: 'var(--s2)' }]);
+    groupedBars($('atk-chart'), { yLabel: 'Rounds where the defence held', aria: 'Resilience per attack',
+      groups: A.order.filter(function (k) { return X.attacks[k]; }).map(function (k) {
+        var a = X.attacks[k];
+        return { label: a.label, bars: [{ label: 'Defences on', value: a.on, text: a.on.toFixed(0) + '%', color: 'var(--s1)', extra: a.rounds + ' simulated rounds' },
+                                        { label: 'Defences off', value: a.off, text: a.off == null ? 'n/a' : a.off.toFixed(0) + '%', hatch: true }] };
+      }) });
+    var rep = A.reported, parts = A.order.filter(function (k) { return rep[k] != null; }).map(function (k) { return A.labels[k].toLowerCase() + ' ' + rep[k] + '%'; });
+    var note = $('atk-note'); note.textContent = '';
+    note.append(h('span', null, 'Myrzashova et al. report ' + parts.join(', ') + ' for their own simulation; those numbers are context, not a comparison.'));
+    var ul = h('ul', { class: 'caveats' });
+    D.audit.chain_caveats.forEach(function (c) { ul.append(h('li', null, c)); });
+    note.append(ul);
+  }
+
+  // ── poisoning ────────────────────────────────────────────────────────────────
+  var poState = { view: 0 };
+  function poisoning() {
+    var V = D.poisoning;
+    $('po-lead').textContent = 'One hospital per repeat is malicious and sends poisoned updates from the first round. The screen sees only the updates, never the patients, and its threshold comes from a calibration on separate runs. Each row compares the same attack without and with screening.';
+    segmented($('po-view'), V.map(function (v, i) { return { value: i, label: v.label }; }), poState.view, function (v) { poState.view = v; drawPo(); }, 'Dataset');
+    drawPo();
+  }
+  function drawPo() {
+    var v = D.poisoning[poState.view];
+    $('po-title').textContent = v.label + ': ' + v.metric_label + ' under attack';
+    var rows = [], trs = [];
+    v.families.forEach(function (f) {
+      rows.push({ label: f.label, sub: 'no attack', off: f.clean.off, on: f.clean.on, head: true });
+      trs.push({ cls: 'ours', cells: [f.label, 'none', f.clean.off ? f3(f.clean.off[0]) : '—', f.clean.on ? f3(f.clean.on[0]) : '—', 'n/a', pct(f.clean.fer), 'n/a', pct(f.clean.fer)] });
+      f.attacks.forEach(function (a) {
+        rows.push({ label: a.attack.replace(/_/g, ' '), sub: f.label, off: a.off, on: a.on, verdict: a.verdict });
+        trs.push({ cells: [f.label, a.attack.replace(/_/g, ' '), a.off ? f3(a.off[0]) + ' ± ' + f3(a.off[1]) : '—', a.on ? f3(a.on[0]) + ' ± ' + f3(a.on[1]) : '—', pct(a.recall), pct(f.clean.fer), pct(a.precision), pct(a.fer)] });
+      });
+    });
+    if (v.baseline) trs.push({ cls: 'base', cells: [v.baseline_label, 'none', f3(v.baseline[0]), 'n/a', 'n/a', 'n/a', 'n/a', 'n/a'] });
+    dumbbell($('po-chart'), { rows: rows, ref: v.baseline ? v.baseline[0] : null, axisLabel: v.metric_label + ' (pooled out-of-fold)', aria: 'Utility under attack, with and without screening' });
+    legend($('po-legend'), [{ label: 'screening off', color: 'var(--s2)', kind: 'hollow' }, { label: 'screening on', color: 'var(--s1)', kind: 'dot' }, { label: 'mean ± std over repeats', color: 'var(--ink-3)' }].concat(
+      v.baseline ? [{ label: v.baseline_label + ': dotted', color: 'var(--ink-3)', kind: 'dotted' }] : []));
+    table($('po-table'), ['Model', 'Attack', 'Off', 'On', 'Recall', 'False excl., clean run', 'Precision', 'False excl., this run'], trs, { num: [2, 3, 4, 5, 6, 7] });
+    var cav = v.families.filter(function (f) { return f.caveat; }).map(function (f) { return f.label + ': ' + f.caveat + '.'; });
+    var taus = v.families.filter(function (f) { return f.tau != null; }).map(function (f) { return f.label + ' τ = ' + f.tau.toFixed(3); });
+    $('po-note').textContent = D.audit.recall_sentence + ' Off / on: utility with screening off and on. Recall (attackers caught), precision and false exclusion (honest hospitals excluded) are pooled over every hospital-round of all repeats; recall sits next to the clean run\'s false-exclusion rate, the cost of screening when nobody attacks. ' +
+      (cav.length ? cav.join(' ') + ' No screened result is ranked above its unscreened run there. ' : '') + 'Thresholds: ' + taus.join(', ') + '.';
+  }
+
+  // ── reference paper ──────────────────────────────────────────────────────────
+  var refState = { t: 't4' };
+  function reference() {
+    segmented($('ref-t'), [{ value: 't4', label: 'Results (Table IV)' }, { value: 't3', label: 'Settings (Table III)' }], refState.t, function (v) { refState.t = v; drawRef(); }, 'Table');
+    drawRef();
+  }
+  function drawRef() {
+    var T = D.literature[refState.t], nLit = T.rows.length - T.ours;
+    $('ref-title').textContent = refState.t === 't4' ? 'Results, security and resilience' : 'Datasets and setups';
+    table($('ref-table'), T.header, T.rows.map(function (r, i) {
+      var cells = r.slice(); cells[0] = i >= nLit ? h('span', { class: 'chip ours' }, r[0]) : h('span', null, r[0], ' ', h('span', { class: 'chip' }, 'reported'));
+      return { cls: i >= nLit ? 'ours' : null, cells: cells };
+    }));
+    $('ref-note').textContent = T.notes.join(' ');
+  }
+
+  // ── reproduce, rail, footer ──────────────────────────────────────────────────
+  function reproduce() {
+    [].forEach.call(document.querySelectorAll('.cmd'), function (c) {
+      var btn = c.querySelector('.copy'), code = c.querySelector('code');
+      btn.addEventListener('click', function () {
+        var done = function () { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1600); };
+        var fallback = function () { var r = document.createRange(); r.selectNodeContents(code); var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r); btn.textContent = 'Selected'; };
+        try { navigator.clipboard.writeText(code.textContent).then(done, fallback); } catch (e) { fallback(); }
+      });
+    });
+    var P = D.protocol;
+    $('foot').append(h('p', null, 'Built by ', h('code', null, D.generated_by), ' from the results files: every number on this page is read from a run, ' + P.repeats + ' repeats of ' + P.folds + '-fold cross-validation, seeds ' + P.seeds + '.'),
+      h('p', null, 'Reference: Myrzashova et al., Safeguarding Patient Data-Sharing: Blockchain-Enabled Federated Learning in Medical Diagnostics, IEEE Transactions on Sustainable Computing, 2025.'));
+  }
+  function rail() {
+    var links = [].slice.call(document.querySelectorAll('.rail a')), secs = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+    function mark() {
+      var y = window.innerHeight * 0.3, best = 0;
+      secs.forEach(function (sec, i) { if (sec && sec.getBoundingClientRect().top - y <= 0) best = i; });
+      links.forEach(function (a, i) { a.classList.toggle('here', i === best); });
+    }
+    window.addEventListener('scroll', mark, { passive: true }); mark();
+  }
+
+  // ── boot and resize ──────────────────────────────────────────────────────────
+  var draws = [];
+  function guard(name, fn) { try { fn(); } catch (e) { var p = document.createElement('p'); p.className = 'note'; p.style.color = 'var(--bad)'; p.textContent = name + ' could not render: ' + e.message; var sec = document.getElementById(name); if (sec) sec.append(p); if (window.console) console.error(e); } }
+  guard('setup', hero);
+  guard('setup', setup);
+  guard('round', round);
+  guard('results', methods); draws.push(function () { guard('results', drawMethods); });
+  guard('hospitals', hospitals); draws.push(function () { guard('hospitals', drawPH); guard('hospitals', drawCV); });
+  guard('privacy', privacy); draws.push(function () { guard('privacy', drawDP); });
+  guard('ledger', ledger); draws.push(function () { guard('ledger', ledger); });
+  guard('chain-attacks', chainAttacks); draws.push(function () { guard('chain-attacks', drawAtk); });
+  guard('poisoning', poisoning); draws.push(function () { guard('poisoning', drawPo); });
+  guard('reference', reference);
+  guard('reproduce', reproduce);
+  rail();
+  var lastW = window.innerWidth, pending = null;
+  window.addEventListener('resize', function () {
+    if (Math.abs(window.innerWidth - lastW) < 8) return;
+    lastW = window.innerWidth; clearTimeout(pending);
+    pending = setTimeout(function () { draws.forEach(function (d) { d(); }); }, 120);
+  });
+})();
+</script>

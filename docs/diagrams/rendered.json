@@ -1,0 +1,97 @@
+{
+ "browser": "Google Chrome 146.0.7680.80",
+ "diagrams": {
+  "architecture": {
+   "dpi": 300,
+   "natural_css_px": [
+    3286.4,
+    534.0
+   ],
+   "png_px": [
+    10272,
+    1672
+   ],
+   "png_sha256": "a91912b4c51b2c4f9632855b18c470be4fa72d0c1d02eaa07eab6526e5a4e3ca",
+   "source_sha256": "5428f9ca1cd0e4c81b4ffa6668877df7ff070eca0cd9b09da69131a1ffc47d8d",
+   "svg_sha256": "f49a6b7f429a69af7da2ac41974e00982395be0a2f49ad14f86a2ea03677a4f9"
+  },
+  "class_diagram": {
+   "dpi": 300,
+   "natural_css_px": [
+    1674.4,
+    1402.2
+   ],
+   "png_px": [
+    5234,
+    4384
+   ],
+   "png_sha256": "da7ade8167dad0169efd1b7e448f9dbbdec04b8d099d778d587fb97d5c69f561",
+   "source_sha256": "beffc8fa97b104664550abd4a4f48e2b2e3ace4316116bb76d1bb7dd4e7d18dd",
+   "svg_sha256": "fd0f80957850e0aacd0532ecc6f2e55d0b14aae744044d498efae3a1240787ff"
+  },
+  "dfd_level0": {
+   "dpi": 300,
+   "natural_css_px": [
+    1432.3,
+    256.6
+   ],
+   "png_px": [
+    4478,
+    803
+   ],
+   "png_sha256": "1a3f46551e0364ec318fe382c2f634fac775a8cad962e1a903242f4109f6176c",
+   "source_sha256": "40b1f308e3d024e14301834d838d87d35dfe385920e4de05c5837e242a2556f8",
+   "svg_sha256": "1fb9ab277fa3a29b18a4768c94c5533e2ab71f5c1fc0103d65a0d1debb75eea6"
+  },
+  "dfd_level1": {
+   "dpi": 300,
+   "natural_css_px": [
+    970.8,
+    2346.6
+   ],
+   "png_px": [
+    3034,
+    7334
+   ],
+   "png_sha256": "2a815ff10927adee8d34553e14524ed4c3af8ede1eac4260ed79ff0aea282f99",
+   "source_sha256": "c29536f4d1ef61e9a161c79178783e839dd8f6f8ddf8297737516de0e31f74a7",
+   "svg_sha256": "eac3c38a5637d2426293a03d49c07ff427c2053068aa8246e137407d25809550"
+  },
+  "sequence_round": {
+   "dpi": 300,
+   "natural_css_px": [
+    2561.0,
+    1166.0
+   ],
+   "png_px": [
+    8003,
+    3544
+   ],
+   "png_sha256": "aa63b07b2bd0ff35ee3ee35028255110ff5909356a48ae6871ca5c1dd922b4f4",
+   "source_sha256": "6f11bb213d172441fa5310b0eeee53aa989284d455090dd24f6b7362f334e6c4",
+   "svg_sha256": "ce4b2ed4dc0ba196973ec0431e044f15b48192cc267b6bf7f217c213f6c0574d"
+  },
+  "use_case": {
+   "dpi": 300,
+   "natural_css_px": [
+    1354.1,
+    1183.0
+   ],
+   "png_px": [
+    4234,
+    3700
+   ],
+   "png_sha256": "9ef6a5c15d432dddfa3aa6fa3be1ca527a18735da7f66522b904a0fbb40b3915",
+   "source_sha256": "95926e03b7aa1efb95acbe0218f0180e5c91cbbe987b1fe85b3c05a86534a27d",
+   "svg_sha256": "667d8768e03c66f7e21bd1ae52bb473a96260c82bf5f7aa0797db5c9c86917e4"
+  }
+ },
+ "generated_by": "python3 -m fedverify.analysis.render_diagrams",
+ "mermaid_cli": "12.0.0",
+ "mermaid_config": {
+  "sequence": {
+   "diagramMarginX": 150
+  }
+ },
+ "png_scale": 3.125
+}

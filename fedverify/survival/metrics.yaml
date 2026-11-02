@@ -1,0 +1,32 @@
+# FedVerify-Survival metrics (master prompt §4, Revision 2 §2.5).
+#
+# Computed ONCE per repeat on the pooled out-of-fold predictions of every evaluated patient, then reported as
+# mean ± std over the repeats. Every name must exist in fedverify/survival/metrics.py METRICS; the order is the
+# table column order. The top-level block is TCGA (binary death indicator); `datasets:` holds the other blocks.
+#
+#   c_index   lifelines concordance_index: a risk score is negated, an AFT survival time is passed unchanged
+#   roc_auc   ROC-AUC of the risk score against the event indicator
+#   f1        F1 at the threshold that maximises F1 on the TRAINING fold's predictions, applied to its test fold
+#   accuracy  share of patients with (P(event) >= 0.5) == label
+metrics:
+  - c_index
+  - roc_auc
+  - f1
+
+per_hospital:
+  min_deaths: 5                    # fewer deaths -> em dash for the rank metrics below (A8 has 4)
+  rank_metrics: [c_index, roc_auc]
+
+datasets:
+  heart:                           # UCI heart disease, 4 hospitals
+    metrics: [accuracy, f1, roc_auc]
+    per_hospital:
+      min_class_count: 5           # fewer than 5 of either class -> em dash (Switzerland, paper mode: 1 negative)
+      rank_metrics: [roc_auc]
+      event_name: positives
+  tcga_survival:                   # XGBoost AFT on TCGA: a survival TIME prediction
+    metrics: [c_index]
+    per_hospital:
+      min_class_count: 5
+      rank_metrics: [c_index]
+      event_name: deaths

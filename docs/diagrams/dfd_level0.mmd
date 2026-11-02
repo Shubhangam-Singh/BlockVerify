@@ -1,0 +1,12 @@
+%% Data-flow diagram, level 0 (context): the whole system as one process and the people and systems around it.
+flowchart LR
+  HOS["Hospital<br/>(data owner)"]
+  RES["Researcher or examiner"]
+  PUB["Public ledger<br/>(Algorand Testnet, optional)"]
+  SYS(("0<br/>FedVerify federated<br/>learning system"))
+  HOS -- "signed model update" --> SYS
+  SYS -- "shared model; was my update accepted?" --> HOS
+  RES -- "run settings and seed" --> SYS
+  SYS -- "lineage, inclusion proofs, tables and figures" --> RES
+  SYS -- "round root" --> PUB
+  PUB -- "anchored root, read independently" --> RES

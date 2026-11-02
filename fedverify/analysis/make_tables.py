@@ -12,6 +12,7 @@ import argparse
 import json
 import math
 import os
+from pathlib import Path
 import sys
 from collections import defaultdict
 from typing import Optional
@@ -105,24 +106,66 @@ def cell(xs: list[float], pct: bool = True) -> str:
     return f"{m*100:.2f} ± {s*100:.2f}" if pct else f"{m:.4f} ± {s:.4f}"
 
 
+# Phase 12: the tables of experiments that were never run in this repository. A table that comes out with no value
+# in any cell says so in its caption, and fedverify/TODO.md lists the command that would fill it. (Table 5 is not
+# here: it is built from analysis/comparison.yaml, not from a run.)
+NOT_RUN = {"table2": ("exp2", 1), "table2b": ("exp2", 1), "table2_full": ("exp2", 3), "table4": ("exp4", 1),
+           "table6": ("exp5", 1)}                      # (experiment, number of label columns)
+
+
+def not_run_note(name: str, rows: list[list[str]]) -> str:
+    """The caption note for a NOT_RUN table whose every value cell is empty; '' once any cell holds a result."""
+    if name not in NOT_RUN:
+        return ""
+    exp, labels = NOT_RUN[name]
+    if any(c not in (MISSING, "n/a") for r in rows for c in r[labels:]):
+        return ""
+    return (f" Not run: experiment {exp} has no results in this repository, so every cell is empty (— or n/a); "
+            "fedverify/TODO.md lists the command that would fill this table.")
+
+
 def _emit(name: str, header: list[str], rows: list[list[str]], out_dir: str,
           caption: str) -> None:
     os.makedirs(out_dir, exist_ok=True)
+    caption += not_run_note(name, rows)
     md = [f"# {name}", "", caption, "",
           "| " + " | ".join(header) + " |",
           "|" + "|".join(["---"] * len(header)) + "|"]
     md += ["| " + " | ".join(r) + " |" for r in rows]
     open(os.path.join(out_dir, f"{name}.md"), "w").write("\n".join(md) + "\n")
 
-    tex = ["\\begin{table}[t]", "\\centering",
-           f"\\caption{{{caption}}}",
-           "\\begin{tabular}{l" + "r" * (len(header) - 1) + "}", "\\hline",
-           " & ".join(h.replace("±", "$\\pm$") for h in header) + " \\\\", "\\hline"]
-    tex += [" & ".join(c.replace("±", "$\\pm$").replace(MISSING, "--") for c in r) + " \\\\"
-            for r in rows]
-    tex += ["\\hline", "\\end{tabular}", "\\end{table}"]
-    open(os.path.join(out_dir, f"{name}.tex"), "w").write("\n".join(tex) + "\n")
+    open(os.path.join(out_dir, f"{name}.tex"), "w").write(tex_table(name, header, rows, caption))
     print(f"  wrote {out_dir}/{name}.md and .tex")
+
+
+def tex_table(name: str, header: list[str], rows: list[list[str]], caption: str) -> str:
+    """LaTeX of one table (Phase 11 fix), through the FL-healthcare Table writer: every string escaped (a "%" in a
+    caption used to start a comment), the tabular in a box shrunk to the line width only if it is wider, the page
+    width for tables of 6+ columns, and wrapped (ragged-right) columns when a header is long, so a wide comparison
+    table wraps its headers instead of shrinking."""
+    from .make_fl_healthcare_tables import Table                # lazy: that module imports this one
+    wide = len(header) >= 6
+    if max(len(h) for h in header[1:]) > 14:
+        cols = "p{3.0cm}" + "p{1.45cm}" * (len(header) - 1)
+    else:
+        cols = "l" + "r" * (len(header) - 1)
+    return Table(name, name, caption, header, rows, wide=wide, columns=cols,
+                 size="footnotesize", colsep=4.0).tex_text()
+
+
+def retex(out_dir: str) -> list[str]:
+    """Re-write each MNIST table's .tex from its own generated .md (lossless: the same header, rows and caption),
+    for tables whose source results are not on disk. Returns the names re-written."""
+    done = []
+    for md_path in sorted(Path(out_dir).glob("table[0-9]*.md")):
+        lines = md_path.read_text(encoding="utf-8").splitlines()
+        name, caption = lines[0].lstrip("# ").strip(), lines[2]
+        table = [ln for ln in lines[4:] if ln.startswith("|")]
+        cells = [[c.strip() for c in ln.strip().strip("|").split("|")] for ln in table]
+        header, rows = cells[0], cells[2:]
+        (md_path.with_suffix(".tex")).write_text(tex_table(name, header, rows, caption), encoding="utf-8")
+        done.append(name)
+    return done
 
 
 # ── table 1 ─────────────────────────────────────────────────────────────────
@@ -550,8 +593,14 @@ def main(argv=None):
     ap.add_argument("--results-dir", default="fedverify/results")
     ap.add_argument("--out-dir", default=None)
     ap.add_argument("--only", nargs="*", default=None, choices=sorted(TABLES))
+    ap.add_argument("--retex", action="store_true",
+                    help="only re-write the .tex of the existing tables from their .md (no results needed)")
     a = ap.parse_args(argv)
     out_dir = a.out_dir or os.path.join(a.results_dir, "tables")
+    if a.retex:
+        for name in retex(out_dir):
+            print(f"  re-wrote {out_dir}/{name}.tex from its .md")
+        return 0
     for name, fn in TABLES.items():
         if a.only and name not in a.only:
             continue

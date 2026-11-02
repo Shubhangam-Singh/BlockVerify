@@ -1,0 +1,48 @@
+{
+  "_about": "Fixed one-hot vocabulary for the UCI heart data: category NAMES only (public metadata, no counts), from all 920 rows. Regenerate with: python3 -m fedverify.survival.heart --write-vocab",
+  "source_sha256": "574f2fa2b43012fa25fca4fcdb36bd7c6bccdd0af4242f6c0e4c8633c5a072ae",
+  "source_rows": 920,
+  "na_category": "NA",
+  "categorical": {
+    "sex": [
+      "Female",
+      "Male",
+      "NA"
+    ],
+    "cp": [
+      "asymptomatic",
+      "atypical angina",
+      "non-anginal",
+      "typical angina",
+      "NA"
+    ],
+    "fbs": [
+      "False",
+      "True",
+      "NA"
+    ],
+    "restecg": [
+      "lv hypertrophy",
+      "normal",
+      "st-t abnormality",
+      "NA"
+    ],
+    "exang": [
+      "False",
+      "True",
+      "NA"
+    ],
+    "slope": [
+      "downsloping",
+      "flat",
+      "upsloping",
+      "NA"
+    ],
+    "thal": [
+      "fixed defect",
+      "normal",
+      "reversable defect",
+      "NA"
+    ]
+  }
+}

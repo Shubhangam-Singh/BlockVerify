@@ -1,0 +1,13 @@
+ref,dataset,no_cases,no_classes,fl_setup,bc_consensus
+[19],EMNIST (handwritten digits),"85,838",cipher recognition (0 to 9),FedSGD,Po-Identity
+[20],MNIST (handwritten digits),"70,000",cipher recognition (0 to 9),FedSGD,Po-Concept
+[21],CC-19 (CT scans),"34,006",2 (positive or negative),FedAVG,PoW
+[22],CC-19 and Covid-19 CT scan datasets,"80,000",2 (positive or negative),FedAVG,PoW
+[23],Oracle Issue of Geolocation Data,NA,NA,FedAVG,PoW
+[24],COVID-19,NA,NA,FedAVG,Hybrid
+[25],HAR tracing activities with smartphones,"10,299",6 activities,FedAVG,Po-Authority
+[26],MNIST (handwritten digits),"70,000",cipher recognition (0 to 9),FedAVG,PoW
+[27],MIT-BIH-AR,"98,996",3 classes,FedAVG,PoW
+[28],X-Ray Lung diseases (4 datasets),"26,017",5 classes,FedAVG,PoS
+[29],Chest CT scans (5 datasets),"80,000",2 (positive or negative),FedDyn,Po-Identity
+Our paper (Myrzashova et al.),NIH X-Ray,"112,120",15 classes,FedAVG,PoW

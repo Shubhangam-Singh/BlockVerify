@@ -1,0 +1,88 @@
+%% Class diagram of the core modules (methods only; every class and method is checked against the repo).
+classDiagram
+  direction LR
+  class SurvivalConfig {
+    +cell()
+    +aggregation()
+    +run_dir()
+    +to_dict()
+  }
+  class ChainSession {
+    +for_fold()
+    +describe()
+    +chain_metrics()
+  }
+  class FoldCommitter {
+    +check_previous()
+    +submit()
+    +verify()
+    +prepare()
+    +process()
+    +commit_round()
+  }
+  class Defences {
+    +off()
+  }
+  class CommitResult
+  class ChainAnchor {
+    +anchor_round()
+    +checkpoint()
+    +lineage()
+  }
+  class MeteredAnchor {
+    +verify_previous()
+  }
+  class KeyRegistry {
+    +register()
+    +verify()
+    +next_counter()
+    +public_key()
+  }
+  class Blockchain {
+    +add_transaction()
+    +mine_pending_transactions()
+    +is_chain_valid()
+  }
+  class Block
+  class Aggregator {
+    +aggregate()
+  }
+  class FedAvg {
+    +aggregate()
+  }
+  class Forensics {
+    +aggregate()
+  }
+  class TreeProbeScreen {
+    +screen()
+  }
+  class Results {
+    +metric()
+    +baseline()
+    +site_rate()
+    +majority()
+  }
+  class Draft {
+    +setup()
+    +results()
+    +limitations()
+    +build()
+  }
+  class Collector {
+    +methods()
+    +poisoning()
+    +build()
+  }
+  ChainSession ..> SurvivalConfig : reads
+  ChainSession "1" --> "1" KeyRegistry : registers the hospitals' keys
+  ChainSession "1" --> "many" FoldCommitter : for_fold()
+  FoldCommitter --> Defences : applies
+  FoldCommitter --> MeteredAnchor : anchors with
+  FoldCommitter ..> CommitResult : returns
+  ChainAnchor <|-- MeteredAnchor
+  ChainAnchor --> Blockchain : mines blocks on
+  Blockchain "1" *-- "many" Block
+  Aggregator <|-- FedAvg
+  Aggregator <|-- Forensics
+  Draft --> Results : reads
+  Collector --> Results : reads
