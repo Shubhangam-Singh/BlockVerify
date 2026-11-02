@@ -3338,7 +3338,7 @@
     </div>
 
     <!-- Register -->
-    <div class="card" style="margin-bottom:.9rem;">
+    <div class="card" id="psRegCard" style="margin-bottom:.9rem;">
       <h2 style="margin:0 0 .4rem;"><span class="card-title-ico"><svg class="ico"><use href="#i-register"/></svg></span> Register a photo</h2>
       <div class="ps-row" style="margin-bottom:.6rem;">
         <label style="font-size:.8rem;"><input type="radio" name="psMode" value="plain" checked onchange="psModeChanged()"> Provenance only (any photo)</label>
@@ -3369,7 +3369,7 @@
     </div>
 
     <!-- Verify -->
-    <div class="card" style="margin-bottom:.9rem;">
+    <div class="card" id="psVerCard" style="margin-bottom:.9rem;">
       <h2 style="margin:0 0 .4rem;"><span class="card-title-ico"><svg class="ico"><use href="#i-verify"/></svg></span> Check a photo</h2>
       <p class="subtitle">Drop any image. Its fingerprints are computed here and compared with the registry, then you can check the anchor on the public ledger yourself.</p>
       <div class="file-drop" onclick="document.getElementById('psVerFile').click()">
@@ -3382,7 +3382,7 @@
     </div>
 
     <!-- My photos -->
-    <div class="card" style="margin-bottom:.9rem;">
+    <div class="card" id="psMineCard" style="margin-bottom:.9rem;">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;">
         <h2 style="margin:0;"><span class="card-title-ico"><svg class="ico"><use href="#i-models"/></svg></span> My photos</h2>
         <label class="btn btn-sec" style="cursor:pointer;font-size:.76rem;padding:.4rem .8rem;">Re-attach manifest<input type="file" accept=".json,application/json" style="display:none" onchange="psRehydrate(this)"></label>
@@ -3392,7 +3392,7 @@
     </div>
 
     <!-- Honest limits (always visible) -->
-    <div class="card" style="margin-bottom:.9rem;border-color:rgba(234,179,8,.35);">
+    <div class="card" id="psLimitsCard" style="margin-bottom:.9rem;border-color:rgba(234,179,8,.35);">
       <h2 style="margin:0 0 .4rem;">Honest limits</h2>
       <ul style="font-size:.8rem;line-height:1.7;margin:0;padding-left:1.1rem;color:var(--text);">
         <li>The cloak targets <b>one</b> encoder. It gives <b>no</b> protection against closed models (Grok, Gemini, Midjourney), and re-encoding, resizing, denoising or diffusion purification can weaken or remove it.</li>
@@ -3438,6 +3438,11 @@
             <div class="qs-icon" style="color:#8b7cff;"><svg class="ico"><use href="#i-globe"/></svg></div>
             <h4>5. Federated Learning <span style="font-size:.6rem;background:#8b7cff;color:var(--fv-chip-ink);padding:.1rem .35rem;border-radius:4px;vertical-align:middle;margin-left:.2rem;">NEW</span></h4>
             <p>Train one AI across many hospitals without sharing patient data — and prove on-chain exactly whose updates went in.</p>
+          </div>
+          <div class="qs-card" onclick="switchTab('photoshield')">
+            <div class="qs-icon"><svg class="ico"><use href="#i-shield"/></svg></div>
+            <h4>6. Photo Shield</h4>
+            <p>Sign and anchor your photo's fingerprints from the browser, check any copy against the ledger, and optionally cloak it against AI edits.</p>
           </div>
           <!-- Watch Demo Card -->
           <div class="qs-card" id="startTourBtn" onclick="startGuidedTour()" style="border-color: var(--primary);">
@@ -3557,6 +3562,31 @@
           </div>
         </div>
 
+        <!-- Photo Shield -->
+        <div class="faq-category">
+          <h3 style="font-size: .85rem; font-weight: 700; color: var(--primary); margin: 1.5rem 0 .6rem; text-transform: uppercase;display:flex;align-items:center;gap:.45rem;"><svg class="ico" style="width:1em;height:1em;"><use href="#i-shield"/></svg> Photo Shield</h3>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">How do I protect a photo, step by step? <span class="faq-arrow">▼</span></button>
+            <div class="faq-a">1. Open <strong>Photo Shield</strong> and click <strong>Create key</strong>, then <strong>Export backup</strong>.<br>2. In <strong>Register a photo</strong>, keep <em>Provenance only</em> and drop your photo. Its fingerprints are computed in your browser.<br>3. Add a title, choose <em>Full</em> or <em>Hash-only</em>, and click <strong>Sign &amp; anchor</strong>. A <code>manifest.json</code> backup downloads.<br>4. Click <strong>Check on public ledger</strong> to confirm the transaction yourself.<br>Do this <strong>before</strong> you post the photo anywhere.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">What do EXACT, DERIVED, SIMILAR and UNKNOWN mean? <span class="faq-arrow">▼</span></button>
+            <div class="faq-a"><strong>EXACT</strong>: the file's SHA-256 matches a registered original or cloaked copy. <strong>DERIVED</strong>: its perceptual hash is very close, so it is very likely a re-compressed, resized or lightly edited copy. <strong>SIMILAR</strong>: close enough to be possibly derived (a heavier edit or crop), or just a similar-looking photo. <strong>UNKNOWN</strong>: nothing close is registered. The two thresholds are measured on test photos and stored in <code>photoshield/calibration.json</code>; without that file the server only reports exact matches. A near match is evidence, not proof.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">What is the cloak and how do I use it? <span class="faq-arrow">▼</span></button>
+            <div class="faq-a">An invisible change to the pixels, computed on your own computer, that confuses the image encoder inside Stable Diffusion, so editors built on it produce damaged edits. Run <code>python -m photoshield protect photo.jpg --out shielded/ --eps 8 --steps 40</code>, post <code>shielded/cloaked.png</code>, and register it with the <em>Cloaked photo</em> mode by dropping <code>manifest.json</code>, the original and <code>cloaked.png</code>. It does not protect against closed models, and heavy processing can remove it.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">I cleared my browser or changed device. Is my key gone? <span class="faq-arrow">▼</span></button>
+            <div class="faq-a">The key lives only in the browser that created it. If you exported a backup, use <strong>Import backup</strong> and enter its passphrase. Without a backup, your registrations stay on the ledger, but you can no longer prove you control the key that made them. That is why the tab asks you to export a backup straight away.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">The server restarted. Are my photos still registered? <span class="faq-arrow">▼</span></button>
+            <div class="faq-a">Yes. The blockchain is the real record: on start-up the server rebuilds its photo registry from its Algorand transactions and re-checks every signature. <em>Full</em> registrations come back completely. <em>Hash-only</em> ones match exact copies only, until you re-attach their <code>manifest.json</code> in <strong>My photos</strong>.</div>
+          </div>
+        </div>
+
         <!-- Troubleshooting -->
         <div class="faq-category">
           <h3 style="font-size: .85rem; font-weight: 700; color: var(--danger); margin: 1.5rem 0 .6rem; text-transform: uppercase;display:flex;align-items:center;gap:.45rem;"><svg class="ico" style="width:1em;height:1em;"><use href="#i-spark"/></svg> Troubleshooting</h3>
@@ -3607,6 +3637,7 @@
         </div>
       </div>
     </div>
+    <div style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem;text-align:center;">The same integrity layer also powers <strong>Federated</strong> (prove whose updates trained a shared model) and <strong>Photo Shield</strong> (sign and anchor your photos, then check any copy).</div>
     <div style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem;font-weight:600;text-align:center;">Log in or create a free account to securely save and track your model integrity checks:</div>
     <div class="welcome-user-row" style="display:flex; gap:1rem; justify-content:center;">
       <button class="btn" onclick="closeWelcome(); openAuthModal('register')" style="white-space:nowrap; padding: .65rem 1.6rem; border-radius: 9px;">Create Account</button>
@@ -8393,9 +8424,15 @@ const TOUR_STEPS = [
   { target: '#flStats', chapter: 'Federated learning', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '📊 Reading a Training Run', body: 'Pick any run from the dropdown at the top. These cards summarise it: how accurate the shared model got, how many malicious participants were caught, and how many honest ones were wrongly excluded — the price of the defence.', position: 'bottom' },
   { target: '#flGridWrap', chapter: 'Federated learning', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '🛡 Who Was Trusted, Round by Round', body: 'One square per participant per round. <b style="color:#22c55e;">Bright green</b> = a malicious participant correctly caught. <b style="color:#ef4444;">Red</b> = one that slipped through. <b style="color:#eab308;">Amber</b> = an honest participant wrongly excluded. Malicious rows are labelled, so you can see at a glance whether the defence worked.', position: 'top' },
   { target: '#flRoundsTable', chapter: 'Federated learning', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '🔗 Proving It Without Trusting Us', body: 'Each round is fingerprinted and written to the blockchain, so nobody — including this server — can rewrite history afterwards. Click <b>Verify proof</b> and your browser re-derives that fingerprint itself and checks it against the public ledger. If we lied, the check fails.', position: 'top' },
-  { target: '#tab-photoshield', chapter: 'Photo Shield', delay: 300, tab: 'photoshield', title: '🛡 Step 6 — Photo Shield', body: 'The same idea for <b>your photos</b>. A photo is hashed in your browser (SHA-256 plus a perceptual hash that survives re-compression), signed with a key that never leaves this browser, and anchored on Algorand. Anyone can later check a copy against the public ledger. Optionally, a local tool adds an invisible cloak that makes Stable-Diffusion edits worse. It cannot stop closed models, and this tab says so.', position: 'bottom' },
-  { target: '#psKeyCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '🔑 Your Key, Your Proof', body: 'Registrations are signed by <b>your</b> key, not the server\'s. Export an encrypted backup: clearing site data or switching device loses the key, and with it the ability to prove later registrations are yours.', position: 'bottom' },
-  { target: '#tab-help', chapter: 'Done', tab: 'help', title: '🎉 Tour Complete!', body: 'You now know the full BlockVerify workflow. Register a model → get a Model ID → verify it anytime → all history is permanently on the blockchain. And with <b>Federated</b>, you can prove who helped build a model in the first place. Ready to try it yourself?', position: 'bottom' }
+  { target: '#tab-photoshield', chapter: 'Photo Shield', delay: 300, tab: 'photoshield', title: '🛡 Step 6 — Photo Shield', body: 'The same integrity idea, for <b>your photos</b>. It does two things: <b>provenance</b> (prove a photo is yours and existed at a given time, and recognise copies of it) and an optional <b>cloak</b> (make AI edits of it harder). Your photo is <b>never uploaded</b>: only its fingerprints leave this browser.', position: 'bottom' },
+  { target: '#psKeyCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '🔑 1. Create your signing key', body: 'Click <b>Create key</b> once. Every registration is signed with this Ed25519 key, which lives only in this browser, so the ledger shows the photo is <b>yours</b>, not the server\'s. Then click <b>Export backup</b> and keep the encrypted file safe: clearing site data or switching device loses the key. <b>Import backup</b> restores it anywhere.', position: 'bottom' },
+  { target: '#psRegCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '📷 2. Register a photo', body: 'Choose a mode. <b>Provenance only</b>: drop any photo. <b>Cloaked photo</b>: first run <code>python -m photoshield protect photo.jpg --out shielded/</code> on your own computer, then drop <code>manifest.json</code>, the original and <code>cloaked.png</code>. The page computes the SHA-256 and a perceptual hash (pHash) right here, and shows them before anything is sent.', position: 'top' },
+  { target: '#psPrivacy', chapter: 'Photo Shield', fallback: '#psRegCard', delay: 400, tab: 'photoshield', title: '🔒 Full or hash-only?', body: '<b>Full</b> puts the pHash on chain too, so re-compressed or resized copies are still recognised even after the server restarts. <b>Hash-only</b> keeps the pHash off chain for privacy: after a restart only exact copies match until you re-attach your <code>manifest.json</code> in <b>My photos</b>.', position: 'top' },
+  { target: '#psRegBtn', chapter: 'Photo Shield', fallback: '#psRegCard', delay: 400, tab: 'photoshield', title: '⛓ Sign &amp; anchor', body: 'One click signs the fingerprints with your key, solves a small proof-of-work, and anchors them as an Algorand Testnet transaction. A <code>manifest.json</code> backup downloads automatically. Then press <b>Check on public ledger</b>: your browser fetches the transaction from the public indexer itself and confirms it, without trusting this server.', position: 'top' },
+  { target: '#psVerCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '🔍 3. Check any photo', body: 'Anyone can drop a photo here. <b>EXACT</b> = byte-for-byte the registered file. <b>DERIVED</b> = very likely a re-compressed or resized copy. <b>SIMILAR</b> = possibly derived (heavier edit, crop, or a look-alike). <b>UNKNOWN</b> = not registered. The DERIVED/SIMILAR thresholds are <b>measured</b> on test photos, not guessed, and a perceptual match is evidence, not proof.', position: 'top' },
+  { target: '#psMineCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '🗂 4. My photos', body: 'Everything you registered: download a <b>PDF certificate</b>, <b>prove ownership</b> (your browser signs a one-time challenge with your key), or <b>re-attach a manifest</b> to restore near-matching for hash-only photos after a server restart.', position: 'top' },
+  { target: '#psLimitsCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '⚖ Honest limits', body: 'The cloak targets one open-source encoder: it gives <b>no</b> protection against closed models (Gemini, Grok, Midjourney), and heavy re-processing can remove it. First-to-register is not authorship, so <b>register before you post</b>. The provenance layer works whether or not the cloak survives.', position: 'top' },
+  { target: '#tab-help', chapter: 'Done', tab: 'help', title: '🎉 Tour Complete!', body: 'You now know the full BlockVerify workflow. Register a model → get a Model ID → verify it anytime → all history is permanently on the blockchain. With <b>Federated</b>, you can prove who helped build a model in the first place, and with <b>Photo Shield</b>, that a photo is yours and when it existed. Ready to try it yourself?', position: 'bottom' }
 ];
 
 let _tourCurrent = 0;
@@ -9956,33 +9993,6 @@ function stopNetworkPolling() {
 
 </script>
 
-<div style="position: fixed; bottom: 8px; right: 12px; font-size: 0.65rem; color: var(--text-muted); opacity: 0.35; z-index: 9999; pointer-events: none; letter-spacing: 0.05em;">
-  crafted with 🤍 by <span id="creditsName" style="display:inline-block; width: 62px; transition: opacity 0.6s ease-in-out;">Shubhangam</span>
-</div>
-<script>
-(function() {
-  const names = [
-    { text: 'Shubhangam', time: 3000 },
-    { text: 'Mihir',      time: 2000 },
-    { text: 'Aditya',     time: 2000 }
-  ];
-  const el = document.getElementById('creditsName');
-  if (!el) return;
-  let idx = 0;
-  
-  function nextCredit() {
-    el.style.opacity = '0';
-    setTimeout(() => {
-      idx = (idx + 1) % names.length;
-      el.innerHTML = names[idx].text;
-      el.style.opacity = '1';
-      setTimeout(nextCredit, names[idx].time);
-    }, 600); // fade out duration before swapping text
-  }
-  
-  setTimeout(nextCredit, names[0].time);
-})();
-</script>
 
 <!-- ═══ PhotoShield core (PHOTOSHIELD_DESIGN.md §7). Tests extract these functions verbatim. ═══ -->
 <script>
