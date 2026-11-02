@@ -379,6 +379,17 @@ def get_transaction_ledger(limit: int = 50) -> dict:
                 try:
                     decoded = base64.b64decode(raw_note).decode("utf-8")
                     meta = json.loads(decoded)
+                    if isinstance(meta, dict) and meta.get("ps") == 1:
+                        # PhotoShield note (additive branch): label it instead of showing a
+                        # blank model row. Model notes take the unchanged path below.
+                        entry["action"]     = "photo-anchor"
+                        entry["photo_id"]   = meta.get("id") or meta.get("pmr", "")[:16]
+                        entry["model_name"] = "PhotoShield album" if "pmr" in meta else "PhotoShield photo"
+                        entry["model_id"]   = entry["photo_id"]
+                        entry["model_hash"] = (meta.get("o") or meta.get("pmr") or "")[:16] + "..."
+                        entry["owner"]      = (meta.get("pk") or "")[:16]
+                        ledger.append(entry)
+                        continue
                     entry["model_name"] = meta.get("name", "")
                     entry["model_id"]   = meta.get("id", "")
                     entry["model_hash"] = meta.get("hash", "")[:16] + "..."

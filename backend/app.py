@@ -23,6 +23,7 @@ from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 from auth import auth_bp, require_auth
 from fl_routes import fl_bp          # Phase 3: federated round commitments (additive)
+from photo_routes import photo_bp    # PhotoShield: photo provenance (additive)
 import algorand_client
 import bitcoin_client
 from time import time
@@ -36,6 +37,7 @@ app = Flask(__name__)
 CORS(app, origins="*", supports_credentials=True)
 app.register_blueprint(auth_bp)
 app.register_blueprint(fl_bp)
+app.register_blueprint(photo_bp)
 
 # Layer order is SEMANTIC for tamper detection (reordering = altered execution
 # graph). Flask sorts JSON keys alphabetically by default, which would destroy
