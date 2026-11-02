@@ -2,6 +2,7 @@
 
     sdvae     Stable Diffusion VAE encoder (stabilityai/sd-vae-ft-mse), latent mean. The
               PhotoGuard encoder attack target. Downloads about 330 MB on first use.
+    sdxlvae   SDXL VAE (stabilityai/sdxl-vae): an E5 transfer target only.
     resnet50  torchvision ImageNet ResNet-50, pooled 2048-d features (eval mode).
     facenet   facenet-pytorch InceptionResnetV1 (VGGFace2), optional extra dependency.
     tiny      a small conv net with fixed random weights. TESTS ONLY: it needs no download,
@@ -73,7 +74,7 @@ class ResNet50Encoder(Encoder):
         self.net = _freeze(m)
 
     def encode(self, x):
-        return self.net((x - self._MEAN) / self._STD)
+        return self.net((x - self._MEAN.to(x.device)) / self._STD.to(x.device))
 
 
 class SDVAEEncoder(Encoder):
@@ -103,6 +104,12 @@ class SDVAEEncoder(Encoder):
         return ((self.vae.decode(z).sample + 1) / 2).clamp(0, 1)
 
 
+class SDXLVAEEncoder(SDVAEEncoder):
+    """SDXL's VAE: a different autoencoder, used as an E5 transfer target (never attacked)."""
+    name = "sdxlvae"
+    REPO = "stabilityai/sdxl-vae"
+
+
 class FaceNetEncoder(Encoder):
     name = "facenet"
 
@@ -126,6 +133,8 @@ def load_encoder(name: str, pretrained: bool = True, seed: Optional[int] = None)
         return ResNet50Encoder(pretrained)
     if name == "sdvae":
         return SDVAEEncoder(pretrained)
+    if name == "sdxlvae":
+        return SDXLVAEEncoder(pretrained)
     if name == "facenet":
         return FaceNetEncoder(pretrained)
     raise ValueError(f"unknown encoder {name!r}")

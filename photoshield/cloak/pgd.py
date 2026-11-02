@@ -28,7 +28,7 @@ def pgd_attack(x: torch.Tensor, enc, eps: float, steps: int, alpha: float,
             ref = enc.encode(x)
             sign = +1.0                      # ascend away from the clean latent
     start = alpha if steps > 0 else 0.0
-    delta = (torch.rand(x.shape, generator=g, dtype=x.dtype) * 2 - 1) * start
+    delta = ((torch.rand(x.shape, generator=g, dtype=x.dtype) * 2 - 1) * start).to(x.device)
     delta = (x + delta).clamp(0, 1) - x
     for step in range(steps):
         delta.requires_grad_(True)

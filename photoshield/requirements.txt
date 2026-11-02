@@ -17,3 +17,6 @@ scikit-image>=0.22     # SSIM, and the public-domain sample photos used by tests
 requests>=2.31         # ledger rebuild (indexer)
 # Optional
 # lpips>=0.1           # LPIPS metric in E1, if wanted
+# E4/E5 (Colab GPU, installed by photoshield/experiments/colab_edit_test.ipynb):
+#   transformers accelerate lpips   (InstructPix2Pix via diffusers, CLIP, LPIPS)
+# E6b (browser JPEG gap): node + playwright with Chromium

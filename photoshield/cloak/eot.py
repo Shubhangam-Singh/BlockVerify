@@ -37,7 +37,7 @@ def gaussian_blur(x: torch.Tensor, sigma: float) -> torch.Tensor:
     if sigma <= 1e-3:
         return x
     r = max(1, math.ceil(3 * sigma))
-    t = torch.arange(-r, r + 1, dtype=x.dtype)
+    t = torch.arange(-r, r + 1, dtype=x.dtype, device=x.device)
     k = torch.exp(-(t ** 2) / (2 * sigma ** 2))
     k = k / k.sum()
     c = x.shape[1]
@@ -57,7 +57,7 @@ def jpeg_real(x: torch.Tensor, quality: int) -> torch.Tensor:
         Image.fromarray(arr).save(buf, "JPEG", quality=int(quality))
         dec = np.asarray(Image.open(io.BytesIO(buf.getvalue())).convert("RGB"), dtype=np.float32) / 255.0
         out.append(torch.from_numpy(dec).permute(2, 0, 1))
-    return torch.stack(out).to(x.dtype)
+    return torch.stack(out).to(device=x.device, dtype=x.dtype)
 
 
 def _jpeg_st(x: torch.Tensor, rng: random.Random, qmin: int, qmax: int) -> torch.Tensor:
