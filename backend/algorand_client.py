@@ -472,3 +472,60 @@ def broadcast_fl_round(run_id: str, round_num: int, round_root: str,
 
     except Exception as e:
         return {"success": False, "error": _friendly_algo_error(e)}
+
+
+# ── 8. PhotoShield: anchor a photo or album note (additive, PHOTOSHIELD_DESIGN.md §6.7) ──
+#
+# Additive only: no existing function changes. A photo note is a 0-ALGO self-payment whose
+# note is compact JSON beginning with {"ps":1, (photoshield/chain/notes.py fixes the key
+# order). It NEVER calls the smart contract: the TEAL app has 64 global slots in total and
+# they belong to model registrations.
+
+PHOTO_NOTE_PREFIX = b'{"ps":1,'
+PHOTO_NOTE_MAX = 1024
+
+
+def broadcast_photo_anchor(note: dict, wait: bool = True) -> dict:
+    """Send one PhotoShield note. Returns the same envelope as broadcast_fl_round."""
+    try:
+        raw = json.dumps(note, separators=(",", ":"), ensure_ascii=True).encode("ascii")
+        if not raw.startswith(PHOTO_NOTE_PREFIX):
+            return {"success": False, "error": 'A photo note must start with {"ps":1,'}
+        if len(raw) > PHOTO_NOTE_MAX:
+            return {"success": False,
+                    "error": f"Note is {len(raw)} bytes; Algorand allows {PHOTO_NOTE_MAX}."}
+
+        info = client.account_info(ADDRESS)
+        if info.get("amount", 0) < 1000:
+            return {
+                "success": False,
+                "error": (f"Wallet empty! Fund {ADDRESS} at "
+                          "https://bank.testnet.algorand.network/"),
+            }
+
+        params = client.suggested_params()
+        txn = PaymentTxn(sender=ADDRESS, sp=params, receiver=ADDRESS, amt=0, note=raw)
+        signed = txn.sign(PRIVATE_KEY)
+        txid = client.send_transaction(signed)
+
+        confirmed_round = None
+        if wait:
+            for _ in range(15):
+                txinfo = client.pending_transaction_info(txid)
+                if txinfo.get("confirmed-round", 0) > 0:
+                    confirmed_round = txinfo["confirmed-round"]
+                    break
+                time.sleep(1)
+            if not confirmed_round:
+                return {"success": False, "error": "Tx sent but confirmation timed out."}
+
+        return {
+            "success": True,
+            "txid": txid,
+            "round": confirmed_round,
+            "fee": int(getattr(params, "min_fee", 1000)),
+            "bytes_written": len(raw),
+        }
+
+    except Exception as e:
+        return {"success": False, "error": _friendly_algo_error(e)}
