@@ -407,8 +407,9 @@ def e8(ns):
         for j, (other, b) in enumerate(imgs):              # unrelated photos, forced alignment
             if j == i:
                 continue
+            from ..origin.align import ASPECT_TOL
             method, rows = _e8_tiles(a, b, mode="resize") if abs(
-                a.shape[1] / a.shape[0] - b.shape[1] / b.shape[0]) <= 0.03 else _e8_tiles(
+                a.shape[1] / a.shape[0] - b.shape[1] / b.shape[0]) / (a.shape[1] / a.shape[0]) <= ASPECT_TOL else _e8_tiles(
                 a, np.asarray(__import__("PIL.Image", fromlist=["Image"]).fromarray(b).resize(
                     (a.shape[1], a.shape[0]))), mode="resize")
             recs.append({"kind": "unrelated", "image": name, "other": other, "transform": "resize",

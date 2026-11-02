@@ -771,8 +771,9 @@ A suspect is usually resized, re-encoded and often cropped or slightly rotated.
 1. ORB keypoints (OpenCV), Hamming matching with Lowe's ratio test, then a RANSAC
    **similarity** transform (rotation + uniform scale + translation, `estimateAffinePartial2D`).
    It needs at least 12 inliers. Unedited regions anchor the fit even when the face is replaced.
-2. Fallback: if the aspect ratios agree within 3 %, a plain resize. Otherwise the report is
-   refused ("cannot align").
+2. Fallback: if the aspect ratios agree within 1 % (same framing), a plain resize. Otherwise the
+   report is refused ("cannot align"). E2E testing showed a 2 % crop slipping through a 3 % tolerance
+   and misregistering every tile, hence 1 %.
 3. The suspect is warped into the original's frame together with a validity mask. A tile with less
    than 95 % coverage is `uncovered`.
 

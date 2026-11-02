@@ -200,7 +200,8 @@ def build_parser() -> argparse.ArgumentParser:
     o.add_argument("suspect")
     o.add_argument("--manifest", required=True, help="the manifest.json of the registration")
     o.add_argument("--out", required=True)
-    o.add_argument("--key", help="key file from `keygen` (the registering key) to sign the report")
+    o.add_argument("--key", help="the registering key: a `keygen` file or the browser's exported key backup "
+                                 "(passphrase from $PHOTOSHIELD_KEY_PASSPHRASE or a prompt)")
     o.add_argument("--calibration", help="threshold file (default photoshield/calibration.json)")
     o.add_argument("--align", choices=("auto", "features", "resize"), default="auto")
     o.add_argument("--include-original", action="store_true", help="put your original in the PDF too")

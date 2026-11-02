@@ -17,6 +17,7 @@ scikit-image>=0.22     # SSIM, and the public-domain sample photos used by tests
 requests>=2.31         # ledger rebuild (indexer)
 # Origin reports (v2): feature alignment of a suspect image to the original
 opencv-python-headless>=4.8
+cryptography>=41       # CLI: read the browser's encrypted key backup (AES-GCM)
 # Optional
 # lpips>=0.1           # LPIPS metric in E1, if wanted
 # E4/E5 (Colab GPU, installed by photoshield/experiments/colab_edit_test.ipynb):

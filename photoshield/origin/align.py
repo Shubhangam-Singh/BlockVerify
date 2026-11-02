@@ -3,7 +3,7 @@
 1. ORB keypoints + Hamming matching + Lowe's ratio test, then a RANSAC similarity transform
    (rotation, uniform scale, translation). Unedited regions anchor the fit even when part of the
    picture (a face, a background) was replaced.
-2. Fallback: a plain resize when the aspect ratios agree within 3 %.
+2. Fallback: a plain resize when the aspect ratios agree within 1 % (same framing).
 3. Otherwise: AlignError.
 
 Deterministic: OpenCV's RANSAC RNG is seeded before every call.
@@ -15,7 +15,7 @@ from typing import Optional
 import numpy as np
 
 MIN_INLIERS = 12
-ASPECT_TOL = 0.03
+ASPECT_TOL = 0.01          # same framing; a cropped copy goes through feature alignment
 FEATURE_SIDE = 1200          # detect features on a copy whose longer side is at most this
 
 

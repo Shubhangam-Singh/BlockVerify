@@ -3381,6 +3381,33 @@
       <div id="psVerResult" style="margin-top:.8rem;"></div>
     </div>
 
+    <!-- Origin report (PhotoShield v2, PHOTOSHIELD_DESIGN.md §15) -->
+    <div class="card" id="psOriginCard" style="margin-bottom:.9rem;">
+      <h2 style="margin:0 0 .4rem;"><span class="card-title-ico"><svg class="ico"><use href="#i-merkle"/></svg></span> Origin report <span class="tab-new" style="margin-left:.4rem;">New</span></h2>
+      <p class="subtitle">Found an edited copy of your photo, such as a face swap or an AI edit? Show which regions are still identical to the photo you anchored, and which were changed. Every region claim carries a Merkle proof against your registration. The report never contains your original.</p>
+      <div class="ps-row" style="margin-bottom:.7rem;">
+        <button class="btn" id="psOrMakeTab" aria-pressed="true" onclick="psOriginMode('make')">Make a report</button>
+        <button class="btn btn-sec" id="psOrCheckTab" aria-pressed="false" onclick="psOriginMode('check')">Check a report</button>
+      </div>
+      <div id="psOrMake">
+        <div class="file-drop" onclick="document.getElementById('psOrFiles').click()">
+          <div class="icon-wrap"><svg class="ico"><use href="#i-compare"/></svg></div>
+          <p>Drop your original photo and the suspect copy, plus manifest.json if you have it</p>
+        </div>
+        <input type="file" id="psOrFiles" multiple accept="image/*,.json,application/json" style="display:none" onchange="psOriginFiles(this)">
+        <div id="psOrMakeOut" style="margin-top:.7rem;"></div>
+        <div style="font-size:.74rem;color:var(--text-muted);margin-top:.5rem;">Both images are compared in this browser; nothing is uploaded. For a cropped or rotated copy use <code>python -m photoshield origin</code>, which aligns it automatically.</div>
+      </div>
+      <div id="psOrCheck" style="display:none;">
+        <div class="file-drop" onclick="document.getElementById('psOrCheckFiles').click()">
+          <div class="icon-wrap"><svg class="ico"><use href="#i-verify"/></svg></div>
+          <p>Drop an origin-report JSON, and the suspect image to bind it to that copy</p>
+        </div>
+        <input type="file" id="psOrCheckFiles" multiple accept=".json,application/json,image/*" style="display:none" onchange="psOriginCheckFiles(this)">
+        <div id="psOrCheckOut" style="margin-top:.7rem;"></div>
+      </div>
+    </div>
+
     <!-- My photos -->
     <div class="card" id="psMineCard" style="margin-bottom:.9rem;">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;">
@@ -3576,6 +3603,10 @@
           <div class="faq-item">
             <button class="faq-q" onclick="toggleFaq(this)">What is the cloak and how do I use it? <span class="faq-arrow">▼</span></button>
             <div class="faq-a">An invisible change to the pixels, computed on your own computer, that confuses the image encoder inside Stable Diffusion, so editors built on it produce damaged edits. Run <code>python -m photoshield protect photo.jpg --out shielded/ --eps 8 --steps 40</code>, post <code>shielded/cloaked.png</code>, and register it with the <em>Cloaked photo</em> mode by dropping <code>manifest.json</code>, the original and <code>cloaked.png</code>. It does not protect against closed models, and heavy processing can remove it.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">Someone posted an edited version of my photo. How do I prove it came from mine? <span class="faq-arrow">▼</span></button>
+            <div class="faq-a">Use <strong>Origin report</strong>.<br>1. Drop your original and the suspect copy, plus <code>manifest.json</code> if you are not logged in.<br>2. The page splits your photo into a grid of regions (committed when you registered it) and compares each one with the copy.<br>3. Green regions are still identical to what you anchored, and red ones were changed. When enough regions match, the verdict is <strong>Derived from your registered photo</strong>.<br>4. Download the signed report and give it to the platform or the police. Anyone can check it under <strong>Check a report</strong> without seeing your original.<br>The thresholds are measured on test photos, not guessed. For a cropped or rotated copy, run <code>python -m photoshield origin original.jpg copy.jpg --manifest manifest.json --out report/ --key my.pskey</code>. It only works for photos registered after region maps were added, and only for local edits: a global style change alters every region.</div>
           </div>
           <div class="faq-item">
             <button class="faq-q" onclick="toggleFaq(this)">I cleared my browser or changed device. Is my key gone? <span class="faq-arrow">▼</span></button>
@@ -8430,6 +8461,7 @@ const TOUR_STEPS = [
   { target: '#psPrivacy', chapter: 'Photo Shield', fallback: '#psRegCard', delay: 400, tab: 'photoshield', title: '🔒 Full or hash-only?', body: '<b>Full</b> puts the pHash on chain too, so re-compressed or resized copies are still recognised even after the server restarts. <b>Hash-only</b> keeps the pHash off chain for privacy: after a restart only exact copies match until you re-attach your <code>manifest.json</code> in <b>My photos</b>.', position: 'top' },
   { target: '#psRegBtn', chapter: 'Photo Shield', fallback: '#psRegCard', delay: 400, tab: 'photoshield', title: '⛓ Sign &amp; anchor', body: 'One click signs the fingerprints with your key, solves a small proof-of-work, and anchors them as an Algorand Testnet transaction. A <code>manifest.json</code> backup downloads automatically. Then press <b>Check on public ledger</b>: your browser fetches the transaction from the public indexer itself and confirms it, without trusting this server.', position: 'top' },
   { target: '#psVerCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '🔍 3. Check any photo', body: 'Anyone can drop a photo here. <b>EXACT</b> = byte-for-byte the registered file. <b>DERIVED</b> = very likely a re-compressed or resized copy. <b>SIMILAR</b> = possibly derived (heavier edit, crop, or a look-alike). <b>UNKNOWN</b> = not registered. The DERIVED/SIMILAR thresholds are <b>measured</b> on test photos, not guessed, and a perceptual match is evidence, not proof.', position: 'top' },
+  { target: '#psOriginCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '🧩 Origin report: was this fake made from my photo?', body: 'A deepfake changes part of a photo, so its fingerprint no longer matches. Drop your <b>original</b> and the <b>suspect copy</b> here: every region of the grid is compared, and the result shows which regions are still identical to the photo you anchored (<b style="color:#22c55e;">green</b>) and which were changed (<b style="color:#ef4444;">red</b>). Each region comes with a Merkle proof against your registration, the report is signed with your key, and it never contains your original. Anyone can check it under <b>Check a report</b>.', position: 'top' },
   { target: '#psMineCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '🗂 4. My photos', body: 'Everything you registered: download a <b>PDF certificate</b>, <b>prove ownership</b> (your browser signs a one-time challenge with your key), or <b>re-attach a manifest</b> to restore near-matching for hash-only photos after a server restart.', position: 'top' },
   { target: '#psLimitsCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '⚖ Honest limits', body: 'The cloak targets one open-source encoder: it gives <b>no</b> protection against closed models (Gemini, Grok, Midjourney), and heavy re-processing can remove it. First-to-register is not authorship, so <b>register before you post</b>. The provenance layer works whether or not the cloak survives.', position: 'top' },
   { target: '#tab-help', chapter: 'Done', tab: 'help', title: '🎉 Tour Complete!', body: 'You now know the full BlockVerify workflow. Register a model → get a Model ID → verify it anytime → all history is permanently on the blockchain. With <b>Federated</b>, you can prove who helped build a model in the first place, and with <b>Photo Shield</b>, that a photo is yours and when it existed. Ready to try it yourself?', position: 'bottom' }
@@ -10085,6 +10117,166 @@ function psHamming(a, b) {
   }
   return d;
 }
+// ═══ PhotoShield v2: region maps and origin reports (PHOTOSHIELD_DESIGN.md §15). ═══════════
+// Pure functions, extracted verbatim by photoshield/tests and run under Node against Python
+// (photoshield/provenance/regions.py, photoshield/origin/report.py). Same operations, same order.
+const PS_FLAT_RANGE = 10000;
+const PS_LEVEL_BASE = 1000.0;
+const PS_REGIONS_ALGO = 'tile-phash@1';
+const PS_ORIGIN_SCHEMA = 'photoshield/origin-report@1';
+const PS_ORIGIN = 'photoshield/origin@1|';
+function psGridFor(w, h) { const g = Math.min(8, Math.floor(Math.min(w, h) / 32)); return g >= 2 ? g : 0; }
+function psTileBoxes(w, h, g) {
+  const rows = [], cols = [], out = [];
+  for (let i = 0; i <= g; i++) { rows.push(Math.floor(i * h / g)); cols.push(Math.floor(i * w / g)); }
+  for (let r = 0; r < g; r++) for (let c = 0; c < g; c++) out.push([r, c, rows[r], rows[r + 1], cols[c], cols[c + 1]]);
+  return out;
+}
+function psTileNames(g) { const n = []; for (let r = 0; r < g; r++) for (let c = 0; c < g; c++) n.push('r' + r + 'c' + c); return n; }
+function psCropRGBA(w, rgba, y0, y1, x0, x1) {
+  const cw = x1 - x0, ch = y1 - y0, out = new Uint8ClampedArray(cw * ch * 4);
+  for (let y = 0; y < ch; y++) out.set(rgba.subarray(((y0 + y) * w + x0) * 4, ((y0 + y) * w + x1) * 4), y * cw * 4);
+  return out;
+}
+function psBinMeans(w, h, rgba) {
+  // The 32x32 bin means of psPhashFromRGBA (§7 steps 3-4), exposed for the region flags.
+  const rgb = psComposite(rgba, w * h);
+  const re = [], ce = [];
+  for (let i = 0; i <= 32; i++) { re.push(Math.floor(i * h / 32)); ce.push(Math.floor(i * w / 32)); }
+  const colBin = new Int32Array(w);
+  for (let j = 0; j < 32; j++) for (let x = ce[j]; x < ce[j + 1]; x++) colBin[x] = j;
+  const f = [];
+  for (let i = 0; i < 32; i++) {
+    const sums = new Array(32).fill(0);
+    for (let y = re[i]; y < re[i + 1]; y++) {
+      let p = y * w * 3;
+      for (let x = 0; x < w; x++, p += 3) sums[colBin[x]] += 299 * rgb[p] + 587 * rgb[p + 1] + 114 * rgb[p + 2];
+    }
+    const row = [];
+    for (let j = 0; j < 32; j++) row.push(sums[j] / ((re[i + 1] - re[i]) * (ce[j + 1] - ce[j])));
+    f.push(row);
+  }
+  return f;
+}
+function psTotalVariation(f) {
+  let tv = 0.0;
+  for (let i = 0; i < f.length; i++) { const row = f[i]; for (let j = 0; j < row.length - 1; j++) tv += Math.abs(row[j + 1] - row[j]); }
+  for (let i = 0; i < f.length - 1; i++) { const a = f[i], b = f[i + 1]; for (let j = 0; j < a.length; j++) tv += Math.abs(b[j] - a[j]); }
+  return tv;
+}
+function psDetailLevel(tv) { let k = 0; while (k < 40 && tv >= PS_LEVEL_BASE * Math.pow(2, k)) k++; return k; }
+function psTileValue(cw, ch, crop) {
+  const f = psBinMeans(cw, ch, crop);
+  let mn = Infinity, mx = -Infinity;
+  for (const row of f) for (const v of row) { if (v < mn) mn = v; if (v > mx) mx = v; }
+  return psPhashFromRGBA(cw, ch, crop) + ':' + ((mx - mn) >= PS_FLAT_RANGE ? 1 : 0) + ':' + psDetailLevel(psTotalVariation(f));
+}
+function psRegionValues(w, h, rgba) {
+  const g = psGridFor(w, h);
+  if (!g) return { grid: 0, values: [] };
+  return { grid: g, values: psTileBoxes(w, h, g).map(([r, c, y0, y1, x0, x1]) => psTileValue(x1 - x0, y1 - y0, psCropRGBA(w, rgba, y0, y1, x0, x1))) };
+}
+async function psMerkleLevelUp(level) {
+  if (level.length % 2) level.push(level[level.length - 1]);          // duplicate-last, as backend/app.py
+  const next = [];
+  for (let i = 0; i < level.length; i += 2) next.push(await bvSha256Hex(level[i] + level[i + 1]));
+  return next;
+}
+async function psRegionCommit(values, g) {
+  const names = psTileNames(g);
+  const leaves = [];
+  for (let i = 0; i < values.length; i++) leaves.push(await bvMerkleLeaf(i, names[i], values[i]));
+  let level = leaves.slice();
+  while (level.length > 1) level = await psMerkleLevelUp(level);
+  return { root: level[0], leaves };
+}
+async function psMerkleProof(leaves, index) {
+  const proof = [];
+  let level = leaves.slice(), idx = index;
+  while (level.length > 1) {
+    if (level.length % 2) level.push(level[level.length - 1]);
+    const sib = idx ^ 1;
+    proof.push({ hash: level[sib], right: sib > idx });
+    level = await psMerkleLevelUp(level);
+    idx = Math.floor(idx / 2);
+  }
+  return proof;
+}
+function psSplitValue(v) { const p = v.split(':'); return [p[0], p[1] === '1', parseInt(p[2], 10)]; }
+function psTileStatus(value, suspectValue, coverage, t) {
+  const [committed, textured, level] = psSplitValue(value);
+  if (suspectValue == null || coverage < 0.95) return [textured ? 'uncovered' : 'flat', null];
+  const [sh, , slevel] = psSplitValue(suspectValue);
+  const d = psHamming(committed, sh);
+  if (!textured) return ['flat', d];
+  if (d >= t.tau_alter || Math.abs(slevel - level) >= t.delta_level) return ['altered', d];
+  if (d <= t.tau_match) return ['match', d];
+  return ['uncertain', d];
+}
+function psOriginSummary(tiles, t) {
+  const s = { match: 0, altered: 0, uncertain: 0, uncovered: 0, flat: 0 };
+  for (const x of tiles) s[x.status] += 1;
+  s.verdict = s.match >= t.k_min ? 'DERIVED_FROM_REGISTERED' : 'NOT_SHOWN';
+  return s;
+}
+async function psOriginMessage(report) {
+  const core = Object.assign({}, report);
+  delete core.sig;
+  return PS_ORIGIN + await bvSha256Hex(psCanonical(core));
+}
+async function psVerifyOriginCore(report) {
+  // Everything that needs no network: digest, photo id, proofs, statuses, summary, signature.
+  const checks = [];
+  const add = (name, ok, detail) => { checks.push({ name, ok: !!ok, detail: detail || '' }); return !!ok; };
+  try {
+    add('schema', report.schema === PS_ORIGIN_SCHEMA, report.schema);
+    const man = report.photo.manifest;
+    const digest = await psDigestOf(man);
+    add('manifest digest', digest === report.photo.manifestDigest, digest);
+    add('photo id', (await psPhotoIdOf(digest)) === report.photo.photoId, report.photo.photoId);
+    const reg = man.regions || {}, g = report.grid, tiles = report.tiles;
+    add('region map', reg.algo === PS_REGIONS_ALGO && reg.grid === g && reg.n === tiles.length && tiles.length === g * g, g + 'x' + g);
+    const names = psTileNames(g);
+    let good = 0;
+    for (let i = 0; i < tiles.length; i++) {
+      const t = tiles[i];
+      if (t.i !== i || t.name !== names[i]) continue;
+      if ((await bvFoldProof(await bvMerkleLeaf(i, t.name, t.value), t.proof)) === reg.root) good++;
+    }
+    add('tile proofs fold to the anchored root', good === tiles.length, good + '/' + tiles.length + ' tiles');
+    const thr = report.thresholds;
+    let wrong = 0;
+    for (const t of tiles) {
+      const [st, d] = psTileStatus(t.value, t.suspect == null ? null : t.suspect, parseFloat(t.coverage), thr);
+      if (st !== t.status || (d !== null && d !== t.d)) wrong++;
+    }
+    add('tile statuses follow from the hashes', wrong === 0, wrong + ' inconsistent');
+    add('summary', psCanonical(psOriginSummary(tiles, thr)) === psCanonical(report.summary), report.summary.verdict);
+    if (report.sig) add('owner signature', await psVerifyRaw(report.pk, report.sig, await psOriginMessage(report)), String(report.pk).slice(0, 16));
+    else add('owner signature', false, 'the report is unsigned');
+    return { ok: checks.every(c => c.ok), checks, digest };
+  } catch (e) {
+    add('well-formed', false, String(e.message || e).slice(0, 200));
+    return { ok: false, checks, digest: null };
+  }
+}
+async function psBuildOriginReport(manifest, values, leaves, suspectValues, suspect, matrix, method, t, created) {
+  // suspectValues: tile values of the suspect already in the original's frame (resize method).
+  const g = manifest.regions.grid, names = psTileNames(g), tiles = [];
+  for (let i = 0; i < values.length; i++) {
+    const sv = suspectValues[i];
+    const [status, d] = psTileStatus(values[i], sv, 1.0, t);
+    tiles.push({ i, name: names[i], value: values[i], suspect: sv, d, coverage: '1.000', status, proof: await psMerkleProof(leaves, i) });
+  }
+  const digest = await psDigestOf(manifest);
+  return {
+    schema: PS_ORIGIN_SCHEMA, created,
+    photo: { photoId: await psPhotoIdOf(digest), manifestDigest: digest, manifest },
+    suspect, alignment: { method, matrix: matrix.map(v => v.toFixed(6)), inliers: 0 },
+    grid: g, thresholds: { tau_match: t.tau_match, tau_alter: t.tau_alter, delta_level: t.delta_level, k_min: t.k_min, source: t.source },
+    tiles, summary: psOriginSummary(tiles, t),
+  };
+}
 // ═══ PhotoShield tab (PHOTOSHIELD_DESIGN.md §9). Additive. ═══════════════════════════════
 // Pure helpers first (psCanonical, psDigestOf, psSignRaw, psVerifyRaw, psEncryptBackup,
 // psDecryptBackup): photoshield/tests extracts them verbatim and runs them under Node against
@@ -10311,7 +10503,7 @@ async function psHashImage(file) {
   const img = await psDecode(file);
   let phash = null, err = null;
   try { phash = psPhashFromRGBA(img.w, img.h, img.rgba); } catch (e) { err = e.message; }
-  return { sha256, phash, width: img.w, height: img.h, error: err };
+  return { sha256, phash, width: img.w, height: img.h, error: err, rgba: img.rgba };
 }
 async function psMinePow(value, label) {
   let nonce = 0;
@@ -10337,7 +10529,7 @@ function psModeChanged() {
   _psPrepared = null;
 }
 function psCheckRow(ok, text) {
-  return `<div>${ok ? '<span class="ps-pill ps-ok">✔</span>' : '<span class="ps-pill ps-bad">✘</span>'} ${text}</div>`;
+  return `<div>${ok === null ? '<span class="ps-pill ps-warn">!</span>' : ok ? '<span class="ps-pill ps-ok">✔</span>' : '<span class="ps-pill ps-bad">✘</span>'} ${text}</div>`;
 }
 async function psRegFilesChosen(input) {
   const files = Array.from(input.files || []);
@@ -10355,8 +10547,16 @@ async function psRegFilesChosen(input) {
       const title = (document.getElementById('psTitle').value || img.name.replace(/\.[^.]+$/, '')).replace(/[<>\x00-\x1f\x7f]/g, '').slice(0, 120) || 'photo';
       document.getElementById('psTitle').value = title;
       _psPrepared = { kind: 'plain', original: { sha256: h.sha256, phash: h.phash, width: h.width, height: h.height } };
+      const rv = psRegionValues(h.width, h.height, h.rgba);
+      let regRow = psCheckRow(null, 'Too small for a region map, so no origin reports for this photo');
+      if (rv.grid) {
+        const { root } = await psRegionCommit(rv.values, rv.grid);
+        _psPrepared.regions = { algo: PS_REGIONS_ALGO, grid: rv.grid, n: rv.grid * rv.grid, root };
+        regRow = psCheckRow(true, 'Region map ' + rv.grid + '×' + rv.grid + ' committed <span class="ps-mono">' + root.slice(0, 16) + '…</span> (enables origin reports)');
+      }
       box.innerHTML = `<div class="ps-box">${psCheckRow(true, 'SHA-256 <span class="ps-mono">' + h.sha256 + '</span>')}
         ${psCheckRow(true, 'pHash <span class="ps-mono">' + h.phash + '</span> · ' + h.width + '×' + h.height)}
+        ${regRow}
         <div style="color:var(--text-muted);font-size:.74rem;margin-top:.3rem;">A manifest.json backup is downloaded when you register. Keep it.</div></div>`;
       return;
     }
@@ -10376,7 +10576,13 @@ async function psRegFilesChosen(input) {
       rows.push(psCheckRow(!!clk, 'Cloaked PNG matches manifest SHA-256' + (clk ? ' (' + escapeHtml(clk.f.name) + ')' : '')));
       rows.push(psCheckRow(!!clk && clk.h.phash === man.cloaked.phash, 'Cloaked pHash recomputed here equals the manifest'));
     }
-    const ok = !!orig && orig.h.phash === man.original.phash && (!man.cloaked || (!!clk && clk.h.phash === man.cloaked.phash));
+    let regOk = true;
+    if (man.regions && orig) {
+      const rv = psRegionValues(orig.h.width, orig.h.height, orig.h.rgba);
+      regOk = rv.grid === man.regions.grid && (await psRegionCommit(rv.values, rv.grid)).root === man.regions.root;
+      rows.push(psCheckRow(regOk, 'Region map recomputed here equals the manifest (enables origin reports)'));
+    }
+    const ok = regOk && !!orig && orig.h.phash === man.original.phash && (!man.cloaked || (!!clk && clk.h.phash === man.cloaked.phash));
     const ck = man.cloak || {};
     box.innerHTML = `<div class="ps-box">${rows.join('')}
       <div style="margin-top:.4rem;font-size:.76rem;color:var(--text-muted);">Cloak: ${escapeHtml(ck.model || '-')} · ε ${escapeHtml(String(ck.eps ?? '-'))}/255 · ${escapeHtml(String(ck.steps ?? '-'))} steps · PSNR ${escapeHtml(ck.psnr || '-')} dB · SSIM ${escapeHtml(ck.ssim || '-')}</div></div>`;
@@ -10399,6 +10605,7 @@ async function psRegister() {
     if (_psPrepared.kind === 'plain') {
       const title = (document.getElementById('psTitle').value || 'photo').replace(/[<>\x00-\x1f\x7f]/g, '').slice(0, 120) || 'photo';
       man = { schema: 'photoshield/manifest@1', title, original: _psPrepared.original, cloaked: null, cloak: null };
+      if (_psPrepared.regions) man.regions = _psPrepared.regions;
     }
     const digest = await psDigestOf(man);
     const sig = await psSignRaw(key, PS_REGISTER + digest);
@@ -10561,6 +10768,197 @@ async function psLoadStatus() {
       <span class="ps-pill ${d.nearMatch === 'calibrated' ? 'ps-ok' : 'ps-warn'}">near match: ${escapeHtml(d.nearMatch)}${d.calibration ? ` (τ ${d.calibration.tau_near}/${d.calibration.tau_far})` : ''}</span>
       <span class="ps-pill">anchor: ${escapeHtml(d.anchorBackend)}</span>`;
   } catch (e) { box.innerHTML = '<span class="ps-pill ps-bad">API unreachable (the free backend may be waking up; retry in a minute)</span>'; }
+}
+// ── origin reports (PhotoShield v2, design §15): UI ───────────────────────────────────────────
+const PS_TILE_COLORS = { match: '22,163,74', altered: '220,38,38', uncertain: '234,179,8', uncovered: '100,116,139' };
+function psOriginMode(m) {
+  document.getElementById('psOrMake').style.display = m === 'make' ? '' : 'none';
+  document.getElementById('psOrCheck').style.display = m === 'check' ? '' : 'none';
+  document.getElementById('psOrMakeTab').setAttribute('aria-pressed', m === 'make');
+  document.getElementById('psOrCheckTab').setAttribute('aria-pressed', m === 'check');
+  document.getElementById('psOrMakeTab').className = m === 'make' ? 'btn' : 'btn btn-sec';
+  document.getElementById('psOrCheckTab').className = m === 'check' ? 'btn' : 'btn btn-sec';
+}
+async function psDecodeScaled(file, w, h, matrix) {
+  // Draw the suspect into the original's w x h frame. matrix = [a,b,tx,c,d,ty] maps suspect -> original.
+  const bmp = await createImageBitmap(file, { colorSpaceConversion: 'none', premultiplyAlpha: 'none', imageOrientation: 'from-image' }).catch(() => createImageBitmap(file));
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d', { willReadFrequently: true, colorSpace: 'srgb' });
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+  const m = matrix || [w / bmp.width, 0, 0, 0, h / bmp.height, 0];
+  ctx.setTransform(m[0], m[3], m[1], m[4], m[2], m[5]);
+  ctx.drawImage(bmp, 0, 0);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  return { w, h, rgba: ctx.getImageData(0, 0, w, h).data, canvas: c, sw: bmp.width, sh: bmp.height };
+}
+function psDrawTiles(canvas, tiles, g) {
+  const ctx = canvas.getContext('2d');
+  for (const [i, box] of psTileBoxes(canvas.width, canvas.height, g).entries()) {
+    const [, , y0, y1, x0, x1] = box, st = tiles[i].status, col = PS_TILE_COLORS[st];
+    if (!col) continue;
+    if (st === 'uncovered') {
+      ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, x1 - x0, y1 - y0); ctx.clip();
+      ctx.strokeStyle = `rgba(${col},.75)`; ctx.lineWidth = 2;
+      for (let k = x0 - (y1 - y0); k < x1; k += 8) { ctx.beginPath(); ctx.moveTo(k, y1); ctx.lineTo(k + (y1 - y0), y0); ctx.stroke(); }
+      ctx.restore();
+    } else { ctx.fillStyle = `rgba(${col},${st === 'match' ? .26 : .48})`; ctx.fillRect(x0, y0, x1 - x0, y1 - y0); }
+    ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1; ctx.strokeRect(x0 + .5, y0 + .5, x1 - x0 - 1, y1 - y0 - 1);
+  }
+}
+function psOriginLegend() {
+  const it = [['match', 'matches your registered photo'], ['altered', 'altered'], ['uncertain', 'uncertain'], ['uncovered', 'not in the copy']];
+  return '<div class="ps-row" style="font-size:.74rem;margin-top:.4rem;">' + it.map(([k, t]) =>
+    `<span style="display:inline-flex;align-items:center;gap:.3rem;"><span style="width:12px;height:12px;border-radius:3px;background:rgb(${PS_TILE_COLORS[k]});display:inline-block;"></span>${t}</span>`).join('') +
+    '<span style="color:var(--text-muted);">no colour = flat region (no claim)</span></div>';
+}
+function psOriginVerdictHtml(s) {
+  const ok = s.verdict === 'DERIVED_FROM_REGISTERED';
+  return `<div><span class="ps-verdict" style="color:${ok ? '#22c55e' : '#94a3b8'};border:1px solid ${ok ? '#22c55e' : '#94a3b8'};">${ok ? 'DERIVED FROM YOUR REGISTERED PHOTO' : 'NOT SHOWN'}</span></div>
+    <div style="margin-top:.45rem;font-size:.84rem;">${s.match} regions match · ${s.altered} altered · ${s.uncertain} uncertain · ${s.uncovered} not in the copy · ${s.flat} flat</div>
+    ${ok ? '' : '<div style="margin-top:.3rem;font-size:.76rem;color:var(--text-muted);">Too few matching regions to show a link. That is not proof that the copy is unrelated: heavy global edits change every region.</div>'}`;
+}
+let _psOriginLast = null;
+async function psOriginFiles(input) {
+  const files = Array.from(input.files || []);
+  input.value = '';
+  const out = document.getElementById('psOrMakeOut');
+  _psOriginLast = null;
+  if (!files.length) return;
+  const say = (html) => { out.innerHTML = html; };
+  try {
+    const mf = files.find(f => /\.json$/i.test(f.name) || f.type === 'application/json');
+    const imgs = files.filter(f => f !== mf);
+    if (imgs.length !== 2) { say(psCheckRow(false, 'Drop exactly two images: your original and the suspect copy (plus manifest.json if you have it).')); return; }
+    say('<div class="ps-box">Hashing both images in this browser…</div>');
+    const shas = await Promise.all(imgs.map(f => computeHash(f)));
+    let man = mf ? JSON.parse(await mf.text()) : null, oi = -1, rec = null;
+    if (man) oi = shas.indexOf(man.original && man.original.sha256);
+    else {
+      for (let k = 0; k < 2 && oi < 0; k++) {
+        const v = await (await fetch(`${API}/photo/verify`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sha256: shas[k] }) })).json();
+        if (v.verdict === 'EXACT_ORIGINAL') { oi = k; rec = v; }
+      }
+    }
+    if (oi < 0) { say(psCheckRow(false, man ? 'Neither image matches the manifest\'s original SHA-256.' : 'Neither image is a registered original. Add your manifest.json, or register the original first.')); return; }
+    const origFile = imgs[oi], susFile = imgs[1 - oi];
+    const orig = await psDecode(origFile);
+    if (!man) {                       // rebuild the manifest from the owner's registry record
+      if (!_authUser) { say(psCheckRow(false, 'Log in as the owner, or drop the manifest.json you downloaded at registration.')); return; }
+      const r = await (await apiFetch(`${API}/photo/${encodeURIComponent(rec.photoId)}`)).json();
+      const p = r.photo || {};
+      if (!p.original || !p.original.phash) { say(psCheckRow(false, 'Only the owner can rebuild the manifest from the registry. Drop manifest.json instead.')); return; }
+      man = { schema: 'photoshield/manifest@1', title: p.title, original: { sha256: p.original.sha256, phash: p.original.phash, width: orig.w, height: orig.h },
+              cloaked: p.cloaked ? { sha256: p.cloaked.sha256, phash: p.cloaked.phash, format: 'png' } : null, cloak: p.cloak || null };
+      if (p.regions) man.regions = p.regions;
+      if ((await psDigestOf(man)) !== p.manifestDigest) { say(psCheckRow(false, 'Could not rebuild the manifest exactly. Drop the manifest.json you downloaded at registration.')); return; }
+    }
+    if (!man.regions) { say(psCheckRow(false, 'This photo was registered before region maps existed, so it has no region commitment. Register it again to make origin reports.')); return; }
+    const st = await (await fetch(`${API}/photo/stats`)).json();
+    const t = st.calibration && st.calibration.tile;
+    if (!t) { say(psCheckRow(false, 'This server has no calibrated tile thresholds (calibration.json "tile"), so it cannot make origin reports.')); return; }
+    say('<div class="ps-box">Recomputing your region map…</div>');
+    const rv = psRegionValues(orig.w, orig.h, orig.rgba);
+    const { root, leaves } = await psRegionCommit(rv.values, rv.grid);
+    const rows = [psCheckRow(root === man.regions.root, 'Your original folds to the region map in the anchored manifest')];
+    if (root !== man.regions.root) { say('<div class="ps-box">' + rows.join('') + '</div>'); return; }
+    const probe = await createImageBitmap(susFile);
+    const aspectOk = Math.abs(orig.w / orig.h - probe.width / probe.height) / (orig.w / orig.h) <= 0.01;   // same framing (photoshield/origin/align.py ASPECT_TOL)
+    if (!aspectOk) {
+      say('<div class="ps-box">' + rows.join('') + psCheckRow(false, 'The copy is cropped or rotated, which this page cannot align.') +
+        `<div style="margin-top:.4rem;font-size:.78rem;">Make the report on your computer, which aligns it automatically:<div class="ps-mono" style="margin-top:.3rem;background:var(--fv-inset);padding:.45rem .6rem;border-radius:6px;">python -m photoshield origin ${escapeHtml(origFile.name)} ${escapeHtml(susFile.name)} --manifest manifest.json --out report/ --key my.pskey</div>Then check the result here under <b>Check a report</b>.</div></div>`);
+      return;
+    }
+    say('<div class="ps-box">' + rows.join('') + '<div>Comparing every region…</div></div>');
+    const sus = await psDecodeScaled(susFile, orig.w, orig.h);
+    const sv = psTileBoxes(orig.w, orig.h, rv.grid).map(([r, c, y0, y1, x0, x1]) => psTileValue(x1 - x0, y1 - y0, psCropRGBA(orig.w, sus.rgba, y0, y1, x0, x1)));
+    const matrix = [orig.w / sus.sw, 0, 0, 0, orig.h / sus.sh, 0];
+    let report = await psBuildOriginReport(man, rv.values, leaves, sv, { sha256: shas[1 - oi], width: sus.sw, height: sus.sh },
+      matrix, 'resize', t, Math.floor(Date.now() / 1000));
+    const key = await psLoadKey();
+    let keyNote = '';
+    if (key) {
+      report.pk = key.pkHex;
+      report.sig = await psSignRaw(key, await psOriginMessage(report));
+      const pid = report.photo.photoId;
+      const pr = await (await fetch(`${API}/photo/proof/${encodeURIComponent(pid)}`)).json().catch(() => ({}));
+      if (pr.ownerPk && pr.ownerPk !== key.pkHex) keyNote = '<div class="ps-banner">This browser\'s key is not the key that registered the photo, so verifiers will reject the signature. Import the registering key first.</div>';
+    } else keyNote = '<div class="ps-banner">No signing key in this browser: the report is unsigned and verifiers will flag it. Import the key that registered the photo.</div>';
+    _psOriginLast = { report, canvas: sus.canvas };
+    psDrawTiles(sus.canvas, report.tiles, report.grid);
+    sus.canvas.style.cssText = 'max-width:100%;height:auto;border-radius:10px;border:1px solid var(--border);margin-top:.6rem;';
+    say(`<div class="ps-box">${rows.join('')}${psOriginVerdictHtml(report.summary)}${keyNote}</div>`);
+    out.appendChild(sus.canvas);
+    out.insertAdjacentHTML('beforeend', psOriginLegend() + `<div class="ps-row" style="margin-top:.6rem;">
+      <button class="btn" onclick="psOriginDownload()">Download report (JSON)</button>
+      <button class="btn btn-sec" onclick="psOriginDownloadPng()">Download heatmap (PNG)</button></div>
+      <div style="font-size:.74rem;color:var(--text-muted);margin-top:.4rem;">The report holds hashes and proofs, never your original. Anyone can check it under <b>Check a report</b>, or with <code>python -m photoshield origin-verify</code>.</div>`);
+  } catch (e) { say(psCheckRow(false, escapeHtml(e.message || String(e)))); }
+}
+function psOriginDownload() {
+  if (!_psOriginLast) return;
+  const r = _psOriginLast.report;
+  psDownload(`origin-report-${r.photo.photoId}-${r.suspect.sha256.slice(0, 8)}.json`, JSON.stringify(r, null, 1));
+}
+function psOriginDownloadPng() {
+  if (!_psOriginLast) return;
+  const a = document.createElement('a');
+  a.href = _psOriginLast.canvas.toDataURL('image/png');
+  a.download = `origin-heatmap-${_psOriginLast.report.photo.photoId}.png`;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+async function psOriginCheckFiles(input) {
+  const files = Array.from(input.files || []);
+  input.value = '';
+  const out = document.getElementById('psOrCheckOut');
+  if (!files.length) return;
+  const lines = [];
+  const step = (ok, t) => lines.push(`<div>${ok === null ? '<span class="ps-pill ps-warn">!</span>' : ok ? '<span class="ps-pill ps-ok">✔</span>' : '<span class="ps-pill ps-bad">✘</span>'} ${t}</div>`);
+  try {
+    const rf = files.find(f => /\.json$/i.test(f.name) || f.type === 'application/json');
+    const img = files.find(f => f !== rf && f.type.startsWith('image/'));
+    if (!rf) { out.innerHTML = psCheckRow(false, 'Drop the origin-report JSON (and, optionally, the suspect image).'); return; }
+    out.innerHTML = '<div class="ps-box">Checking the report in this browser…</div>';
+    const report = JSON.parse(await rf.text());
+    const core = await psVerifyOriginCore(report);
+    for (const c of core.checks) step(c.ok, escapeHtml(c.name) + (c.detail ? ` <span style="color:var(--text-muted);">(${escapeHtml(c.detail)})</span>` : ''));
+    let ok = core.ok;
+    const pid = report.photo && report.photo.photoId;
+    const p = await (await fetch(`${API}/photo/proof/${encodeURIComponent(pid || '')}`)).json().catch(() => ({}));
+    if (!p.success) { step(false, 'The photo is not in this registry'); ok = false; }
+    else {
+      const m1 = p.manifestDigest === core.digest, k1 = p.ownerPk === report.pk;
+      step(m1, 'The registry anchored this manifest digest'); step(k1, 'The report is signed by the key that registered the photo');
+      ok = ok && m1 && k1;
+      if (p.indexerUrl) {
+        const tx = (await (await fetch(p.indexerUrl)).json()).transaction || {};
+        const note = JSON.parse(atob(tx.note || ''));
+        let a1;
+        if (p.mode === 'album') a1 = (await bvFoldProof(await bvMerkleLeaf(p.index, pid, core.digest), p.proof)) === note.pmr && note.pk === report.pk;
+        else a1 = note.md === core.digest && note.pk === report.pk;
+        step(a1, `Read the anchor directly from the public Algorand indexer (round ${escapeHtml(String(tx['confirmed-round']))})`);
+        ok = ok && a1;
+        if (a1) step(true, '<b>TRUSTLESS ✓</b>: the anchor was confirmed from the public ledger itself');
+      } else step(null, '<b>SERVER-TRUSTED</b>: this anchor is on a local or mock chain, so there is no public ledger to read');
+    }
+    let canvas = null;
+    if (img) {
+      const sha = await computeHash(img);
+      const b1 = sha === (report.suspect && report.suspect.sha256);
+      step(b1, 'The image you dropped is the suspect this report is about');
+      ok = ok && b1;
+      if (b1) {
+        const mo = report.photo.manifest.original;
+        const sus = await psDecodeScaled(img, mo.width, mo.height, report.alignment.matrix.map(Number));
+        psDrawTiles(sus.canvas, report.tiles, report.grid);
+        canvas = sus.canvas;
+      }
+    } else step(null, 'No suspect image given, so the report is not yet bound to a specific copy');
+    out.innerHTML = `<div class="ps-box"><div style="margin-bottom:.4rem;"><span class="ps-verdict" style="color:${ok ? '#22c55e' : '#ef4444'};border:1px solid ${ok ? '#22c55e' : '#ef4444'};">${ok ? 'REPORT VALID' : 'REPORT INVALID'}</span></div>
+      ${ok ? psOriginVerdictHtml(report.summary) : ''}<div class="ps-steps" style="margin-top:.5rem;">${lines.join('')}</div>
+      <div style="font-size:.74rem;color:var(--text-muted);margin-top:.4rem;">The regional comparison itself can be re-run by anyone with the suspect image: <code>python -m photoshield origin-verify report.json suspect.jpg --recheck</code>.</div></div>`;
+    if (canvas) { canvas.style.cssText = 'max-width:100%;height:auto;border-radius:10px;border:1px solid var(--border);margin-top:.6rem;'; out.appendChild(canvas); out.insertAdjacentHTML('beforeend', psOriginLegend()); }
+  } catch (e) { out.innerHTML = psCheckRow(false, escapeHtml(e.message || String(e))); }
 }
 function loadPhotoShield() { psLoadStatus(); psRenderKey(); psLoadMine(); }
 </script>

@@ -140,10 +140,23 @@ def _load_calibration():
             c = json.load(f)
         near, far = int(c["tau_near"]), int(c["tau_far"])
         if 0 <= near <= far <= 64:
-            return {"tau_near": near, "tau_far": far, "source": os.path.basename(CALIBRATION_FILE),
-                    "fpr_target": c.get("fpr_target"), "dataset": c.get("dataset")}
+            out = {"tau_near": near, "tau_far": far, "source": os.path.basename(CALIBRATION_FILE),
+                   "fpr_target": c.get("fpr_target"), "dataset": c.get("dataset")}
+            out["tile"] = _tile_calibration(c.get("tile"))     # origin reports (design §15.4)
+            return out
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
         pass
+    return None
+
+
+def _tile_calibration(t):
+    try:
+        out = {k: int(t[k]) for k in ("tau_match", "tau_alter", "delta_level", "k_min")}
+    except (KeyError, TypeError, ValueError):
+        return None
+    if 0 <= out["tau_match"] < out["tau_alter"] <= 64 and out["delta_level"] >= 1 and out["k_min"] >= 1:
+        out["source"] = os.path.basename(CALIBRATION_FILE)
+        return out
     return None
 
 
@@ -325,6 +338,7 @@ def _public(r, requester=None):
     out["cloaked"] = {"sha256": r["cloaked"]["sha256"]} if r.get("cloaked") else None
     out["hasPhash"] = bool(r["original"].get("phash"))
     out["cloak"] = r.get("cloak")
+    out["regions"] = r.get("regions")          # region-map commitment (root only, no tile values)
     out["ownerPkFp"] = S.pk_fingerprint(r["ownerPk"])
     out["ownerPk"] = r["ownerPk"]
     out["indexerUrl"] = _indexer_url(r.get("algoTxId"))
@@ -360,7 +374,7 @@ def _record(man, digest, pk, sig, privacy, user, anchor, album=None):
             "original": {"sha256": o["sha256"], "phash": o["phash"],
                          "width": o["width"], "height": o["height"]},
             "cloaked": {"sha256": c["sha256"], "phash": c["phash"]} if c else None,
-            "cloak": man.get("cloak"),
+            "cloak": man.get("cloak"), "regions": man.get("regions"),
             "albumId": album and album["albumId"], "albumIndex": album and album["index"],
             "albumProof": album and album["proof"],
             "algoTxId": anchor.get("txid"), "algoRound": anchor.get("round"),
@@ -610,7 +624,7 @@ def rehydrate():
                              height=man["original"]["height"])
         if man.get("cloaked") and r.get("cloaked"):
             r["cloaked"]["phash"] = man["cloaked"]["phash"]
-        r.update(title=man["title"], cloak=man.get("cloak"), source="rehydrate")
+        r.update(title=man["title"], cloak=man.get("cloak"), regions=man.get("regions"), source="rehydrate")
         _reindex()
         _save_db()
         return jsonify({"success": True, "photoId": r["photoId"],
@@ -774,6 +788,10 @@ def photo_certificate(photo_id):
         ck = r["cloak"]
         field("CLOAK", f"{ck.get('model')} · eps {ck.get('eps')}/255 · {ck.get('steps')} steps · "
                        f"PSNR {ck.get('psnr', '-')} dB")
+    if r.get("regions"):
+        rg = r["regions"]
+        field("REGION MAP (origin reports)", f"{rg.get('grid')}x{rg.get('grid')} tiles · root {rg.get('root')}",
+              mono=True)
     link = (f"https://lora.algokit.io/testnet/transaction/{r['algoTxId']}"
             if _indexer_url(r.get("algoTxId")) else "https://lora.algokit.io/testnet")
     w = qr.QrCodeWidget(link)
