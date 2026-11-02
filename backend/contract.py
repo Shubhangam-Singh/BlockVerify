@@ -61,6 +61,11 @@ def save_app_id(app_id: int, txid: str) -> None:
 
 
 def load_app_id() -> int | None:
+    # ALGO_APP_ID lets a host with an ephemeral disk reuse the deployed contract
+    # instead of deploying a new one after every restart.
+    env_id = (os.environ.get("ALGO_APP_ID") or "").strip()
+    if env_id.isdigit():
+        return int(env_id)
     if os.path.exists(APP_ID_FILE):
         with open(APP_ID_FILE) as f:
             return json.load(f).get("app_id")

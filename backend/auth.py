@@ -43,6 +43,10 @@ def _lock_down(path: str) -> None:
         pass  # non-POSIX filesystem (e.g. Windows) — best effort only
 
 def _load_secret() -> str:
+    # JWT_SECRET keeps tokens valid across restarts on hosts with an ephemeral disk.
+    env_secret = (os.environ.get("JWT_SECRET") or "").strip()
+    if env_secret:
+        return env_secret
     if os.path.exists(SECRET_FILE):
         _lock_down(SECRET_FILE)          # ensure existing key is owner-only
         with open(SECRET_FILE) as f:

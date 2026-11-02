@@ -49,7 +49,28 @@ def _friendly_algo_error(exc) -> str:
 WALLET_FILE = os.path.join(os.path.dirname(__file__), "data", "algo_wallet.json")
 
 
+def _wallet_from_env():
+    """Load the server wallet from the environment, if configured.
+
+    Hosts with an ephemeral disk (e.g. Render's free tier) lose backend/data/ on every
+    restart, which would otherwise generate a fresh, unfunded wallet each boot.
+    ALGO_MNEMONIC (25 words) or ALGO_PRIVATE_KEY (base64, as stored in
+    algo_wallet.json) keeps one funded wallet across restarts.
+    """
+    mnemonic_words = (os.environ.get("ALGO_MNEMONIC") or "").strip()
+    private_key = (os.environ.get("ALGO_PRIVATE_KEY") or "").strip()
+    if mnemonic_words:
+        from algosdk import mnemonic
+        private_key = mnemonic.to_private_key(mnemonic_words)
+    if not private_key:
+        return None
+    return account.address_from_private_key(private_key), private_key
+
+
 def get_or_create_wallet():
+    from_env = _wallet_from_env()
+    if from_env:
+        return from_env
     if os.path.exists(WALLET_FILE):
         with open(WALLET_FILE) as f:
             data = json.load(f)
@@ -358,6 +379,17 @@ def get_transaction_ledger(limit: int = 50) -> dict:
                 try:
                     decoded = base64.b64decode(raw_note).decode("utf-8")
                     meta = json.loads(decoded)
+                    if isinstance(meta, dict) and meta.get("ps") == 1:
+                        # PhotoShield note (additive branch): label it instead of showing a
+                        # blank model row. Model notes take the unchanged path below.
+                        entry["action"]     = "photo-anchor"
+                        entry["photo_id"]   = meta.get("id") or meta.get("pmr", "")[:16]
+                        entry["model_name"] = "PhotoShield album" if "pmr" in meta else "PhotoShield photo"
+                        entry["model_id"]   = entry["photo_id"]
+                        entry["model_hash"] = (meta.get("o") or meta.get("pmr") or "")[:16] + "..."
+                        entry["owner"]      = (meta.get("pk") or "")[:16]
+                        ledger.append(entry)
+                        continue
                     entry["model_name"] = meta.get("name", "")
                     entry["model_id"]   = meta.get("id", "")
                     entry["model_hash"] = meta.get("hash", "")[:16] + "..."
@@ -447,6 +479,63 @@ def broadcast_fl_round(run_id: str, round_num: int, round_root: str,
             "round": confirmed_round,
             "fee": int(getattr(params, "min_fee", 1000)),
             "bytes_written": len(note),
+        }
+
+    except Exception as e:
+        return {"success": False, "error": _friendly_algo_error(e)}
+
+
+# ── 8. PhotoShield: anchor a photo or album note (additive, PHOTOSHIELD_DESIGN.md §6.7) ──
+#
+# Additive only: no existing function changes. A photo note is a 0-ALGO self-payment whose
+# note is compact JSON beginning with {"ps":1, (photoshield/chain/notes.py fixes the key
+# order). It NEVER calls the smart contract: the TEAL app has 64 global slots in total and
+# they belong to model registrations.
+
+PHOTO_NOTE_PREFIX = b'{"ps":1,'
+PHOTO_NOTE_MAX = 1024
+
+
+def broadcast_photo_anchor(note: dict, wait: bool = True) -> dict:
+    """Send one PhotoShield note. Returns the same envelope as broadcast_fl_round."""
+    try:
+        raw = json.dumps(note, separators=(",", ":"), ensure_ascii=True).encode("ascii")
+        if not raw.startswith(PHOTO_NOTE_PREFIX):
+            return {"success": False, "error": 'A photo note must start with {"ps":1,'}
+        if len(raw) > PHOTO_NOTE_MAX:
+            return {"success": False,
+                    "error": f"Note is {len(raw)} bytes; Algorand allows {PHOTO_NOTE_MAX}."}
+
+        info = client.account_info(ADDRESS)
+        if info.get("amount", 0) < 1000:
+            return {
+                "success": False,
+                "error": (f"Wallet empty! Fund {ADDRESS} at "
+                          "https://bank.testnet.algorand.network/"),
+            }
+
+        params = client.suggested_params()
+        txn = PaymentTxn(sender=ADDRESS, sp=params, receiver=ADDRESS, amt=0, note=raw)
+        signed = txn.sign(PRIVATE_KEY)
+        txid = client.send_transaction(signed)
+
+        confirmed_round = None
+        if wait:
+            for _ in range(15):
+                txinfo = client.pending_transaction_info(txid)
+                if txinfo.get("confirmed-round", 0) > 0:
+                    confirmed_round = txinfo["confirmed-round"]
+                    break
+                time.sleep(1)
+            if not confirmed_round:
+                return {"success": False, "error": "Tx sent but confirmation timed out."}
+
+        return {
+            "success": True,
+            "txid": txid,
+            "round": confirmed_round,
+            "fee": int(getattr(params, "min_fee", 1000)),
+            "bytes_written": len(raw),
         }
 
     except Exception as e:

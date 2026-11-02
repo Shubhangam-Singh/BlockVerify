@@ -1,0 +1,22 @@
+# PhotoShield dependencies. Install from the repository root:
+#
+#   pip install --break-system-packages --index-url https://download.pytorch.org/whl/cpu torch torchvision
+#   pip install --break-system-packages -r photoshield/requirements.txt
+#
+# torch/torchvision come from the CPU-only index on the laptop (CLAUDE.md A2).
+#
+# Provenance (P1): hashing, manifests, signatures
+numpy>=1.24
+Pillow>=10.0
+PyNaCl>=1.5            # Ed25519 verify; already present on the backend via py-algorand-sdk
+# Cloak (P2): encoders, PGD, metrics
+torch>=2.0             # CPU index on the laptop
+torchvision>=0.15      # resnet50 encoder, image transforms
+diffusers>=0.27        # sdvae encoder (stabilityai/sd-vae-ft-mse); downloads ~330 MB on first use
+scikit-image>=0.22     # SSIM, and the public-domain sample photos used by tests and E6
+requests>=2.31         # ledger rebuild (indexer)
+# Optional
+# lpips>=0.1           # LPIPS metric in E1, if wanted
+# E4/E5 (Colab GPU, installed by photoshield/experiments/colab_edit_test.ipynb):
+#   transformers accelerate lpips   (InstructPix2Pix via diffusers, CLIP, LPIPS)
+# E6b (browser JPEG gap): node + playwright with Chromium

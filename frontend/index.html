@@ -2060,6 +2060,7 @@
       <button class="tab" onclick="switchTab('proof',this)"><span class="tab-icon"><svg class="ico"><use href="#i-proof"/></svg></span><span class="tab-label">Chain Proof</span></button>
       <button class="tab" onclick="switchTab('ledger',this)"><span class="tab-icon"><svg class="ico"><use href="#i-ledger"/></svg></span><span class="tab-label">Ledger</span></button>
       <button class="tab tab-flagship" onclick="switchTab('federated',this)"><span class="tab-icon"><svg class="ico"><use href="#i-globe"/></svg></span><span class="tab-label">Federated</span><span class="tab-new">NEW</span></button>
+      <button class="tab tab-flagship" onclick="switchTab('photoshield',this)"><span class="tab-icon"><svg class="ico"><use href="#i-shield"/></svg></span><span class="tab-label">Photo Shield</span><span class="tab-new">NEW</span></button>
       <div class="sidebar-label">System</div>
       <button class="tab" onclick="switchTab('help',this)"><span class="tab-icon"><svg class="ico"><use href="#i-help"/></svg></span><span class="tab-label">Help & FAQ</span></button>
     </nav>
@@ -2749,6 +2750,124 @@
     </div>
   </div>
 
+  <!-- Photo Shield (PHOTOSHIELD_DESIGN.md §9). Additive tab. Photos are hashed in this browser; only hashes leave it. -->
+  <div class="tab-content" id="tab-photoshield">
+    <style>
+      .ps-row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+      .ps-pill{display:inline-block;padding:.18rem .55rem;border-radius:999px;font-size:.72rem;font-weight:700;border:1px solid var(--border);color:var(--text-muted)}
+      .ps-ok{color:#22c55e;border-color:rgba(34,197,94,.45)} .ps-bad{color:#ef4444;border-color:rgba(239,68,68,.45)}
+      .ps-warn{color:#eab308;border-color:rgba(234,179,8,.45)} .ps-info{color:#22d3ee;border-color:rgba(34,211,238,.45)}
+      .ps-box{border:1px solid var(--border);border-radius:10px;padding:.8rem 1rem;font-size:.82rem;line-height:1.6;background:rgba(255,255,255,.02)}
+      .ps-mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.74rem;word-break:break-all}
+      .ps-banner{border:1px solid rgba(234,179,8,.5);background:rgba(234,179,8,.08);color:var(--text);border-radius:10px;padding:.7rem .9rem;font-size:.8rem;margin-top:.7rem}
+      .ps-verdict{font-size:1.05rem;font-weight:800;letter-spacing:.02em;padding:.35rem .8rem;border-radius:8px;display:inline-block}
+      .ps-bar{height:8px;border-radius:4px;background:var(--surface2);overflow:hidden;margin-top:.35rem}
+      .ps-bar>div{height:100%}
+      .ps-table{width:100%;border-collapse:collapse;font-size:.78rem}
+      .ps-table th,.ps-table td{padding:.45rem .5rem;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+      .ps-steps div{padding:.2rem 0}
+      .ps-sel{background:var(--surface-solid);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.8rem}
+    </style>
+
+    <div class="card" style="margin-bottom:.9rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem;">
+        <h2 style="margin:0;"><span class="card-title-ico"><svg class="ico"><use href="#i-shield"/></svg></span> Photo Shield</h2>
+        <div class="ps-row">
+          <button class="btn btn-sec" style="font-size:.76rem;padding:.4rem .8rem;" onclick="loadPhotoShield()"><svg class="ico"><use href="#i-refresh"/></svg> Refresh</button>
+          <button class="btn btn-sec" style="font-size:.76rem;padding:.4rem .8rem;" onclick="psToggle('psHelp')">What is this?</button>
+        </div>
+      </div>
+      <p class="subtitle" style="margin-top:.5rem;">Prove that a photo is yours and existed at a given time, and make AI edits of it harder. Your photo is hashed <b>in this browser</b>; only fingerprints are sent.</p>
+      <div id="psHelp" class="ps-box" style="display:none;margin-top:.6rem;">
+        <b>Two layers.</b> <b style="color:#22d3ee;">Provenance</b>: the photo's SHA-256 and a perceptual hash (pHash) are signed with <i>your</i> key and anchored on Algorand. Anyone can later check a copy against the public ledger, without trusting this server. The pHash still recognises copies that were re-compressed or resized.
+        <b style="color:#a78bfa;">Cloak</b> (optional, runs on your own computer): a tiny, invisible perturbation that makes Stable-Diffusion-based editors produce damaged edits. It raises the cost of misuse on some open models. It does not stop closed models.
+        <div style="margin-top:.5rem;color:var(--text-muted);font-size:.76rem;">Design and limits: <code>PHOTOSHIELD_DESIGN.md</code>, <code>photoshield/docs/WHAT_IS_PHOTOSHIELD.md</code></div>
+      </div>
+      <div id="psStatus" class="ps-row" style="margin-top:.6rem;"></div>
+    </div>
+
+    <!-- Owner key -->
+    <div class="card" style="margin-bottom:.9rem;" id="psKeyCard">
+      <h2 style="margin:0 0 .4rem;"><span class="card-title-ico"><svg class="ico"><use href="#i-lock"/></svg></span> Your signing key</h2>
+      <p class="subtitle">Every registration is signed with an Ed25519 key that lives only in this browser. The server never sees it.</p>
+      <div id="psKeyInfo" class="ps-box">Checking for a key…</div>
+      <div class="ps-row" style="margin-top:.7rem;">
+        <button class="btn" id="psKeyGenBtn" onclick="psGenerateKey()">Create key</button>
+        <button class="btn btn-sec" onclick="psExportKey()">Export backup</button>
+        <label class="btn btn-sec" style="cursor:pointer;">Import backup<input type="file" accept=".json,application/json" style="display:none" onchange="psImportKey(this)"></label>
+        <label style="font-size:.74rem;color:var(--text-muted);display:flex;gap:.35rem;align-items:center;"><input type="checkbox" id="psPlainExport"> I understand an unencrypted backup can be stolen</label>
+      </div>
+      <div id="psKeyWarn" class="ps-banner" style="display:none;">&#9888; Your signing key exists only in this browser. Clearing site data, a private window or another device loses it, and with it the ability to prove that your registrations are yours. <b>Export a backup now.</b></div>
+    </div>
+
+    <!-- Register -->
+    <div class="card" style="margin-bottom:.9rem;">
+      <h2 style="margin:0 0 .4rem;"><span class="card-title-ico"><svg class="ico"><use href="#i-register"/></svg></span> Register a photo</h2>
+      <div class="ps-row" style="margin-bottom:.6rem;">
+        <label style="font-size:.8rem;"><input type="radio" name="psMode" value="plain" checked onchange="psModeChanged()"> Provenance only (any photo)</label>
+        <label style="font-size:.8rem;"><input type="radio" name="psMode" value="cloaked" onchange="psModeChanged()"> Cloaked photo (from the local tool)</label>
+      </div>
+      <div id="psCliBox" class="ps-box" style="display:none;margin-bottom:.7rem;">
+        Cloak on your own computer first. Nothing is uploaded:
+        <div class="ps-mono" style="margin-top:.35rem;background:var(--fv-inset);padding:.45rem .6rem;border-radius:6px;">python -m photoshield protect photo.jpg --out shielded/ --eps 8 --steps 40</div>
+        Then drop <b>shielded/manifest.json</b>, your <b>original photo</b> and <b>shielded/cloaked.png</b> below. This page re-hashes both images and checks them against the manifest before anything is sent.
+      </div>
+      <div class="file-drop" onclick="document.getElementById('psRegFiles').click()">
+        <div class="icon-wrap"><svg class="ico"><use href="#i-upload"/></svg></div>
+        <p id="psRegDropText">Click or drop a photo</p>
+        <div class="file-name" id="psRegFN"></div>
+      </div>
+      <input type="file" id="psRegFiles" multiple accept="image/*,.json,application/json" style="display:none" onchange="psRegFilesChosen(this)">
+      <div id="psRegChecks" style="margin-top:.6rem;"></div>
+      <div class="fg" style="margin-top:.6rem;"><label>Title</label><input type="text" id="psTitle" maxlength="120" placeholder="e.g. Profile photo, November 2026"></div>
+      <div class="fg"><label>Privacy</label>
+        <select id="psPrivacy" class="ps-sel">
+          <option value="full">Full: pHash on chain (copies still recognised after a server restart)</option>
+          <option value="hash-only">Hash-only: no pHash on chain (after a restart only exact copies match, unless you re-attach your manifest)</option>
+        </select>
+      </div>
+      <button class="btn" id="psRegBtn" onclick="psRegister()">Sign &amp; anchor</button>
+      <div style="font-size:.74rem;color:var(--text-muted);margin-top:.5rem;">Register <b>before</b> you post a photo: first-to-register is what the ledger records, not who took it.</div>
+      <div id="psRegResult" style="margin-top:.8rem;"></div>
+    </div>
+
+    <!-- Verify -->
+    <div class="card" style="margin-bottom:.9rem;">
+      <h2 style="margin:0 0 .4rem;"><span class="card-title-ico"><svg class="ico"><use href="#i-verify"/></svg></span> Check a photo</h2>
+      <p class="subtitle">Drop any image. Its fingerprints are computed here and compared with the registry, then you can check the anchor on the public ledger yourself.</p>
+      <div class="file-drop" onclick="document.getElementById('psVerFile').click()">
+        <div class="icon-wrap"><svg class="ico"><use href="#i-search"/></svg></div>
+        <p>Click or drop an image to check</p>
+        <div class="file-name" id="psVerFN"></div>
+      </div>
+      <input type="file" id="psVerFile" accept="image/*" style="display:none" onchange="psVerifyFile(this)">
+      <div id="psVerResult" style="margin-top:.8rem;"></div>
+    </div>
+
+    <!-- My photos -->
+    <div class="card" style="margin-bottom:.9rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;">
+        <h2 style="margin:0;"><span class="card-title-ico"><svg class="ico"><use href="#i-models"/></svg></span> My photos</h2>
+        <label class="btn btn-sec" style="cursor:pointer;font-size:.76rem;padding:.4rem .8rem;">Re-attach manifest<input type="file" accept=".json,application/json" style="display:none" onchange="psRehydrate(this)"></label>
+      </div>
+      <p class="subtitle">The server holds no pixels. If it restarted, hash-only photos match exactly only until you re-attach their <code>manifest.json</code>.</p>
+      <div id="psMine" style="overflow-x:auto;"></div>
+    </div>
+
+    <!-- Honest limits (always visible) -->
+    <div class="card" style="margin-bottom:.9rem;border-color:rgba(234,179,8,.35);">
+      <h2 style="margin:0 0 .4rem;">Honest limits</h2>
+      <ul style="font-size:.8rem;line-height:1.7;margin:0;padding-left:1.1rem;color:var(--text);">
+        <li>The cloak targets <b>one</b> encoder. It gives <b>no</b> protection against closed models (Grok, Gemini, Midjourney), and re-encoding, resizing, denoising or diffusion purification can weaken or remove it.</li>
+        <li>Provenance proves that these fingerprints existed at a time, signed by a key. It does not stop a fake from spreading, and platforms do not check it automatically.</li>
+        <li>A perceptual match is <b>evidence, not proof</b>: similar photos can collide, heavy edits or crops evade it, and an adversary can deliberately evade pHash.</li>
+        <li>First-to-register is not authorship. Register before posting.</li>
+        <li>Losing your key loses the ability to prove control of past registrations. Back it up.</li>
+        <li>Use it on photos you own.</li>
+      </ul>
+    </div>
+  </div>
+
   <div class="tab-content" id="tab-help">
     <div class="card">
       <h2><span class="card-title-ico"><svg class="ico"><use href="#i-help"/></svg></span> Help &amp; Quick Start</h2>
@@ -2815,6 +2934,10 @@
           <div class="faq-item">
             <button class="faq-q" onclick="toggleFaq(this)">What is BlockVerify? <span class="faq-arrow">▼</span></button>
             <div class="faq-a">BlockVerify is an AI model integrity platform powered by the <strong>Algorand Testnet</strong> — a public, globally distributed blockchain. Every registration and verification is broadcast as an immutable transaction on the live Algorand network. If someone tampers with the model file, the hash won't match and you'll know immediately.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">What does Photo Shield do, and what can it not do? <span class="faq-arrow">▼</span></button>
+            <div class="faq-a"><strong>Photo Shield</strong> anchors your photo's fingerprints (SHA-256 and a perceptual hash) on Algorand, signed with a key held only in your browser, so you can later show the photo existed under your key at that time and check whether a circulating copy derives from it. The optional local cloak makes edits by Stable-Diffusion-based tools worse. It does <strong>not</strong> protect against closed models, it can be removed by heavy processing, and a perceptual match is evidence, not proof. Your photo is never uploaded: only hashes are.</div>
           </div>
           <div class="faq-item">
             <button class="faq-q" onclick="toggleFaq(this)">Do I need to create an account? <span class="faq-arrow">▼</span></button>
@@ -3034,7 +3157,7 @@
 <script>
 const API = window.location.hostname === 'localhost' || window.location.hostname === '0.0.0.0'
   ? 'http://localhost:5000/api'
-  : 'https://blockverify-backend-4xug.onrender.com/api';
+  : 'https://blockverify-api-0ojc.onrender.com/api';
 const hashes = {};
 const layerHashesMap = {};
 const layerDataMap = {};   // raw per-layer weight arrays — stays client-side, used for forensic analysis
@@ -3244,7 +3367,7 @@ function setLoading(btnId, loading, label) {
 }
 
 let _tabHashLock = false;
-const _TAB_IDS = ['register','verify','compare','versions','audit','alerts','models','analytics','registry','explorer','proof','ledger','federated','help'];
+const _TAB_IDS = ['register','verify','compare','versions','audit','alerts','models','analytics','registry','explorer','proof','ledger','federated','photoshield','help'];
 
 function switchTab(name, btn) {
   if (!_TAB_IDS.includes(name)) return;
@@ -3267,6 +3390,7 @@ function switchTab(name, btn) {
   if (name === 'alerts' && typeof markAlertsRead === 'function') markAlertsRead();
   if (name === 'analytics' && typeof loadAnalytics === 'function') loadAnalytics();
   if (name === 'federated' && typeof loadFederated === 'function') { loadFederated(); flVizInit(); }
+  if (name === 'photoshield' && typeof loadPhotoShield === 'function') loadPhotoShield();
   if (name === 'compare' && typeof initCmpOrbit === 'function') {
     initCmpOrbit();
     if (document.getElementById('cmp3dCard').style.display !== 'none') startCmpAuto();
@@ -7732,6 +7856,8 @@ const TOUR_STEPS = [
   { target: '#flStats', chapter: 'Federated learning', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '📊 Reading a Training Run', body: 'Pick any run from the dropdown at the top. These cards summarise it: how accurate the shared model got, how many malicious participants were caught, and how many honest ones were wrongly excluded — the price of the defence.', position: 'bottom' },
   { target: '#flGridWrap', chapter: 'Federated learning', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '🛡 Who Was Trusted, Round by Round', body: 'One square per participant per round. <b style="color:#22c55e;">Bright green</b> = a malicious participant correctly caught. <b style="color:#ef4444;">Red</b> = one that slipped through. <b style="color:#eab308;">Amber</b> = an honest participant wrongly excluded. Malicious rows are labelled, so you can see at a glance whether the defence worked.', position: 'top' },
   { target: '#flRoundsTable', chapter: 'Federated learning', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '🔗 Proving It Without Trusting Us', body: 'Each round is fingerprinted and written to the blockchain, so nobody — including this server — can rewrite history afterwards. Click <b>Verify proof</b> and your browser re-derives that fingerprint itself and checks it against the public ledger. If we lied, the check fails.', position: 'top' },
+  { target: '#tab-photoshield', chapter: 'Photo Shield', delay: 300, tab: 'photoshield', title: '🛡 Step 6 — Photo Shield', body: 'The same idea for <b>your photos</b>. A photo is hashed in your browser (SHA-256 plus a perceptual hash that survives re-compression), signed with a key that never leaves this browser, and anchored on Algorand. Anyone can later check a copy against the public ledger. Optionally, a local tool adds an invisible cloak that makes Stable-Diffusion edits worse. It cannot stop closed models, and this tab says so.', position: 'bottom' },
+  { target: '#psKeyCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '🔑 Your Key, Your Proof', body: 'Registrations are signed by <b>your</b> key, not the server\'s. Export an encrypted backup: clearing site data or switching device loses the key, and with it the ability to prove later registrations are yours.', position: 'bottom' },
   { target: '#tab-help', chapter: 'Done', tab: 'help', title: '🎉 Tour Complete!', body: 'You now know the full BlockVerify workflow. Register a model → get a Model ID → verify it anytime → all history is permanently on the blockchain. And with <b>Federated</b>, you can prove who helped build a model in the first place. Ready to try it yourself?', position: 'bottom' }
 ];
 
@@ -9319,6 +9445,577 @@ function stopNetworkPolling() {
   
   setTimeout(nextCredit, names[0].time);
 })();
+</script>
+
+<!-- ═══ PhotoShield core (PHOTOSHIELD_DESIGN.md §7). Tests extract these functions verbatim. ═══ -->
+<script>
+// GENERATED table: python3 -m photoshield.provenance.gen_dct_table --js
+const PS_DCT_COS = [
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [0.99879545620517241,0.98917650996478101,0.97003125319454397,0.94154406518302081,0.90398929312344334,0.85772861000027212,0.80320753148064494,0.74095112535495911,0.67155895484701833,0.59569930449243347,0.51410274419322166,0.4275550934302822,0.33688985339222005,0.24298017990326398,0.14673047445536175,0.049067674327418126,-0.049067674327418008,-0.14673047445536164,-0.24298017990326387,-0.33688985339221994,-0.42755509343028186,-0.51410274419322166,-0.59569930449243336,-0.67155895484701844,-0.74095112535495888,-0.80320753148064483,-0.85772861000027201,-0.90398929312344334,-0.9415440651830207,-0.97003125319454397,-0.98917650996478101,-0.99879545620517241],
+  [0.99518472667219693,0.95694033573220882,0.88192126434835505,0.77301045336273699,0.63439328416364549,0.47139673682599781,0.29028467725446233,0.09801714032956077,-0.098017140329560645,-0.29028467725446216,-0.4713967368259977,-0.63439328416364538,-0.77301045336273699,-0.88192126434835494,-0.95694033573220882,-0.99518472667219682,-0.99518472667219693,-0.95694033573220894,-0.88192126434835505,-0.7730104533627371,-0.63439328416364593,-0.47139673682599786,-0.29028467725446244,-0.098017140329560451,0.09801714032956009,0.29028467725446205,0.47139673682599759,0.6343932841636456,0.77301045336273666,0.88192126434835483,0.95694033573220882,0.99518472667219693],
+  [0.98917650996478101,0.90398929312344334,0.74095112535495911,0.51410274419322166,0.24298017990326398,-0.049067674327417786,-0.33688985339222016,-0.59569930449243291,-0.80320753148064505,-0.9415440651830207,-0.99879545620517241,-0.97003125319454397,-0.85772861000027212,-0.67155895484701866,-0.42755509343028247,-0.1467304744553623,0.14673047445536194,0.42755509343028214,0.67155895484701833,0.85772861000027201,0.97003125319454375,0.99879545620517241,0.9415440651830207,0.80320753148064472,0.59569930449243402,0.33688985339222088,0.049067674327418154,-0.24298017990326451,-0.51410274419322144,-0.74095112535495933,-0.90398929312344312,-0.98917650996478101],
+  [0.98078528040323043,0.83146961230254524,0.55557023301960229,0.19509032201612833,-0.19509032201612819,-0.55557023301960196,-0.83146961230254535,-0.98078528040323043,-0.98078528040323043,-0.83146961230254546,-0.55557023301960218,-0.19509032201612866,0.1950903220161283,0.55557023301960184,0.83146961230254524,0.98078528040323032,0.98078528040323043,0.83146961230254546,0.55557023301960229,0.19509032201612878,-0.1950903220161273,-0.55557023301960173,-0.83146961230254512,-0.98078528040323054,-0.98078528040323065,-0.83146961230254557,-0.5555702330196024,-0.19509032201612803,0.19509032201612719,0.55557023301960162,0.83146961230254512,0.98078528040323043],
+  [0.97003125319454397,0.74095112535495911,0.33688985339222005,-0.14673047445536164,-0.59569930449243336,-0.90398929312344312,-0.99879545620517241,-0.85772861000027212,-0.51410274419322177,-0.049067674327418029,0.42755509343028214,0.8032075314806445,0.98917650996478101,0.94154406518302092,0.67155895484701811,0.24298017990326423,-0.24298017990326451,-0.67155895484701766,-0.94154406518302047,-0.98917650996478113,-0.80320753148064539,-0.4275550934302827,0.049067674327417418,0.51410274419322277,0.8577286100002719,0.99879545620517241,0.90398929312344345,0.59569930449243347,0.14673047445536355,-0.33688985339221844,-0.74095112535495922,-0.97003125319454409],
+  [0.95694033573220882,0.63439328416364549,0.09801714032956077,-0.4713967368259977,-0.88192126434835494,-0.99518472667219693,-0.77301045336273688,-0.29028467725446327,0.29028467725446294,0.77301045336273666,0.99518472667219693,0.88192126434835505,0.47139673682599798,-0.098017140329559965,-0.63439328416364482,-0.95694033573220849,-0.95694033573220871,-0.63439328416364538,-0.098017140329560687,0.47139673682599736,0.88192126434835394,0.99518472667219693,0.77301045336273655,0.29028467725446194,-0.29028467725446089,-0.77301045336273577,-0.99518472667219682,-0.88192126434835438,-0.47139673682599831,0.098017140329561367,0.63439328416364449,0.95694033573220894],
+  [0.94154406518302081,0.51410274419322166,-0.14673047445536164,-0.74095112535495888,-0.99879545620517241,-0.80320753148064528,-0.24298017990326326,0.42755509343028136,0.90398929312344345,0.97003125319454431,0.59569930449243325,-0.049067674327417543,-0.67155895484701889,-0.98917650996478068,-0.85772861000027234,-0.33688985339222099,0.33688985339222022,0.8577286100002719,0.9891765099647809,0.67155895484701955,0.049067674327420173,-0.59569930449243258,-0.97003125319454409,-0.90398929312344345,-0.42755509343028453,0.24298017990326243,0.80320753148064472,0.99879545620517241,0.74095112535496011,0.14673047445536203,-0.51410274419322255,-0.94154406518302147]
+];
+const PS_DCT_S = [0.17677669529663689,0.25,0.25,0.25,0.25,0.25,0.25,0.25];
+// PhotoShield canonical pHash — browser side of PHOTOSHIELD_DESIGN.md §7.
+// This block is copied VERBATIM into frontend/index.html; the tests extract it from there.
+// Identical operations, in identical order, to photoshield/provenance/hashing.py.
+function psComposite(rgba, n) {
+  // §7 step 2: alpha over white, exact integers. Returns a Uint8Array of n*3 RGB values.
+  const out = new Uint8Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    const a = rgba[i * 4 + 3];
+    for (let c = 0; c < 3; c++) {
+      const v = rgba[i * 4 + c];
+      out[i * 3 + c] = Math.floor((v * a + 255 * (255 - a) + 127) / 255);
+    }
+  }
+  return out;
+}
+function psPhashFromRGBA(w, h, rgba) {
+  // rgba: Uint8ClampedArray/Uint8Array of length w*h*4 (canvas getImageData order).
+  if (w < 32 || h < 32) throw new Error('UNHASHABLE: image is ' + w + 'x' + h + '; pHash needs at least 32x32');
+  const rgb = psComposite(rgba, w * h);
+  const re = [], ce = [];
+  for (let i = 0; i <= 32; i++) { re.push(Math.floor(i * h / 32)); ce.push(Math.floor(i * w / 32)); }
+  // §7 steps 3-4: integer luma (x1000), exact integer bin sums, one division per bin.
+  const colBin = new Int32Array(w);
+  for (let j = 0; j < 32; j++) for (let x = ce[j]; x < ce[j + 1]; x++) colBin[x] = j;
+  const f = [];
+  for (let i = 0; i < 32; i++) {
+    const sums = new Array(32).fill(0);
+    for (let y = re[i]; y < re[i + 1]; y++) {
+      let p = y * w * 3;
+      for (let x = 0; x < w; x++, p += 3) sums[colBin[x]] += 299 * rgb[p] + 587 * rgb[p + 1] + 114 * rgb[p + 2];
+    }
+    const row = [];
+    for (let j = 0; j < 32; j++) row.push(sums[j] / ((re[i + 1] - re[i]) * (ce[j + 1] - ce[j])));
+    f.push(row);
+  }
+  // §7 step 5: separable DCT-II, fixed order, table literals only.
+  const g = [];
+  for (let x = 0; x < 32; x++) {
+    const gx = [], fx = f[x];
+    for (let v = 0; v < 8; v++) {
+      const cv = PS_DCT_COS[v]; let acc = 0.0;
+      for (let y = 0; y < 32; y++) acc += cv[y] * fx[y];
+      gx.push(acc);
+    }
+    g.push(gx);
+  }
+  const F = [];
+  for (let u = 0; u < 8; u++) {
+    const cu = PS_DCT_COS[u], Fu = [];
+    for (let v = 0; v < 8; v++) {
+      let acc = 0.0;
+      for (let x = 0; x < 32; x++) acc += cu[x] * g[x][v];
+      Fu.push((PS_DCT_S[u] * PS_DCT_S[v]) * acc);
+    }
+    F.push(Fu);
+  }
+  // §7 step 6: median of the 63 non-DC coefficients, bits MSB-first, DC bit 0.
+  const coeffs = [];
+  for (let u = 0; u < 8; u++) for (let v = 0; v < 8; v++) if (u || v) coeffs.push(F[u][v]);
+  coeffs.sort((a, b) => a - b);
+  const median = coeffs[31];
+  let hex = '';
+  for (let u = 0; u < 8; u++) {
+    let byte = 0;
+    for (let v = 0; v < 8; v++) byte = (byte << 1) | ((u || v) && F[u][v] > median ? 1 : 0);
+    hex += byte.toString(16).padStart(2, '0');
+  }
+  return hex;
+}
+function psHamming(a, b) {
+  let d = 0;
+  for (let i = 0; i < a.length; i++) {
+    let x = parseInt(a[i], 16) ^ parseInt(b[i], 16);
+    while (x) { d += x & 1; x >>= 1; }
+  }
+  return d;
+}
+// ═══ PhotoShield tab (PHOTOSHIELD_DESIGN.md §9). Additive. ═══════════════════════════════
+// Pure helpers first (psCanonical, psDigestOf, psSignRaw, psVerifyRaw, psEncryptBackup,
+// psDecryptBackup): photoshield/tests extracts them verbatim and runs them under Node against
+// the Python implementation. UI functions follow.
+
+const PS_REGISTER = 'photoshield/register@1|';
+const PS_ALBUM = 'photoshield/album@1|';
+const PS_PROVE = 'photoshield/prove@1|';
+const PS_PKCS8_PREFIX = '302e020100300506032b657004220420';   // Ed25519 PKCS#8 header (RFC 8410)
+const PS_KDF_ITER = 600000;
+
+function psHex(bytes) { return Array.from(new Uint8Array(bytes)).map(b => b.toString(16).padStart(2, '0')).join(''); }
+function psUnhex(h) { const o = new Uint8Array(h.length / 2); for (let i = 0; i < o.length; i++) o[i] = parseInt(h.substr(i * 2, 2), 16); return o; }
+function psB64(bytes) { let s = ''; const b = new Uint8Array(bytes); for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return btoa(s); }
+function psUnb64(s) { const r = atob(s); const o = new Uint8Array(r.length); for (let i = 0; i < r.length; i++) o[i] = r.charCodeAt(i); return o; }
+
+function psCanonical(v) {
+  // Python: json.dumps(sort_keys=True, separators=(',',':'), ensure_ascii=False). No floats.
+  if (v === null || typeof v === 'boolean' || typeof v === 'string') return JSON.stringify(v);
+  if (typeof v === 'number') {
+    if (!Number.isInteger(v)) throw new Error('floats are not allowed in a manifest');
+    return JSON.stringify(v);
+  }
+  if (Array.isArray(v)) return '[' + v.map(psCanonical).join(',') + ']';
+  const keys = Object.keys(v).sort();
+  return '{' + keys.map(k => JSON.stringify(k) + ':' + psCanonical(v[k])).join(',') + '}';
+}
+async function psDigestOf(manifest) { return bvSha256Hex(psCanonical(manifest)); }
+async function psPhotoIdOf(digest) { return (await bvSha256Hex('ps-id|' + digest)).slice(0, 16); }
+
+async function psSignRaw(key, message) {
+  // key: {impl: 'webcrypto', privateKey} or {impl: 'nacl', seed: Uint8Array}
+  const msg = new TextEncoder().encode(message);
+  if (key.impl === 'webcrypto') return psHex(await crypto.subtle.sign({ name: 'Ed25519' }, key.privateKey, msg));
+  const kp = nacl.sign.keyPair.fromSeed(key.seed);
+  return psHex(nacl.sign.detached(msg, kp.secretKey));
+}
+async function psVerifyRaw(pkHex, sigHex, message) {
+  const msg = new TextEncoder().encode(message);
+  try {
+    if (await psHasWebEd25519()) {
+      const pub = await crypto.subtle.importKey('raw', psUnhex(pkHex), { name: 'Ed25519' }, false, ['verify']);
+      return await crypto.subtle.verify({ name: 'Ed25519' }, pub, psUnhex(sigHex), msg);
+    }
+    await psLoadNacl();
+    return nacl.sign.detached.verify(msg, psUnhex(sigHex), psUnhex(pkHex));
+  } catch (e) { return false; }
+}
+let _psWebEd = null;
+async function psHasWebEd25519() {
+  if (_psWebEd !== null) return _psWebEd;
+  try { await crypto.subtle.generateKey({ name: 'Ed25519' }, false, ['sign', 'verify']); _psWebEd = true; }
+  catch (e) { _psWebEd = false; }
+  return _psWebEd;
+}
+async function psPkcs8Of(key) {
+  if (key.impl === 'webcrypto') return new Uint8Array(await crypto.subtle.exportKey('pkcs8', key.privateKey));
+  return psUnhex(PS_PKCS8_PREFIX + psHex(key.seed));
+}
+async function psKeyFromPkcs8(pkcs8) {
+  // Returns {impl, privateKey|seed, pkHex}. The seed is the last 32 bytes of an Ed25519 PKCS#8.
+  if (psHex(pkcs8).slice(0, PS_PKCS8_PREFIX.length) !== PS_PKCS8_PREFIX || pkcs8.length !== 48)
+    throw new Error('not an Ed25519 PKCS#8 key');
+  if (await psHasWebEd25519()) {
+    const privateKey = await crypto.subtle.importKey('pkcs8', pkcs8, { name: 'Ed25519' }, true, ['sign']);
+    const jwk = await crypto.subtle.exportKey('jwk', privateKey);
+    const x = jwk.x.replace(/-/g, '+').replace(/_/g, '/');
+    return { impl: 'webcrypto', privateKey, pkHex: psHex(psUnb64(x + '='.repeat((4 - x.length % 4) % 4))) };
+  }
+  await psLoadNacl();
+  const seed = pkcs8.slice(16);
+  return { impl: 'nacl', seed, pkHex: psHex(nacl.sign.keyPair.fromSeed(seed).publicKey) };
+}
+async function psEncryptBackup(key, pkHex, passphrase) {
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+  const aes = await crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: PS_KDF_ITER },
+    base, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, aes, await psPkcs8Of(key));
+  return { schema: 'photoshield/key-backup@1', alg: 'Ed25519', publicKeyHex: pkHex,
+           encryptedPrivateKey: psB64(ct), cipher: 'AES-GCM', iv: psB64(iv),
+           kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: PS_KDF_ITER, salt: psB64(salt) },
+           createdAt: new Date().toISOString() };
+}
+async function psDecryptBackup(backup, passphrase) {
+  if (!backup || backup.schema !== 'photoshield/key-backup@1') throw new Error('not a PhotoShield key backup');
+  let pkcs8;
+  if (backup.privateKeyPkcs8) pkcs8 = psUnb64(backup.privateKeyPkcs8);
+  else {
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+    const aes = await crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt: psUnb64(backup.kdf.salt),
+      iterations: backup.kdf.iterations }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    try { pkcs8 = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: psUnb64(backup.iv) }, aes, psUnb64(backup.encryptedPrivateKey))); }
+    catch (e) { throw new Error('Wrong passphrase or damaged backup.'); }
+  }
+  const key = await psKeyFromPkcs8(pkcs8);
+  if (key.pkHex !== backup.publicKeyHex) throw new Error('Backup is inconsistent: its key does not match its public key.');
+  return key;
+}
+
+// ── key storage (IndexedDB, per browser and per origin) ─────────────────────────────────────
+let _psKey = null;
+function psLoadNacl() {
+  if (typeof nacl !== 'undefined') return Promise.resolve();
+  return loadScript('https://cdnjs.cloudflare.com/ajax/libs/tweetnacl/1.0.3/nacl-fast.min.js');
+}
+function psIdb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('photoshield-keys', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('keys');
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function psIdbGet() {
+  const db = await psIdb();
+  return new Promise((res, rej) => { const q = db.transaction('keys').objectStore('keys').get('current'); q.onsuccess = () => res(q.result || null); q.onerror = () => rej(q.error); });
+}
+async function psIdbPut(v) {
+  const db = await psIdb();
+  return new Promise((res, rej) => { const t = db.transaction('keys', 'readwrite'); t.objectStore('keys').put(v, 'current'); t.oncomplete = () => res(); t.onerror = () => rej(t.error); });
+}
+async function psLoadKey() {
+  if (_psKey) return _psKey;
+  try { _psKey = await psIdbGet(); } catch (e) { _psKey = null; }
+  return _psKey;
+}
+async function psRenderKey() {
+  const k = await psLoadKey();
+  const info = document.getElementById('psKeyInfo'), warn = document.getElementById('psKeyWarn');
+  if (!info) return;
+  if (!k) {
+    info.innerHTML = 'No key in this browser yet. Create one, or import a backup from another browser.';
+    warn.style.display = 'none';
+    document.getElementById('psKeyGenBtn').style.display = '';
+    return;
+  }
+  document.getElementById('psKeyGenBtn').style.display = 'none';
+  info.innerHTML = `<div>Public key <span class="ps-pill ps-info">${escapeHtml(k.pkHex.slice(0, 16))}</span>
+    <span class="ps-mono" style="color:var(--text-muted);">${escapeHtml(k.pkHex)}</span></div>
+    <div style="margin-top:.3rem;font-size:.76rem;color:var(--text-muted);">Created ${escapeHtml(k.createdAt || '')} · ${k.impl === 'webcrypto' ? 'WebCrypto Ed25519' : 'tweetnacl Ed25519'} ·
+    backup ${k.backedUp ? '<span class="ps-pill ps-ok">exported</span>' : '<span class="ps-pill ps-warn">not exported</span>'}</div>`;
+  warn.style.display = k.backedUp ? 'none' : '';
+}
+async function psGenerateKey() {
+  if (await psLoadKey()) { toast('info', 'A key already exists in this browser.'); return; }
+  let rec;
+  if (await psHasWebEd25519()) {
+    const kp = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
+    rec = { impl: 'webcrypto', privateKey: kp.privateKey, pkHex: psHex(await crypto.subtle.exportKey('raw', kp.publicKey)) };
+  } else {
+    await psLoadNacl();
+    const seed = crypto.getRandomValues(new Uint8Array(32));
+    rec = { impl: 'nacl', seed, pkHex: psHex(nacl.sign.keyPair.fromSeed(seed).publicKey) };
+  }
+  rec.createdAt = new Date().toISOString();
+  rec.backedUp = false;
+  await psIdbPut(rec);
+  _psKey = rec;
+  toast('success', 'Signing key created. Export a backup now.');
+  psRenderKey();
+}
+function psDownload(name, text) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+async function psExportKey() {
+  const k = await psLoadKey();
+  if (!k) { toast('error', 'No key to export.'); return; }
+  let backup;
+  if (document.getElementById('psPlainExport').checked) {
+    backup = { schema: 'photoshield/key-backup@1', alg: 'Ed25519', publicKeyHex: k.pkHex,
+               privateKeyPkcs8: psB64(await psPkcs8Of(k)), createdAt: new Date().toISOString(), encrypted: false };
+  } else {
+    const p1 = prompt('Choose a passphrase for the backup (at least 10 characters):');
+    if (!p1) return;
+    if (p1.length < 10) { toast('error', 'Use at least 10 characters.'); return; }
+    if (prompt('Type the passphrase again:') !== p1) { toast('error', 'Passphrases differ.'); return; }
+    toast('info', 'Encrypting the backup…');
+    backup = await psEncryptBackup(k, k.pkHex, p1);
+  }
+  psDownload(`photoshield-key-${k.pkHex.slice(0, 16)}.json`, JSON.stringify(backup, null, 2));
+  k.backedUp = true;
+  await psIdbPut(k);
+  psRenderKey();
+}
+async function psImportKey(input) {
+  const f = input.files && input.files[0];
+  input.value = '';
+  if (!f) return;
+  try {
+    const backup = JSON.parse(await f.text());
+    const pass = backup.privateKeyPkcs8 ? '' : prompt('Backup passphrase:');
+    if (pass === null) return;
+    const key = await psDecryptBackup(backup, pass);
+    const cur = await psLoadKey();
+    if (cur && cur.pkHex !== key.pkHex && !confirm('Replace the key currently in this browser? Make sure it is backed up.')) return;
+    key.createdAt = backup.createdAt || new Date().toISOString();
+    key.backedUp = true;
+    await psIdbPut(key);
+    _psKey = key;
+    toast('success', 'Key imported. Public key ' + key.pkHex.slice(0, 16));
+    psRenderKey();
+  } catch (e) { toast('error', e.message || String(e)); }
+}
+
+// ── hashing a file in the browser (design §7 steps 1-2) ─────────────────────────────────────
+async function psDecode(file) {
+  let bmp;
+  try { bmp = await createImageBitmap(file, { colorSpaceConversion: 'none', premultiplyAlpha: 'none', imageOrientation: 'from-image' }); }
+  catch (e) { bmp = await createImageBitmap(file); }
+  const c = document.createElement('canvas');
+  c.width = bmp.width; c.height = bmp.height;
+  const ctx = c.getContext('2d', { willReadFrequently: true, colorSpace: 'srgb' });
+  ctx.drawImage(bmp, 0, 0);
+  const d = ctx.getImageData(0, 0, bmp.width, bmp.height).data;
+  return { w: bmp.width, h: bmp.height, rgba: d };
+}
+async function psHashImage(file) {
+  const sha256 = await computeHash(file);
+  const img = await psDecode(file);
+  let phash = null, err = null;
+  try { phash = psPhashFromRGBA(img.w, img.h, img.rgba); } catch (e) { err = e.message; }
+  return { sha256, phash, width: img.w, height: img.h, error: err };
+}
+async function psMinePow(value, label) {
+  let nonce = 0;
+  const t0 = performance.now();
+  for (;;) {
+    for (let k = 0; k < POW_CHUNK; k++, nonce++) {
+      if ((await sha256Str(`${value}${nonce}`)).startsWith(POW_PREFIX)) return nonce;
+    }
+    if (label) label.textContent = `Mining proof-of-work… ${nonce} hashes, ${((performance.now() - t0) / 1000).toFixed(1)} s`;
+    await new Promise(r => setTimeout(r, 0));
+  }
+}
+
+// ── register ────────────────────────────────────────────────────────────────────────────────
+let _psPrepared = null;
+function psMode() { const r = document.querySelector('input[name="psMode"]:checked'); return r ? r.value : 'plain'; }
+function psModeChanged() {
+  const cl = psMode() === 'cloaked';
+  document.getElementById('psCliBox').style.display = cl ? '' : 'none';
+  document.getElementById('psRegDropText').textContent = cl ? 'Click or drop manifest.json + original photo + cloaked.png' : 'Click or drop a photo';
+  document.getElementById('psRegChecks').innerHTML = '';
+  document.getElementById('psRegFN').textContent = '';
+  _psPrepared = null;
+}
+function psCheckRow(ok, text) {
+  return `<div>${ok ? '<span class="ps-pill ps-ok">✔</span>' : '<span class="ps-pill ps-bad">✘</span>'} ${text}</div>`;
+}
+async function psRegFilesChosen(input) {
+  const files = Array.from(input.files || []);
+  input.value = '';
+  const box = document.getElementById('psRegChecks');
+  document.getElementById('psRegFN').textContent = files.map(f => f.name).join(', ');
+  _psPrepared = null;
+  if (!files.length) return;
+  box.innerHTML = '<div class="ps-box">Hashing in this browser…</div>';
+  try {
+    if (psMode() === 'plain') {
+      const img = files.find(f => f.type.startsWith('image/')) || files[0];
+      const h = await psHashImage(img);
+      if (h.error) { box.innerHTML = psCheckRow(false, escapeHtml(h.error)); return; }
+      const title = (document.getElementById('psTitle').value || img.name.replace(/\.[^.]+$/, '')).replace(/[<>\x00-\x1f\x7f]/g, '').slice(0, 120) || 'photo';
+      document.getElementById('psTitle').value = title;
+      _psPrepared = { kind: 'plain', original: { sha256: h.sha256, phash: h.phash, width: h.width, height: h.height } };
+      box.innerHTML = `<div class="ps-box">${psCheckRow(true, 'SHA-256 <span class="ps-mono">' + h.sha256 + '</span>')}
+        ${psCheckRow(true, 'pHash <span class="ps-mono">' + h.phash + '</span> · ' + h.width + '×' + h.height)}
+        <div style="color:var(--text-muted);font-size:.74rem;margin-top:.3rem;">A manifest.json backup is downloaded when you register. Keep it.</div></div>`;
+      return;
+    }
+    const mf = files.find(f => /\.json$/i.test(f.name) || f.type === 'application/json');
+    if (!mf) { box.innerHTML = psCheckRow(false, 'manifest.json is missing'); return; }
+    const man = JSON.parse(await mf.text());
+    if (man.schema !== 'photoshield/manifest@1') { box.innerHTML = psCheckRow(false, 'Not a PhotoShield manifest'); return; }
+    const imgs = files.filter(f => f !== mf);
+    const hashed = await Promise.all(imgs.map(async f => ({ f, h: await psHashImage(f) })));
+    const orig = hashed.find(x => x.h.sha256 === man.original.sha256);
+    const clk = man.cloaked ? hashed.find(x => x.h.sha256 === man.cloaked.sha256) : null;
+    const rows = [
+      psCheckRow(!!orig, 'Original photo matches manifest SHA-256' + (orig ? ' (' + escapeHtml(orig.f.name) + ')' : '')),
+      psCheckRow(!!orig && orig.h.phash === man.original.phash, 'Original pHash recomputed here equals the manifest'),
+    ];
+    if (man.cloaked) {
+      rows.push(psCheckRow(!!clk, 'Cloaked PNG matches manifest SHA-256' + (clk ? ' (' + escapeHtml(clk.f.name) + ')' : '')));
+      rows.push(psCheckRow(!!clk && clk.h.phash === man.cloaked.phash, 'Cloaked pHash recomputed here equals the manifest'));
+    }
+    const ok = !!orig && orig.h.phash === man.original.phash && (!man.cloaked || (!!clk && clk.h.phash === man.cloaked.phash));
+    const ck = man.cloak || {};
+    box.innerHTML = `<div class="ps-box">${rows.join('')}
+      <div style="margin-top:.4rem;font-size:.76rem;color:var(--text-muted);">Cloak: ${escapeHtml(ck.model || '-')} · ε ${escapeHtml(String(ck.eps ?? '-'))}/255 · ${escapeHtml(String(ck.steps ?? '-'))} steps · PSNR ${escapeHtml(ck.psnr || '-')} dB · SSIM ${escapeHtml(ck.ssim || '-')}</div></div>`;
+    if (!ok) { box.innerHTML += '<div class="ps-banner">The files do not match this manifest, so nothing will be sent. Use the exact files the tool wrote.</div>'; return; }
+    document.getElementById('psTitle').value = man.title;
+    _psPrepared = { kind: 'cloaked', manifest: man };
+  } catch (e) { box.innerHTML = psCheckRow(false, escapeHtml(e.message || String(e))); }
+}
+async function psRegister() {
+  const out = document.getElementById('psRegResult');
+  if (!_authUser) { openAuthModal('login'); return; }
+  if (!_psPrepared) { toast('error', 'Choose the photo (and manifest) first.'); return; }
+  const key = await psLoadKey();
+  if (!key) { toast('error', 'Create or import a signing key first.'); document.getElementById('psKeyCard').scrollIntoView({ behavior: 'smooth' }); return; }
+  if (!key.backedUp && !confirm('Your signing key is not backed up. If this browser loses it you cannot prove control of this registration later. Continue anyway?')) return;
+  const btn = document.getElementById('psRegBtn');
+  btn.disabled = true;
+  try {
+    let man = _psPrepared.manifest;
+    if (_psPrepared.kind === 'plain') {
+      const title = (document.getElementById('psTitle').value || 'photo').replace(/[<>\x00-\x1f\x7f]/g, '').slice(0, 120) || 'photo';
+      man = { schema: 'photoshield/manifest@1', title, original: _psPrepared.original, cloaked: null, cloak: null };
+    }
+    const digest = await psDigestOf(man);
+    const sig = await psSignRaw(key, PS_REGISTER + digest);
+    out.innerHTML = '<div class="ps-box" id="psPowLabel">Mining proof-of-work…</div>';
+    const powNonce = await psMinePow(man.original.sha256, document.getElementById('psPowLabel'));
+    out.innerHTML = '<div class="ps-box">Anchoring on the ledger…</div>';
+    const res = await apiFetch(`${API}/photo/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ manifest: man, powNonce, pk: key.pkHex, sig, privacy: document.getElementById('psPrivacy').value }) });
+    const d = await res.json();
+    if (_psPrepared.kind === 'plain') psDownload(`manifest-${digest.slice(0, 8)}.json`, JSON.stringify(man, null, 2));
+    if (!d.success) {
+      const extra = res.status === 409 ? `<div style="margin-top:.3rem;">First registered by key <span class="ps-pill">${escapeHtml(d.ownerPkFp || '')}</span> in round ${escapeHtml(String(d.algoRound ?? '-'))}.</div>` : '';
+      out.innerHTML = `<div class="ps-banner" style="border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.08);">${escapeHtml(d.error || 'Registration failed')}${extra}</div>`;
+      return;
+    }
+    const tx = d.algoTxId || '';
+    const link = tx.length === 52 ? `<a href="https://lora.algokit.io/testnet/transaction/${encodeURIComponent(tx)}" target="_blank" rel="noopener noreferrer" style="color:var(--primary)">${escapeHtml(tx.slice(0, 12))}…</a>` : `<span class="ps-mono">${escapeHtml(tx.slice(0, 16))}</span> (${escapeHtml(d.anchorBackend || 'local')} anchor)`;
+    out.innerHTML = `<div class="ps-box"><div><span class="ps-pill ps-ok">${d.duplicate ? 'ALREADY REGISTERED' : 'ANCHORED'}</span> photo <span class="ps-mono">${escapeHtml(d.photoId)}</span></div>
+      <div style="margin-top:.3rem;">Transaction ${link} · round ${escapeHtml(String(d.algoRound ?? '-'))}</div>
+      <div style="margin-top:.5rem;" class="ps-row"><a class="btn btn-sec" style="font-size:.76rem;padding:.35rem .7rem;" href="${API}/photo/certificate/${encodeURIComponent(d.photoId)}" target="_blank" rel="noopener">Certificate (PDF)</a>
+      <button class="btn btn-sec" style="font-size:.76rem;padding:.35rem .7rem;" onclick="psLedgerCheck('${escapeHtml(d.photoId)}', null, this)">Check on public ledger</button></div>
+      <div class="ps-steps" style="margin-top:.4rem;"></div></div>`;
+    toast('success', 'Photo anchored.');
+    psLoadMine();
+  } catch (e) { out.innerHTML = `<div class="ps-banner">${escapeHtml(e.message || String(e))}</div>`; }
+  finally { btn.disabled = false; }
+}
+
+// ── verify ──────────────────────────────────────────────────────────────────────────────────
+const PS_VERDICTS = {
+  EXACT_ORIGINAL: ['#22c55e', 'This is the registered original'],
+  EXACT_CLOAKED: ['#22c55e', 'This is the registered protected copy'],
+  DERIVED: ['#eab308', 'Very likely a re-encoded or lightly edited copy of a registered photo'],
+  SIMILAR: ['#f97316', 'Possibly derived: heavier edit, crop, or a different but similar photo'],
+  UNKNOWN: ['#94a3b8', 'Not in the registry'],
+};
+async function psVerifyFile(input) {
+  const f = input.files && input.files[0];
+  input.value = '';
+  if (!f) return;
+  document.getElementById('psVerFN').textContent = f.name;
+  const out = document.getElementById('psVerResult');
+  out.innerHTML = '<div class="ps-box">Hashing in this browser…</div>';
+  try {
+    const h = await psHashImage(f);
+    const res = await fetch(`${API}/photo/verify`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sha256: h.sha256, phash: h.phash }) });
+    const d = await res.json();
+    if (!d.success) { out.innerHTML = `<div class="ps-banner">${escapeHtml(d.error || 'Verification failed')}</div>`; return; }
+    const [col, text] = PS_VERDICTS[d.verdict] || PS_VERDICTS.UNKNOWN;
+    const tauFar = d.thresholds ? d.thresholds.tauFar : 64;
+    const dist = (d.distance ?? d.nearestDistance);
+    const bar = dist != null ? `<div style="margin-top:.5rem;font-size:.76rem;color:var(--text-muted);">pHash distance ${dist} / 64 bits${d.thresholds ? ` · near ≤ ${d.thresholds.tauNear}, similar ≤ ${d.thresholds.tauFar} (from ${escapeHtml(d.thresholds.source)})` : ''}</div>
+      <div class="ps-bar"><div style="width:${Math.max(3, 100 - dist / 64 * 100)}%;background:${col};"></div></div>` : '';
+    const who = d.photoId ? `<div style="margin-top:.4rem;">Photo <span class="ps-mono">${escapeHtml(d.photoId)}</span> · key <span class="ps-pill">${escapeHtml(d.ownerPkFp || '')}</span>${d.ownerUser ? ' · user ' + escapeHtml(d.ownerUser) : ''} · round ${escapeHtml(String(d.algoRound ?? '-'))}</div>` : '';
+    const notes = [];
+    if (d.warning) notes.push(escapeHtml(d.warning));
+    if (d.nearMatch === 'uncalibrated') notes.push('Near matching is off on this server (no calibration file), so only exact copies are recognised.');
+    if (d.ledgerSync === 'rebuilding') notes.push('The registry is still being rebuilt from the ledger; try again shortly.');
+    if (d.ledgerSync === 'unreachable') notes.push('The ledger could not be reached; results come from the server cache.');
+    out.innerHTML = `<div class="ps-box">
+      <span class="ps-verdict" style="color:${col};border:1px solid ${col};">${escapeHtml(d.verdict)}</span> <span style="margin-left:.4rem;">${escapeHtml(text)}</span>
+      ${who}${bar}
+      ${notes.length ? `<div style="margin-top:.45rem;font-size:.76rem;color:#eab308;">${notes.join('<br>')}</div>` : ''}
+      ${d.photoId ? `<div style="margin-top:.55rem;"><button class="btn btn-sec" style="font-size:.76rem;padding:.35rem .7rem;" onclick="psLedgerCheck('${escapeHtml(d.photoId)}', '${escapeHtml(h.sha256)}', this)">Check on public ledger</button></div><div class="ps-steps"></div>` : ''}
+      <div style="margin-top:.4rem;font-size:.72rem;color:var(--text-muted);">Your file: SHA-256 <span class="ps-mono">${escapeHtml(h.sha256)}</span> · pHash <span class="ps-mono">${escapeHtml(h.phash || 'n/a')}</span></div></div>`;
+  } catch (e) { out.innerHTML = `<div class="ps-banner">${escapeHtml(e.message || String(e))}</div>`; }
+}
+
+// The trustless check: read the note from the PUBLIC indexer, not from this server.
+async function psLedgerCheck(photoId, localSha, btn) {
+  const steps = btn.parentElement.parentElement.querySelector('.ps-steps') || btn.parentElement.nextElementSibling;
+  const lines = [];
+  const show = () => { steps.innerHTML = lines.join(''); };
+  const step = (ok, t) => { lines.push(`<div>${ok === null ? '<span class="ps-pill ps-warn">!</span>' : ok ? '<span class="ps-pill ps-ok">✔</span>' : '<span class="ps-pill ps-bad">✘</span>'} ${t}</div>`); show(); };
+  btn.disabled = true;
+  try {
+    const p = await (await fetch(`${API}/photo/proof/${encodeURIComponent(photoId)}`)).json();
+    if (!p.success) { step(false, escapeHtml(p.error || 'proof unavailable')); return; }
+    step(null, 'Server gave an anchor reference. Nothing is trusted yet.');
+    const idOk = (await psPhotoIdOf(p.manifestDigest)) === photoId;
+    step(idOk, 'Photo id recomputed in this browser from the manifest digest');
+    if (!p.indexerUrl) { step(null, '<b>SERVER-TRUSTED</b>: this anchor is on a local or mock chain, so there is no public ledger to read.'); return; }
+    const tx = (await (await fetch(p.indexerUrl)).json()).transaction || {};
+    const note = JSON.parse(atob(tx.note || ''));
+    step(true, `Read the transaction directly from the public Algorand indexer (round ${escapeHtml(String(tx['confirmed-round']))})`);
+    let ok = idOk;
+    if (p.mode === 'album') {
+      const leaf = await bvMerkleLeaf(p.index, photoId, p.manifestDigest);
+      const folded = await bvFoldProof(leaf, p.proof);
+      const r1 = folded === note.pmr && note.plc === p.leafCount;
+      step(r1, `Album proof folds to the anchored root (${escapeHtml(String(note.pmr || '').slice(0, 12))}…, ${escapeHtml(String(note.plc))} photos)`);
+      const s1 = await psVerifyRaw(note.pk, note.sig, PS_ALBUM + note.pmr + '|' + note.plc);
+      step(s1, 'Owner signature over the album root verifies in this browser');
+      ok = ok && r1 && s1;
+    } else {
+      const m1 = note.id === photoId && note.md === p.manifestDigest;
+      step(m1, 'Anchored note names this photo and manifest digest');
+      if (localSha) {
+        const m2 = note.o === localSha || note.c === localSha;
+        step(m2, 'Your file\'s SHA-256 is in the anchored note');
+        ok = ok && m2;
+      }
+      const s1 = await psVerifyRaw(note.pk, note.sig, PS_REGISTER + note.md);
+      step(s1, 'Owner signature verifies in this browser (key ' + escapeHtml(String(note.pk).slice(0, 16)) + ')');
+      ok = ok && m1 && s1;
+    }
+    step(ok, ok ? '<b>TRUSTLESS ✓</b>: established from the public ledger alone' : '<b>VERIFICATION FAILED</b>: the server\'s answer does not match the ledger');
+  } catch (e) { step(false, escapeHtml(e.message || String(e))); }
+  finally { btn.disabled = false; }
+}
+
+// ── my photos, rehydrate, prove ─────────────────────────────────────────────────────────────
+async function psLoadMine() {
+  const box = document.getElementById('psMine');
+  if (!box) return;
+  if (!_authUser) { box.innerHTML = '<div class="ps-box">Log in to list your photos.</div>'; return; }
+  try {
+    const d = await (await apiFetch(`${API}/photo/owner/${encodeURIComponent(_authUser)}`)).json();
+    if (!d.success || !d.photos.length) { box.innerHTML = '<div class="ps-box">No photos registered from this account yet.</div>'; return; }
+    box.innerHTML = `<table class="ps-table"><thead><tr><th>Title</th><th>Photo</th><th>Privacy</th><th>Anchor</th><th></th></tr></thead><tbody>${d.photos.map(p => `
+      <tr><td>${escapeHtml(p.title || '(restore with manifest)')}</td>
+      <td class="ps-mono">${escapeHtml(p.photoId)}${p.cloaked ? ' <span class="ps-pill ps-info">cloaked</span>' : ''}</td>
+      <td>${escapeHtml(p.privacy)}${p.hasPhash ? '' : ' <span class="ps-pill ps-warn">exact only</span>'}</td>
+      <td class="ps-mono">${escapeHtml(String(p.algoTxId || '').slice(0, 12))}… r${escapeHtml(String(p.algoRound ?? '-'))}</td>
+      <td style="white-space:nowrap;"><a class="btn btn-sec" style="font-size:.72rem;padding:.3rem .6rem;" href="${API}/photo/certificate/${encodeURIComponent(p.photoId)}" target="_blank" rel="noopener">PDF</a>
+      <button class="btn btn-sec" style="font-size:.72rem;padding:.3rem .6rem;" onclick="psProve('${escapeHtml(p.photoId)}')">Prove</button></td></tr>`).join('')}</tbody></table>`;
+  } catch (e) { box.innerHTML = `<div class="ps-box">${escapeHtml(e.message || String(e))}</div>`; }
+}
+async function psRehydrate(input) {
+  const f = input.files && input.files[0];
+  input.value = '';
+  if (!f) return;
+  if (!_authUser) { openAuthModal('login'); return; }
+  try {
+    const man = JSON.parse(await f.text());
+    const d = await (await apiFetch(`${API}/photo/rehydrate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ manifest: man }) })).json();
+    toast(d.success ? 'success' : 'error', d.message || d.error);
+    psLoadMine();
+  } catch (e) { toast('error', e.message || String(e)); }
+}
+async function psProve(photoId) {
+  const key = await psLoadKey();
+  if (!key) { toast('error', 'No signing key in this browser. Import your backup first.'); return; }
+  try {
+    const c = (await (await fetch(`${API}/photo/challenge`)).json()).challenge;
+    const sig = await psSignRaw(key, PS_PROVE + photoId + '|' + c);
+    const d = await (await apiFetch(`${API}/photo/prove`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ photoId, challenge: c, sig }) })).json();
+    toast(d.proven ? 'success' : 'error', d.proven ? `Proved: this browser holds the key that registered ${photoId}.` : (d.message || d.error));
+  } catch (e) { toast('error', e.message || String(e)); }
+}
+function psToggle(id) { const el = document.getElementById(id); el.style.display = el.style.display === 'none' ? '' : 'none'; }
+async function psLoadStatus() {
+  const box = document.getElementById('psStatus');
+  try {
+    const d = await (await fetch(`${API}/photo/stats`)).json();
+    const sync = { ok: 'ps-ok', rebuilding: 'ps-warn', unreachable: 'ps-bad' }[d.ledgerSync] || '';
+    box.innerHTML = `<span class="ps-pill">${d.photos} photos · ${d.albums} albums</span>
+      <span class="ps-pill ${sync}">ledger sync: ${escapeHtml(d.ledgerSync)}</span>
+      <span class="ps-pill ${d.nearMatch === 'calibrated' ? 'ps-ok' : 'ps-warn'}">near match: ${escapeHtml(d.nearMatch)}${d.calibration ? ` (τ ${d.calibration.tau_near}/${d.calibration.tau_far})` : ''}</span>
+      <span class="ps-pill">anchor: ${escapeHtml(d.anchorBackend)}</span>`;
+  } catch (e) { box.innerHTML = '<span class="ps-pill ps-bad">API unreachable (the free backend may be waking up; retry in a minute)</span>'; }
+}
+function loadPhotoShield() { psLoadStatus(); psRenderKey(); psLoadMine(); }
 </script>
 
 </body>

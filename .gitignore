@@ -22,4 +22,5 @@ evaluation/checkpoints/*.safetensors
 
 # FedVerify: experiment outputs and datasets are generated, not committed
 fedverify/results/
+photoshield/results/
 fedverify/data/

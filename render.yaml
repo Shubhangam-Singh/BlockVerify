@@ -1,10 +1,36 @@
+# Render Blueprint: free-tier backend (Flask API) + static frontend.
+# Secrets are set in the Render dashboard, never committed:
+#   ALGO_MNEMONIC (or ALGO_PRIVATE_KEY)  funded Algorand Testnet server wallet
+#   JWT_SECRET                           keeps logins valid across restarts
+#   GEMINI_API_KEYS                      optional, for the in-app assistant
+# Photo Shield (/api/photo/*) needs no extra secret. Optional settings (PHOTOSHIELD_DESIGN.md §6.11):
+#   PHOTOSHIELD_ANCHOR        algorand (default) | local | mock
+#   PHOTOSHIELD_LEDGER_SYNC   1 (default): rebuild the photo registry from Algorand notes after a
+#                             restart, since the free tier's disk is wiped; 0 disables it
+#   PHOTOSHIELD_ANCHOR_ADDRESSES  extra sender addresses to rebuild from (e.g. an old wallet)
+#   PHOTOSHIELD_SERVER_CLOAK  keep 0: the free tier has no torch; users cloak locally
+# pHash thresholds ship in photoshield/calibration.json (python -m photoshield study e6 --install).
 services:
   - type: web
-    name: blockverify-backend
+    name: blockverify-api
     runtime: python
-    rootDir: .
+    plan: free
+    region: singapore
     buildCommand: pip install -r backend/requirements.txt
     startCommand: python backend/app.py
     envVars:
-      - key: PORT
-        value: 5000
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: ALGO_APP_ID
+        value: "764828342"
+      - key: ALGO_MNEMONIC
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEYS
+        sync: false
+  - type: web
+    name: blockverify
+    runtime: static
+    buildCommand: echo "static site, no build"
+    staticPublishPath: frontend
