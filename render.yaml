@@ -1,10 +1,29 @@
+# Render Blueprint: free-tier backend (Flask API) + static frontend.
+# Secrets are set in the Render dashboard, never committed:
+#   ALGO_MNEMONIC (or ALGO_PRIVATE_KEY)  funded Algorand Testnet server wallet
+#   JWT_SECRET                           keeps logins valid across restarts
+#   GEMINI_API_KEYS                      optional, for the in-app assistant
 services:
   - type: web
-    name: blockverify-backend
+    name: blockverify-api
     runtime: python
-    rootDir: .
+    plan: free
+    region: singapore
     buildCommand: pip install -r backend/requirements.txt
     startCommand: python backend/app.py
     envVars:
-      - key: PORT
-        value: 5000
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: ALGO_APP_ID
+        value: "764828342"
+      - key: ALGO_MNEMONIC
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEYS
+        sync: false
+  - type: web
+    name: blockverify
+    runtime: static
+    buildCommand: echo "static site, no build"
+    staticPublishPath: frontend
