@@ -49,7 +49,28 @@ def _friendly_algo_error(exc) -> str:
 WALLET_FILE = os.path.join(os.path.dirname(__file__), "data", "algo_wallet.json")
 
 
+def _wallet_from_env():
+    """Load the server wallet from the environment, if configured.
+
+    Hosts with an ephemeral disk (e.g. Render's free tier) lose backend/data/ on every
+    restart, which would otherwise generate a fresh, unfunded wallet each boot.
+    ALGO_MNEMONIC (25 words) or ALGO_PRIVATE_KEY (base64, as stored in
+    algo_wallet.json) keeps one funded wallet across restarts.
+    """
+    mnemonic_words = (os.environ.get("ALGO_MNEMONIC") or "").strip()
+    private_key = (os.environ.get("ALGO_PRIVATE_KEY") or "").strip()
+    if mnemonic_words:
+        from algosdk import mnemonic
+        private_key = mnemonic.to_private_key(mnemonic_words)
+    if not private_key:
+        return None
+    return account.address_from_private_key(private_key), private_key
+
+
 def get_or_create_wallet():
+    from_env = _wallet_from_env()
+    if from_env:
+        return from_env
     if os.path.exists(WALLET_FILE):
         with open(WALLET_FILE) as f:
             data = json.load(f)

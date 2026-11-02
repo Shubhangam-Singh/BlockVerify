@@ -9,4 +9,5 @@ bcrypt==4.2.1
 flask-socketio==5.4.1
 simple-websocket==1.1.0
 reportlab==4.2.5
-
+fpdf2==2.8.1
+numpy==1.26.4
