@@ -289,6 +289,56 @@ def table_e5(results) -> str:
     return "\n\n".join(parts)
 
 
+def _e8_status(t, thr):
+    d, gt, cov, textured, level, slevel = t
+    if d is None or not textured:
+        return None
+    moved = abs(slevel - level) >= thr["delta_level"]
+    if d >= thr["tau_alter"] or moved:
+        return "altered"
+    if d <= thr["tau_match"]:
+        return "match"
+    return "uncertain"
+
+
+def table_e8(results) -> str:
+    runs = _runs(results, "e8")
+    if not runs:
+        MISSING.append("E8: no runs (python -m photoshield study e8)")
+        return "_No E8 runs._"
+    parts = []
+    for cell, seed, cfg, recs in runs:
+        thr = cfg["thresholds"]
+        head = (f"**{cfg.get('n_images')} photos, {seed}. Thresholds from this run: τ_match = "
+                f"{thr['tau_match']}, τ_alter = {thr['tau_alter']}, Δlevel = {thr['delta_level']}, "
+                f"k_min = {thr['k_min']}.** Edited tile = at least half inside the edit mask; unchanged "
+                f"tile = no overlap. Pasted rectangles simulate a face swap, smooth fills simulate inpainting. "
+                f"For unrelated photos every tile counts as unchanged, so \"matched\" is the false-match rate.")
+        rows, ablation = [], []
+        for kind in ("clean", "paste", "smooth", "unrelated"):
+            for tr in dict.fromkeys(r["transform"] for r in recs if r["kind"] == kind):
+                rs = [r for r in recs if r["kind"] == kind and r["transform"] == tr]
+                ok = [r for r in rs if r["tiles"]]
+                ed = [t for r in ok for t in r["tiles"] if t[1] >= 0.5 and _e8_status(t, thr)]
+                un = [t for r in ok for t in r["tiles"] if t[1] == 0.0 and _e8_status(t, thr)]
+                der = sum(1 for r in ok if sum(_e8_status(t, thr) == "match" for t in r["tiles"]) >= thr["k_min"])
+                rec = (sum(_e8_status(t, thr) == "altered" for t in ed) / len(ed)) if ed else None
+                kept = (sum(_e8_status(t, thr) == "match" for t in un) / len(un)) if un else None
+                falt = (sum(_e8_status(t, thr) == "altered" for t in un) / len(un)) if un else None
+                rows.append([kind, tr, str(len(rs)), fmt(len(ok) / len(rs), 3), f"{der}/{len(ok)}",
+                             fmt(rec, 3) if ed else DASH, fmt(kept, 3),
+                             fmt(falt, 3) if kind != "unrelated" else DASH])
+                if kind in ("paste", "smooth") and ed:
+                    ph = sum(1 for t in ed if t[0] >= thr["tau_alter"]) / len(ed)
+                    ablation.append([kind, tr, fmt(ph, 3), fmt(rec, 3)])
+        parts.append(head + "\n\n" + _table(
+            ["suspects", "sharing", "n", "aligned", "verdict DERIVED", "edited tiles flagged altered",
+             "unchanged tiles matched", "unchanged tiles wrongly altered"], rows))
+        parts.append("Ablation: share of edited tiles flagged by the pHash distance alone vs with the "
+                     "detail-level rule.\n\n" + _table(["edit", "sharing", "pHash only", "pHash + detail level"], ablation))
+    return "\n\n".join(parts)
+
+
 SECTIONS = [
     ("E1/E2 — invisibility vs strength, encoder disruption", table_e1),
     ("E3 — does the cloak survive sharing?", table_e3),
@@ -298,6 +348,7 @@ SECTIONS = [
     ("E6p — does a processed cloaked photo still match its anchor?", table_e6p),
     ("E6b — browser vs PIL JPEG decode", table_e6b),
     ("E7 — provenance cost", table_e7),
+    ("E8 — origin reports: localising local edits (v2)", table_e8),
 ]
 
 

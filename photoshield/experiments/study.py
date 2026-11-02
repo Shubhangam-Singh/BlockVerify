@@ -292,10 +292,164 @@ def e6(ns):
                    results=os.path.relpath(d, REPO),
                    note="Calibrated on scikit-image sample photos. Recalibrate on your own corpus "
                         "with --images DIR before relying on near matches.")
-        with open(CALIBRATION, "w") as f:
-            json.dump(cal, f, indent=2, sort_keys=True)
-            f.write("\n")
+        prev = _read_calibration()
+        if "tile" in prev:                    # keep the origin-report thresholds (e8)
+            cal["tile"] = prev["tile"]
+        _write_calibration(cal)
         print(f"[e6] installed {os.path.relpath(CALIBRATION, REPO)} (read by backend/photo_routes.py)")
+
+
+def _read_calibration() -> dict:
+    try:
+        with open(CALIBRATION) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def _write_calibration(cal: dict) -> None:
+    with open(CALIBRATION, "w") as f:
+        json.dump(cal, f, indent=2, sort_keys=True)
+        f.write("\n")
+
+
+# ── E8: origin reports, localisation of local edits (design §15.7) ───────────
+E8_TRANSFORMS = ("none", "jpeg75", "resize75", "crop5", "rotate3")
+
+
+def _e8_share(a, name):
+    from PIL import Image
+    if name == "none":
+        return a
+    if name == "jpeg75":
+        return jpeg(a, 75)
+    if name == "resize75":
+        return resize_back(a, 0.75)
+    if name == "crop5":
+        return crop_pct(a, 0.10)                      # 5 % off every side
+    if name == "rotate3":
+        return jpeg(np.asarray(Image.fromarray(a).rotate(3, resample=Image.BILINEAR)), 90)
+    raise ValueError(name)
+
+
+def _e8_rect(rng, h, w):
+    frac = rng.uniform(0.10, 0.30)
+    ar = rng.uniform(0.6, 1.6)
+    rh = int(min(h - 2, round((frac * h * w / ar) ** 0.5)))
+    rw = int(min(w - 2, round(frac * h * w / max(rh, 1))))
+    y = int(rng.integers(0, h - rh))
+    x = int(rng.integers(0, w - rw))
+    return y, x, rh, rw
+
+
+def _e8_edit(rng, a, kind, donor):
+    from PIL import Image, ImageFilter
+    h, w = a.shape[:2]
+    y, x, rh, rw = _e8_rect(rng, h, w)
+    out = a.copy()
+    if kind == "paste":                                # a region from an unrelated photo
+        d = np.asarray(Image.fromarray(donor).resize((max(w, rw), max(h, rh))))
+        dy = int(rng.integers(0, d.shape[0] - rh + 1))
+        dx = int(rng.integers(0, d.shape[1] - rw + 1))
+        out[y:y + rh, x:x + rw] = d[dy:dy + rh, dx:dx + rw]
+    else:                                              # a smooth, inpainting-like fill
+        patch = np.asarray(Image.fromarray(a[y:y + rh, x:x + rw]).filter(ImageFilter.GaussianBlur(10)))
+        noise = rng.normal(0, 6, patch.shape)
+        out[y:y + rh, x:x + rw] = np.clip(patch.astype(np.float64) + noise, 0, 255).astype(np.uint8)
+    mask = np.zeros((h, w), bool)
+    mask[y:y + rh, x:x + rw] = True
+    return out, mask
+
+
+def _e8_tiles(original, suspect, mask=None, mode="auto"):
+    """Raw per-tile observations [d, gt_fraction, coverage, textured, level, suspect_level]."""
+    from ..origin import align as A
+    from ..provenance import hashing as H, regions as R
+    h, w = original.shape[:2]
+    g, values = R.region_values(original)
+    try:
+        al = A.align(original, suspect, mode)
+    except A.AlignError:
+        return None, None
+    rows = []
+    for (r, c, y0, y1, x0, x1), v in zip(R.tile_boxes(w, h, g), values):
+        committed, textured, level = R.split_value(v)
+        cov = float(al["mask"][y0:y1, x0:x1].mean())
+        gt = float(mask[y0:y1, x0:x1].mean()) if mask is not None else 0.0
+        d = slevel = None
+        if cov >= 0.95:
+            sh, _, slevel = R.split_value(R.tile_value(al["warped"][y0:y1, x0:x1]))
+            d = H.hamming(committed, sh)
+        rows.append([d, round(gt, 4), round(cov, 4), int(textured), level, slevel])
+    return al["method"], rows
+
+
+def e8(ns):
+    rng = np.random.default_rng(ns.seed)
+    imgs = [(n, _resize_max(a, 512)) for n, a in load_images(ns.images, ns.limit)]
+    recs = []
+    t0 = time.perf_counter()
+    for i, (name, a) in enumerate(imgs):
+        for tname in E8_TRANSFORMS:                         # clean shared copies
+            method, rows = _e8_tiles(a, _e8_share(a, tname))
+            recs.append({"kind": "clean", "image": name, "transform": tname, "aligned": rows is not None,
+                         "method": method, "tiles": rows})
+        for kind in ("paste", "smooth"):
+            for rep in range(ns.edits):
+                j = int(rng.integers(0, len(imgs) - 1))
+                donor = imgs[j + (j >= i)][1]                  # any photo but this one
+                edited, mask = _e8_edit(rng, a, kind, donor)
+                for tname in E8_TRANSFORMS:
+                    method, rows = _e8_tiles(a, _e8_share(edited, tname), mask)
+                    recs.append({"kind": kind, "image": name, "rep": rep, "transform": tname,
+                                 "aligned": rows is not None, "method": method,
+                                 "edited_fraction": round(float(mask.mean()), 4), "tiles": rows})
+        for j, (other, b) in enumerate(imgs):              # unrelated photos, forced alignment
+            if j == i:
+                continue
+            method, rows = _e8_tiles(a, b, mode="resize") if abs(
+                a.shape[1] / a.shape[0] - b.shape[1] / b.shape[0]) <= 0.03 else _e8_tiles(
+                a, np.asarray(__import__("PIL.Image", fromlist=["Image"]).fromarray(b).resize(
+                    (a.shape[1], a.shape[0]))), mode="resize")
+            recs.append({"kind": "unrelated", "image": name, "other": other, "transform": "resize",
+                         "aligned": rows is not None, "method": method, "tiles": rows})
+    wall = time.perf_counter() - t0
+
+    # calibration (design §15.7): thresholds from the observations, never typed
+    unrel = [t[0] for r in recs if r["kind"] == "unrelated" and r["tiles"] for t in r["tiles"]
+             if t[3] and t[0] is not None]
+    unchanged = [t[0] for r in recs if r["kind"] != "unrelated" and r["tiles"] for t in r["tiles"]
+                 if t[3] and t[0] is not None and t[1] == 0.0]
+    shifts = [abs(t[5] - t[4]) for r in recs if r["kind"] != "unrelated" and r["tiles"] for t in r["tiles"]
+              if t[3] and t[0] is not None and t[1] == 0.0]
+    tau_match = max([t for t in range(65) if sum(d <= t for d in unrel) / len(unrel) <= ns.fpr_tile] or [0])
+    exceed = [t for t in range(tau_match + 1, 65) if sum(d >= t for d in unchanged) / len(unchanged) <= ns.fpr_alter]
+    tau_alter = min(exceed) if exceed else tau_match + 1
+    delta_level = next(k for k in range(1, 41) if sum(x >= k for x in shifts) / len(shifts) <= ns.fpr_alter)
+
+    def is_match(t):
+        return t[3] and t[0] is not None and t[0] <= tau_match and abs(t[5] - t[4]) < delta_level
+    pair_matches = [sum(1 for t in r["tiles"] if is_match(t))
+                    for r in recs if r["kind"] == "unrelated" and r["tiles"]]
+    k_min = next(k for k in range(1, 65) if sum(m >= k for m in pair_matches) / len(pair_matches) <= ns.fpr_pair)
+    thr = {"tau_match": tau_match, "tau_alter": tau_alter, "delta_level": delta_level, "k_min": k_min}
+    cell = f"e8_{ns.images if ns.images == 'skimage' else 'custom'}"
+    d = run_dir("e8", cell, ns.seed)
+    write_run(d, {"exp": "e8", "images": ns.images, "n_images": len(imgs), "edits_per_kind": ns.edits,
+                  "transforms": list(E8_TRANSFORMS), "fpr_tile": ns.fpr_tile, "fpr_alter": ns.fpr_alter,
+                  "fpr_pair": ns.fpr_pair, "seed": ns.seed, "threads": ns.threads, "size": 512,
+                  "thresholds": thr, "e8_wall_s": wall}, recs)
+    print(f"[e8] {len(recs)} suspects; tau_match={tau_match} tau_alter={tau_alter} "
+          f"delta_level={delta_level} k_min={k_min} "
+          f"({len(unrel)} unrelated tiles, {len(unchanged)} unchanged tiles, {len(pair_matches)} unrelated pairs)")
+    if ns.install:
+        cal = _read_calibration()
+        cal["tile"] = dict(thr, fpr_tile=ns.fpr_tile, fpr_alter=ns.fpr_alter, fpr_pair=ns.fpr_pair,
+                           dataset=f"{ns.images} ({len(imgs)} photos, synthetic local edits)",
+                           generated_by="python -m photoshield study e8 --install",
+                           results=os.path.relpath(d, REPO))
+        _write_calibration(cal)
+        print(f"[e8] installed tile thresholds into {os.path.relpath(CALIBRATION, REPO)}")
 
 
 # ── E6b: does a purified cloak still match its anchor? ──────────────────────
@@ -484,7 +638,7 @@ def e7(ns):
 def build_parser():
     p = argparse.ArgumentParser(prog="python -m photoshield study", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("exp", choices=("e1", "e3", "e6", "e6p", "e6-browser", "e7", "all"))
+    p.add_argument("exp", choices=("e1", "e3", "e6", "e6p", "e6-browser", "e7", "e8", "all"))
     p.add_argument("--model", default="sdvae", choices=("sdvae", "resnet50", "facenet", "tiny"))
     p.add_argument("--no-pretrained", action="store_true", help="random weights (tests only)")
     p.add_argument("--images", default="skimage", help="'skimage' or a directory of your photos")
@@ -499,7 +653,11 @@ def build_parser():
     p.add_argument("--fpr-near", type=float, default=0.01)
     p.add_argument("--fpr-far", type=float, default=0.05)
     p.add_argument("--trials", type=int, default=50)
-    p.add_argument("--install", action="store_true", help="e6: write photoshield/calibration.json")
+    p.add_argument("--install", action="store_true", help="e6/e8: write photoshield/calibration.json")
+    p.add_argument("--edits", type=int, default=2, help="e8: random edits per photo and kind")
+    p.add_argument("--fpr-tile", type=float, default=0.005, help="e8: unrelated-tile match rate for tau_match")
+    p.add_argument("--fpr-alter", type=float, default=0.01, help="e8: unchanged-tile exceedance for tau_alter")
+    p.add_argument("--fpr-pair", type=float, default=0.01, help="e8: unrelated-pair verdict rate for k_min")
     p.add_argument("--results", default=None, help="results root (default photoshield/results)")
     return p
 
@@ -525,6 +683,8 @@ def main(argv=None) -> int:
         e6_browser(ns)
     if ns.exp in ("e7", "all"):
         e7(ns)
+    if ns.exp in ("e8", "all"):
+        e8(ns)
     return 0
 
 

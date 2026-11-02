@@ -744,10 +744,16 @@ model layers, here they are image regions.
 - **Grid.** `G = min(8, floor(min(W, H) / 32))`. Images with `G < 2` (a side under 64 px) get no
   region map. Tile `(r, c)` covers rows `[floor(r·H/G), floor((r+1)·H/G))` and the same rule for
   columns. Integer arithmetic only, identical in Python and the browser.
-- **Tile value** `"<16-hex pHash>:<flag>"`. The pHash is the canonical §7 pHash of the tile crop,
-  so the browser reproduces it bit for bit. `flag` is `1` (textured) when the range of the tile's
-  32 × 32 luma bin means is at least `FLAT_RANGE = 10000` (10 grey levels at ×1000 luma), else
-  `0` (flat). Flat tiles, such as clear sky or a white wall, carry no claim either way.
+- **Tile value** `"<16-hex pHash>:<flag>:<level>"` **(r5)**.
+  - The pHash is the canonical §7 pHash of the tile crop, so the browser reproduces it bit for bit.
+  - `flag` is `1` (textured) when the range of the tile's 32 × 32 luma bin means is at least
+    `FLAT_RANGE = 10000` (10 grey levels at ×1000 luma), else `0` (flat). Flat tiles, such as
+    clear sky or a white wall, carry no claim either way.
+  - `level` is the **detail octave**: the number of `k` with `TV ≥ 1000 · 2^k`, where TV is the
+    total variation of the bin means, summed rows first and then columns, in a fixed order.
+  - Why `level` exists: pHash keeps only low frequencies, so a smooth fill (blur, layout-keeping
+    inpainting) can leave a tile's pHash intact. TV drops by octaves when detail is wiped out.
+    E8 measured the gain as an ablation (`make_tables`, E8).
 - **Commitment.** Leaves use the repository's canonical leaf
   `SHA256(JSON([i, "r{r}c{c}", value]))` and the same duplicate-last Merkle as albums.
 - **Manifest field** (optional, so v1 manifests and their digests are unchanged):
@@ -780,14 +786,14 @@ For each tile, `d = Hamming(committed pHash, suspect tile pHash)`:
 |---|---|
 | `flat` | the committed flag is 0 |
 | `uncovered` | coverage < 0.95 |
-| `match` | d ≤ τ_match |
-| `altered` | d ≥ τ_alter |
+| `altered` | d ≥ τ_alter, or the detail level moved by ≥ Δlevel octaves |
+| `match` | d ≤ τ_match and the level moved by < Δlevel |
 | `uncertain` | otherwise |
 
 Image verdict: **DERIVED_FROM_REGISTERED** when `match ≥ k_min`. **NOT_SHOWN** otherwise: the
 report proves nothing, which is not the same as "not derived".
 
-τ_match, τ_alter and k_min are **measured**, never typed (§15.7). They live in the `tile` section
+τ_match, τ_alter, Δlevel and k_min are **measured**, never typed (§15.7). They live in the `tile` section
 of `photoshield/calibration.json`. Without it, report generation stops with an explanation.
 
 ### 15.5 Report format `photoshield/origin-report@1`
@@ -829,8 +835,9 @@ the suspect image. It never requires the original.
   - Negatives are unrelated photos forced through the resize alignment.
   - It writes tile-level precision and recall of `altered` against the mask, image-level TPR and
     FPR of the verdict, and alignment success.
-  - `--install` writes τ_match (unrelated-tile FPR ≤ 0.5 %), τ_alter (unchanged-tile exceedance
-    ≤ 1 %) and k_min (unrelated-pair FPR ≤ 1 %).
+  - `--install` writes τ_match (unrelated-tile FPR ≤ 0.5 %), τ_alter and Δlevel (unchanged-tile
+    exceedance ≤ 1 % each) and k_min (unrelated-pair FPR ≤ 1 %), merged into
+    `photoshield/calibration.json` under `tile`. e6 keeps that section when it reinstalls.
 - **E9 (Colab GPU):** real **Stable Diffusion inpainting** with known masks, plus the same
   sharing transforms. Localisation IoU and verdict TPR, in the E4 notebook.
 

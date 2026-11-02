@@ -98,7 +98,8 @@ def pdf(report: dict, heat: Image.Image, path: str, include_original: bool = Fal
         f"Regions ({report['grid']}x{report['grid']}): {s['match']} match, {s['altered']} altered, "
         f"{s['uncertain']} uncertain, {s['uncovered']} not in suspect, {s['flat']} flat",
         f"Thresholds: match <= {report['thresholds']['tau_match']} bits, altered >= "
-        f"{report['thresholds']['tau_alter']} bits, verdict needs >= {report['thresholds']['k_min']} matches "
+        f"{report['thresholds']['tau_alter']} bits or a detail shift >= {report['thresholds']['delta_level']} octaves, "
+        f"verdict needs >= {report['thresholds']['k_min']} matches "
         f"(from {report['thresholds']['source']})",
         f"Signed by owner key: {str(report.get('pk', 'unsigned'))[:32]}...",
     ]

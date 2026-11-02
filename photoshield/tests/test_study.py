@@ -90,3 +90,19 @@ def test_tables_numbers_come_from_files(tmp_path):
     recs = [json.loads(l) for l in open(tmp_path / "e7" / "chain_cost" / "seed0" / "records.jsonl")]
     nb = max(r["note_bytes"] for r in recs if r["kind"] == "single")
     assert f"| mock | 2 | {nb} |" in md
+
+
+def test_e8_calibrates_tile_thresholds(tmp_path):
+    pytest.importorskip("cv2")
+    before = open(study.CALIBRATION).read() if os.path.exists(study.CALIBRATION) else None
+    study.main(["e8", "--limit", "3", "--edits", "1", "--results", str(tmp_path)])
+    d = tmp_path / "e8" / "e8_skimage" / "seed0"
+    cfg = json.loads((d / "config.json").read_text())
+    t = cfg["thresholds"]
+    assert 0 <= t["tau_match"] < t["tau_alter"] <= 64 and t["delta_level"] >= 1 and t["k_min"] >= 1
+    recs = [json.loads(l) for l in open(d / "records.jsonl")]
+    assert {r["kind"] for r in recs} == {"clean", "paste", "smooth", "unrelated"}
+    assert all(len(x) == 6 for r in recs if r["tiles"] for x in r["tiles"])
+    after = open(study.CALIBRATION).read() if os.path.exists(study.CALIBRATION) else None
+    assert before == after                             # nothing installed without --install
+    assert "E8" in make_tables.render(str(tmp_path))

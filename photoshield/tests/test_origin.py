@@ -15,7 +15,7 @@ from PIL import Image  # noqa: E402
 from photoshield.origin import align as A, report as OR  # noqa: E402
 from photoshield.provenance import hashing as H, manifest as M, regions as R, signing as S  # noqa: E402
 
-T = {"tau_match": 10, "tau_alter": 22, "k_min": 8, "source": "test"}   # test values, not calibration
+T = {"tau_match": 10, "tau_alter": 22, "delta_level": 3, "k_min": 8, "source": "test"}   # test values, not calibration
 
 
 def png(a):
@@ -59,7 +59,7 @@ def test_grid_rule_and_tiles_partition_the_image():
 
 def test_region_map_is_deterministic_and_proofs_fold(reg):
     g, vals = R.region_values(reg["orig"])
-    assert g == 8 and len(vals) == 64 and all(len(v) == 18 and v[16] == ":" for v in vals)
+    assert g == 8 and len(vals) == 64 and all(v[16] == ":" and v.count(":") == 2 for v in vals)
     root, leaves = R.commit(vals, g)
     assert root == reg["man"]["regions"]["root"] == R.region_map(reg["orig"])["root"]
     from photoshield.provenance.merkle import verify_proof
@@ -71,7 +71,7 @@ def test_flat_tiles_are_flagged():
     img = np.full((256, 256, 3), 128, np.uint8)
     img[:, 128:] = sd.astronaut()[:256, :128]
     _, vals = R.region_values(img)
-    flags = [v.endswith(":1") for v in vals]
+    flags = [v.split(":")[1] == "1" for v in vals]
     assert not any(flags[r * 8 + c] for r in range(8) for c in range(4))     # the grey half
     assert sum(flags[r * 8 + c] for r in range(8) for c in range(4, 8)) >= 28
 
@@ -172,7 +172,8 @@ def test_thresholds_come_from_calibration(tmp_path):
     with pytest.raises(OR.OriginError, match="study e8"):
         OR.load_thresholds(str(tmp_path / "none.json"))
     p = tmp_path / "cal.json"
-    p.write_text(json.dumps({"tau_near": 1, "tau_far": 2, "tile": {"tau_match": 9, "tau_alter": 20, "k_min": 6}}))
+    p.write_text(json.dumps({"tau_near": 1, "tau_far": 2, "tile": {"tau_match": 9, "tau_alter": 20,
+                                                                    "delta_level": 2, "k_min": 6}}))
     assert OR.load_thresholds(str(p))["k_min"] == 6
 
 
@@ -185,7 +186,7 @@ def test_cli_origin_end_to_end(reg, tmp_path):
     keygen(key)
     (tmp_path / "manifest.json").write_text(json.dumps(reg["man"]))
     cal = tmp_path / "cal.json"
-    cal.write_text(json.dumps({"tile": {k: T[k] for k in ("tau_match", "tau_alter", "k_min")}}))
+    cal.write_text(json.dumps({"tile": {k: T[k] for k in ("tau_match", "tau_alter", "delta_level", "k_min")}}))
     out = tmp_path / "rep"
     assert cli.main(["origin", str(tmp_path / "orig.png"), str(tmp_path / "fake.jpg"), "--manifest",
                      str(tmp_path / "manifest.json"), "--out", str(out), "--key", key,

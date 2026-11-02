@@ -39,7 +39,8 @@ def load_thresholds(path: Optional[str] = None) -> dict:
         with open(p) as f:
             t = json.load(f)["tile"]
         out = {"tau_match": int(t["tau_match"]), "tau_alter": int(t["tau_alter"]),
-               "k_min": int(t["k_min"]), "source": os.path.basename(p)}
+               "delta_level": int(t["delta_level"]), "k_min": int(t["k_min"]),
+               "source": os.path.basename(p)}
     except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError):
         raise OriginError(f"no tile thresholds in {p}: run `python -m photoshield study e8 --install` first")
     _check_thresholds(out)
@@ -47,22 +48,30 @@ def load_thresholds(path: Optional[str] = None) -> dict:
 
 
 def _check_thresholds(t: dict) -> None:
-    if not (0 <= t["tau_match"] < t["tau_alter"] <= 64 and t["k_min"] >= 1):
-        raise OriginError("tile thresholds must satisfy 0 <= tau_match < tau_alter <= 64 and k_min >= 1")
+    if not (0 <= t["tau_match"] < t["tau_alter"] <= 64 and t["k_min"] >= 1 and t["delta_level"] >= 1):
+        raise OriginError("tile thresholds must satisfy 0 <= tau_match < tau_alter <= 64, "
+                          "delta_level >= 1 and k_min >= 1")
 
 
-def tile_status(value: str, suspect_hash: Optional[str], coverage: float, t: dict):
-    """(status, distance or None) for one tile, by the table in design §15.4."""
-    committed, textured = R.split_value(value)
+def tile_status(value: str, suspect_value: Optional[str], coverage: float, t: dict):
+    """(status, pHash distance or None) for one tile, by the table in design §15.4.
+
+    altered:   d >= tau_alter, or the detail level moved by >= delta_level octaves
+    match:     d <= tau_match and the detail level moved by < delta_level
+    uncertain: otherwise
+    """
+    committed, textured, level = R.split_value(value)
+    if suspect_value is None or coverage < MIN_COVERAGE:
+        return ("flat" if not textured else "uncovered"), None
+    sh, _, slevel = R.split_value(suspect_value)
+    d = hashing.hamming(committed, sh)
     if not textured:
-        return "flat", (hashing.hamming(committed, suspect_hash) if suspect_hash else None)
-    if coverage < MIN_COVERAGE or suspect_hash is None:
-        return "uncovered", None
-    d = hashing.hamming(committed, suspect_hash)
+        return "flat", d
+    moved = abs(slevel - level) >= t["delta_level"]
+    if d >= t["tau_alter"] or moved:
+        return "altered", d
     if d <= t["tau_match"]:
         return "match", d
-    if d >= t["tau_alter"]:
-        return "altered", d
     return "uncertain", d
 
 
@@ -91,7 +100,7 @@ def compare(original: np.ndarray, suspect: np.ndarray, t: dict, mode: str = "aut
         cov = float(al["mask"][y0:y1, x0:x1].mean())
         sh = None
         if cov >= MIN_COVERAGE:
-            sh = R.tile_value(al["warped"][y0:y1, x0:x1]).split(":")[0]
+            sh = R.tile_value(al["warped"][y0:y1, x0:x1])
         status, d = tile_status(value, sh, cov, t)
         tiles.append({"i": i, "name": f"r{r}c{c}", "value": value, "suspect": sh, "d": d,
                       "coverage": f"{cov:.3f}", "status": status})
@@ -152,7 +161,7 @@ def build_report(original_bytes: bytes, suspect_bytes: bytes, manifest: dict, th
         "alignment": {"method": al["method"], "matrix": A.matrix_strings(al["M"]),
                       "inliers": int(al["inliers"])},
         "grid": res["grid"],
-        "thresholds": {k: thresholds[k] for k in ("tau_match", "tau_alter", "k_min", "source")},
+        "thresholds": {k: thresholds[k] for k in ("tau_match", "tau_alter", "delta_level", "k_min", "source")},
         "tiles": res["tiles"],
         "summary": summarize(res["tiles"], thresholds),
     }
@@ -223,7 +232,7 @@ def verify_report(report: dict, suspect_bytes: Optional[bytes] = None, recheck: 
                 diffs = []
                 for (r, c, y0, y1, x0, x1), t in zip(R.tile_boxes(w, h, g), tiles):
                     if t["status"] in ("match", "altered", "uncertain"):
-                        sh = R.tile_value(warped[y0:y1, x0:x1]).split(":")[0]
+                        sh = R.tile_value(warped[y0:y1, x0:x1])
                         if sh != t["suspect"]:
                             diffs.append(t["i"])
                 add("suspect tile hashes recomputed", not diffs,
