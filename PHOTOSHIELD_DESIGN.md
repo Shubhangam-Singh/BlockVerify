@@ -719,3 +719,144 @@ trailer (CLAUDE.md A12), and a stop.
   closest neighbours cover two of the three (Mohit et al. 2026, ARCHANGEL 2019, Dual Defense 2024,
   DualShield 2026). Several of those are unreviewed preprints, so the claim is worded "to our
   knowledge".
+
+---
+
+## 15. v2: Origin reports ("was this deepfake made from my photo?")
+
+### 15.1 The gap v1 leaves
+v1 recognises **copies**: exact (SHA-256) and lightly processed (whole-image pHash). A deepfake is a
+**heavily, locally** edited copy: the face is swapped, the background replaced, a body inpainted.
+Its whole-image pHash moves past τ_far and v1 answers UNKNOWN at the moment the owner most needs
+evidence. The cloak does not close the gap either, because purification strips it.
+
+v2 answers a different question, posed by the owner who holds the original:
+> Which regions of this suspect image are identical to a photo I anchored at time T, and which
+> regions were changed?
+
+The output is an **origin report**, a signed JSON document with a heatmap. Anyone can verify it
+against the public ledger without seeing the original photo.
+
+It is the same idea as BlockVerify's layer-level tamper localisation: there the Merkle leaves are
+model layers, here they are image regions.
+
+### 15.2 Region map (committed at registration)
+- **Grid.** `G = min(8, floor(min(W, H) / 32))`. Images with `G < 2` (a side under 64 px) get no
+  region map. Tile `(r, c)` covers rows `[floor(r·H/G), floor((r+1)·H/G))` and the same rule for
+  columns. Integer arithmetic only, identical in Python and the browser.
+- **Tile value** `"<16-hex pHash>:<flag>"`. The pHash is the canonical §7 pHash of the tile crop,
+  so the browser reproduces it bit for bit. `flag` is `1` (textured) when the range of the tile's
+  32 × 32 luma bin means is at least `FLAT_RANGE = 10000` (10 grey levels at ×1000 luma), else
+  `0` (flat). Flat tiles, such as clear sky or a white wall, carry no claim either way.
+- **Commitment.** Leaves use the repository's canonical leaf
+  `SHA256(JSON([i, "r{r}c{c}", value]))` and the same duplicate-last Merkle as albums.
+- **Manifest field** (optional, so v1 manifests and their digests are unchanged):
+  ```json
+  "regions": {"algo": "tile-phash@1", "grid": 8, "n": 64, "root": "<64-hex>"}
+  ```
+  It is covered by the manifest digest `md`, which is already in the anchored note. **The note
+  format does not change**, and neither do ledger rebuild, albums or verify.
+- The tile values themselves are **not** published. The owner recomputes them from the original
+  when making a report, which also re-checks them against the committed root. A report reveals
+  only per-tile hashes plus Merkle proofs, never pixels.
+
+### 15.3 Alignment
+A suspect is usually resized, re-encoded and often cropped or slightly rotated.
+1. ORB keypoints (OpenCV), Hamming matching with Lowe's ratio test, then a RANSAC
+   **similarity** transform (rotation + uniform scale + translation, `estimateAffinePartial2D`).
+   It needs at least 12 inliers. Unedited regions anchor the fit even when the face is replaced.
+2. Fallback: if the aspect ratios agree within 3 %, a plain resize. Otherwise the report is
+   refused ("cannot align").
+3. The suspect is warped into the original's frame together with a validity mask. A tile with less
+   than 95 % coverage is `uncovered`.
+
+The browser generates reports only with the resize fallback (same framing, the common case for AI
+editors). Cropped or rotated suspects go through the CLI. Both produce the same report format.
+
+### 15.4 Tile verdicts and the image verdict
+For each tile, `d = Hamming(committed pHash, suspect tile pHash)`:
+
+| status | condition |
+|---|---|
+| `flat` | the committed flag is 0 |
+| `uncovered` | coverage < 0.95 |
+| `match` | d ≤ τ_match |
+| `altered` | d ≥ τ_alter |
+| `uncertain` | otherwise |
+
+Image verdict: **DERIVED_FROM_REGISTERED** when `match ≥ k_min`. **NOT_SHOWN** otherwise: the
+report proves nothing, which is not the same as "not derived".
+
+τ_match, τ_alter and k_min are **measured**, never typed (§15.7). They live in the `tile` section
+of `photoshield/calibration.json`. Without it, report generation stops with an explanation.
+
+### 15.5 Report format `photoshield/origin-report@1`
+```json
+{"schema": "photoshield/origin-report@1", "created": 1793620000,
+ "photo": {"photoId": "...", "manifestDigest": "...", "manifest": {...}},
+ "suspect": {"sha256": "...", "width": 1024, "height": 768},
+ "alignment": {"method": "orb-ransac" | "resize", "matrix": ["a","b","tx","c","d","ty"], "inliers": 214},
+ "grid": 8, "thresholds": {"tau_match": .., "tau_alter": .., "k_min": .., "source": "calibration.json"},
+ "tiles": [{"i": 0, "name": "r0c0", "value": "<hex>:1", "suspect": "<hex>", "d": 3,
+            "coverage": "1.000", "status": "match", "proof": [{"hash": "...", "right": true}]}],
+ "summary": {"match": 41, "altered": 9, "uncertain": 3, "uncovered": 0, "flat": 11,
+             "verdict": "DERIVED_FROM_REGISTERED"},
+ "pk": "<owner Ed25519>", "sig": "<over 'photoshield/origin@1|' + sha256(canonical(report \ sig))>"}
+```
+- No floats anywhere: matrix entries and coverage are decimal strings (the §5.1 rule), so the
+  browser and Python sign the same bytes.
+- Numbers shown above are an illustration of shape, not results.
+
+### 15.6 Verifying a report (browser or `python -m photoshield origin-verify`)
+1. `sha256(canonical(manifest)) == manifestDigest`, and `photoId` is derived from it.
+2. Every tile leaf folds, with its proof, to `manifest.regions.root`. The proofs commit to the
+   positions too, so tiles cannot be moved between positions.
+3. The owner signature verifies, and `pk` equals the key in the anchored note.
+4. The anchor: the note read from the public indexer names `md` (as in v1's ledger check).
+5. Optional: a supplied suspect file hashes to `suspect.sha256`. The CLI can also re-run the
+   comparison with the recorded matrix and confirm each claimed `d`.
+
+Steps 1–4 make the report **tamper-evident**. Step 5 binds it to a specific circulating image.
+The perceptual claim ("these regions look the same") is reproducible by anyone with the CLI and
+the suspect image. It never requires the original.
+
+### 15.7 Evaluation
+- **E8 (CPU, container):** scikit-image photos at 512 px.
+  - Synthetic local edits with known masks: *paste* (a rectangle from an unrelated photo,
+    simulating a face swap) and *smooth fill* (blur plus noise, simulating inpainting), each 10–30 %
+    of the area.
+  - Each edit is then shared: JPEG 75, resize 0.75, crop 5 %, rotate 3°.
+  - Negatives are unrelated photos forced through the resize alignment.
+  - It writes tile-level precision and recall of `altered` against the mask, image-level TPR and
+    FPR of the verdict, and alignment success.
+  - `--install` writes τ_match (unrelated-tile FPR ≤ 0.5 %), τ_alter (unchanged-tile exceedance
+    ≤ 1 %) and k_min (unrelated-pair FPR ≤ 1 %).
+- **E9 (Colab GPU):** real **Stable Diffusion inpainting** with known masks, plus the same
+  sharing transforms. Localisation IoU and verdict TPR, in the E4 notebook.
+
+### 15.8 Honest limits (added to §12)
+- A report needs the **original** and a registration made with v2, which has a region map. v1
+  registrations carry none.
+- Heavy global edits (a full style transfer) change every tile, so the verdict is NOT_SHOWN.
+  Origin reports target **local** manipulations.
+- Alignment can fail on extreme crops, mirroring or perspective changes.
+- A matching region proves that region existed under the owner's key at time T. It does not prove
+  who made the fake.
+
+### 15.9 Roadmap after origin reports
+- **C2PA Content Credentials** in the cloaked PNG, with the anchor as an assertion.
+- **Identity proofs.** A signed statement posted on GitHub or a website links an owner key to a
+  public handle, Keybase-style. The server vouches for nothing.
+- **Face-ID cloak study.** An ensemble cloak against the face-identity and CLIP image encoders
+  used by zero-shot face-swap pipelines, evaluated against purification. The honest negative
+  result counts as a finding.
+
+### 15.10 Phases
+
+| Phase | Deliverable |
+|---|---|
+| V0 | This section |
+| V1 | `provenance/regions.py`, the manifest `regions` field, `protect` writes it, `photoshield/origin/` (align, report, heatmap), CLI `origin` / `origin-verify`, tests |
+| V2/V3 | The browser computes the region map at registration (bit-identical to Python, Node-tested); the backend exposes tile calibration; Origin report card (generate for same-framing copies, verify any report); tour and FAQ |
+| V4 | E8 plus `--install`; E9 in the Colab notebook; tables |
+| V5 | Docs, gates, deploy |
