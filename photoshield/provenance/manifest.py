@@ -27,8 +27,8 @@ _BAD_TITLE = re.compile(r"[<>\x00-\x1f\x7f]")
 _TOKEN = re.compile(r"^[A-Za-z0-9._:+\-]{1,40}$")
 _DECIMAL = re.compile(r"^-?(\d{1,6})(\.\d{1,6})?$|^inf$")
 
-CLOAK_INT = ("eps", "steps", "size", "seed", "threads")
-CLOAK_STR = ("model", "tool_version", "jpeg_mode")
+CLOAK_INT = ("eps", "steps", "size", "seed", "threads", "alpha_div", "full_res")
+CLOAK_STR = ("model", "tool_version", "jpeg_mode", "target")
 CLOAK_METRICS = ("psnr", "ssim", "latent_shift", "recon_psnr_drop", "linf")
 
 
