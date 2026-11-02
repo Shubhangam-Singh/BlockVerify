@@ -82,8 +82,29 @@ def test_notebook_is_unexecuted_and_drives_tested_code():
     code = [c for c in nb["cells"] if c["cell_type"] == "code"]
     assert all(c["outputs"] == [] and c["execution_count"] is None for c in code)
     src = "".join("".join(c["source"]) for c in code)
-    for name in ("run_e4", "run_e5", "instruct_pix2pix", "lpips_scorer", "clip_directional",
+    for name in ("run_e4", "run_e5", "run_e9", "sd_inpaint", "instruct_pix2pix", "lpips_scorer", "clip_directional",
                  "make_tables", "use_deterministic_algorithms"):
         assert name in src
     for fn in ("run_e4", "run_e5", "instruct_pix2pix", "lpips_scorer", "clip_directional"):
         assert callable(getattr(E, fn))
+
+
+def test_e9_inpainting_layout_with_a_stub(tmp_path):
+    pytest.importorskip("cv2")
+    import skimage.data as sd
+
+    def stub_inpaint(rgb, mask, prompt, seed):          # paste noise into the mask, like a fill
+        out = rgb.copy()
+        rng = np.random.default_rng(seed + len(prompt))
+        out[mask] = rng.integers(0, 256, (int(mask.sum()), 3))
+        return out
+    T = {"tau_match": 21, "tau_alter": 25, "delta_level": 2, "k_min": 3, "source": "test"}
+    d = E.run_e9([("astronaut", sd.astronaut())], stub_inpaint, prompts=("a face",), seeds=(0,),
+                 transforms=("none", "jpeg75"), results=str(tmp_path), thresholds=T, inpaint_info={"pipeline": "stub"})
+    recs = [json.loads(l) for l in open(f"{d}/records.jsonl")]
+    assert len(recs) == 2 and all(r["aligned"] and len(r["tiles"]) == 64 for r in recs)
+    assert recs[0]["outside_mask_drift"] == 0.0
+    md = make_tables.render(str(tmp_path))
+    assert "stub" in md and "inpainted tiles flagged altered" in md
+    import os
+    assert os.path.exists(f"{d}/grids/astronaut_p0.png")

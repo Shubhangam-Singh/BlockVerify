@@ -339,6 +339,34 @@ def table_e8(results) -> str:
     return "\n\n".join(parts)
 
 
+def table_e9(results) -> str:
+    runs = _runs(results, "e9")
+    if not runs:
+        MISSING.append("E9: no runs (photoshield/experiments/colab_edit_test.ipynb)")
+        return "_No E9 runs. Run the Colab notebook and copy its results/e9 folder here._"
+    parts = []
+    for cell, seed, cfg, recs in runs:
+        thr = cfg["thresholds"]
+        rows = []
+        for tr in dict.fromkeys(r["transform"] for r in recs):
+            rs = [r for r in recs if r["transform"] == tr]
+            ok = [r for r in rs if r["tiles"]]
+            ed = [t for r in ok for t in r["tiles"] if t[1] >= 0.5 and _e8_status(t, thr)]
+            un = [t for r in ok for t in r["tiles"] if t[1] == 0.0 and _e8_status(t, thr)]
+            der = sum(1 for r in ok if sum(_e8_status(t, thr) == "match" for t in r["tiles"]) >= thr["k_min"])
+            rows.append([tr, str(len(rs)), f"{der}/{len(ok)}",
+                         fmt(sum(_e8_status(t, thr) == "altered" for t in ed) / len(ed), 3) if ed else DASH,
+                         fmt(sum(_e8_status(t, thr) == "match" for t in un) / len(un), 3) if un else DASH,
+                         pm([r.get("outside_mask_drift") for r in rs], 2)])
+        inf = cfg.get("inpaint", {})
+        parts.append(f"**{inf.get('pipeline', '?')} ({inf.get('repo', '?')}), {len(cfg.get('images', []))} photos, "
+                     f"{len(cfg.get('prompts', []))} prompts, seeds {cfg.get('edit_seeds')}, {seed}; thresholds from "
+                     f"{cfg.get('thresholds_source')}**\n\n" + _table(
+                         ["sharing", "n", "verdict DERIVED", "inpainted tiles flagged altered",
+                          "untouched tiles matched", "mean |change| outside mask (0-255)"], rows))
+    return "\n\n".join(parts)
+
+
 SECTIONS = [
     ("E1/E2 — invisibility vs strength, encoder disruption", table_e1),
     ("E3 — does the cloak survive sharing?", table_e3),
@@ -349,6 +377,7 @@ SECTIONS = [
     ("E6b — browser vs PIL JPEG decode", table_e6b),
     ("E7 — provenance cost", table_e7),
     ("E8 — origin reports: localising local edits (v2)", table_e8),
+    ("E9 — origin reports against Stable Diffusion inpainting (Colab)", table_e9),
 ]
 
 
