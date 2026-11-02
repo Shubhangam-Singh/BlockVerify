@@ -202,3 +202,17 @@ and `*.onrender.com`; PyPI is reachable. Consequences:
 - Anything that needs real SD-VAE weights, a live Algorand call or the live Render site runs on
   the human's laptop. Container tests use a tiny random-weight encoder and a mocked Algorand
   client, as `backend/tests/test_api.py` already does.
+
+## A16. UI redesign of frontend/index.html (agreed with the human, 2 Nov 2026)
+The human asked for a professional redesign ("Ledger": dark marketing landing, light/dark app,
+one blue accent, Inter/Inter Tight/JetBrains Mono). That cannot be strictly additive, so the
+"Existing code" rule is relaxed for `frontend/index.html` only, within these limits:
+- Visual only. Every element id, `onclick` handler, JS function and API call is unchanged; the
+  restyle lives in one `<style id="ledger-theme">` block after the original styles.
+- Markup changes are limited to: the landing page (`#landing`, shown at `/` and `#home`), a new
+  logo mark, sidebar group labels (Models / Network / Extensions / Help), and moving the overview
+  strip (stats, wallet, activity) into the content column, ids intact.
+- Behaviour changes are limited to routing: the login modal and the tour toast no longer cover the
+  landing page; they appear when the visitor enters the app, as before.
+- Verified with before/after screenshots of every tab (desktop dark/light, phone) and the
+  PhotoShield Playwright flow (`photoshield/tests/e2e/`).

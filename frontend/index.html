@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BlockVerify — AI Model Integrity Verification</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2306080c'/><path d='M16 5c2.5 2 5 2.6 7.5 2.6 0 8-2.4 12.4-7.5 14.9C10.9 20.4 8.5 16 8.5 8 11 8 13.5 7 16 5Z' fill='%2300e5a0'/><path d='M12.4 15.6 15 18.2 19.6 12.4' fill='none' stroke='%2306080c' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230A0D14'/><rect x='5' y='5' width='22' height='22' rx='6' fill='none' stroke='%235B8CFF' stroke-width='2.2'/><path d='M10.5 16.5l3.6 3.6 7.4-8.2' fill='none' stroke='%235B8CFF' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Inter+Tight:wght@500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
@@ -1905,8 +1905,384 @@
     body.light-theme .faq-q { background: rgba(15,23,42,0.03); }
     body.light-theme .step-item { background: rgba(15,23,42,0.02); }
   </style>
+  <!-- ══════════════════════════════════════════════════════════════════
+       "Ledger" design system (UI redesign, CLAUDE.md A16). Visual only:
+       it re-tokens and restyles the components above; no ids, handlers or
+       behaviour change. Selectors are prefixed `:root body` so they win over
+       the earlier `body.light-theme .x` rules by source order.
+       ══════════════════════════════════════════════════════════════════ -->
+  <style id="ledger-theme">
+    :root {
+      --bg: #0A0D14; --bg-1: #0D111A; --bg-grid: transparent;
+      --surface: #111623; --surface2: #161C2C; --surface-solid: #111623; --card: #111623;
+      --border: #222A3B; --border-strong: #2F3A52;
+      --text: #E8ECF4; --text-muted: #9AA4B8;
+      --primary-rgb: 91, 140, 255; --primary-light-rgb: 143, 176, 255; --accent-rgb: 124, 108, 255;
+      --success-rgb: 52, 211, 153; --danger-rgb: 248, 113, 113; --warn-rgb: 251, 191, 36;
+      --primary-ink: #0A0D14;
+      --fv-inset: #0D111A; --fv-inset-b: #222A3B;
+      --font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --display: 'Inter Tight', 'Inter', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      --radius: 14px; --radius-sm: 10px; --radius-lg: 18px;
+      --shadow-1: 0 1px 2px rgba(0,0,0,.35);
+      --shadow-2: 0 1px 2px rgba(0,0,0,.30);
+      --shadow-3: 0 16px 40px -18px rgba(0,0,0,.7);
+      --glow: none;
+      --sidebar-w: 248px;
+    }
+    body.light-theme {
+      --bg: #F6F7FA; --bg-1: #FFFFFF; --bg-grid: transparent;
+      --surface: #FFFFFF; --surface2: #F3F5F9; --surface-solid: #FFFFFF; --card: #FFFFFF;
+      --border: #E3E7EF; --border-strong: #CBD2DE;
+      --text: #0F1626; --text-muted: #5A6478;
+      --primary-rgb: 47, 91, 234; --primary-light-rgb: 30, 63, 176; --accent-rgb: 91, 75, 224;
+      --success-rgb: 15, 138, 95; --danger-rgb: 180, 35, 24; --warn-rgb: 180, 83, 9;
+      --primary-ink: #FFFFFF;
+      --fv-inset: #F3F5F9; --fv-inset-b: #E3E7EF;
+      --shadow-1: 0 1px 2px rgba(15,22,38,.06);
+      --shadow-2: 0 1px 2px rgba(15,22,38,.05);
+      --shadow-3: 0 16px 36px -18px rgba(15,22,38,.28);
+    }
+
+    /* ── Ground: plain, quiet ── */
+    :root body {
+      background: var(--bg); background-image: none; cursor: auto; letter-spacing: 0;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+    :root body a, :root body button, :root body .btn, :root body .file-drop, :root body .block-card,
+    :root body .qs-card, :root body .chatbot-btn, :root body .close-btn, :root body .bc-copy,
+    :root body [onclick] { cursor: pointer !important; }
+    ::selection { background: rgba(var(--primary-rgb), .30); color: inherit; }
+    #bg-canvas { display: none !important; }
+    h1, h2, h3, .auth-title, .welcome-title, .stat-val, .logo-word, .tour-tooltip-title { font-family: var(--display); letter-spacing: -0.015em; }
+    code, .mono, .hash-box { font-family: var(--mono); }
+
+    /* ── Header (app top bar) ── */
+    :root body .header {
+      background: var(--bg-1); backdrop-filter: none; -webkit-backdrop-filter: none;
+      border-bottom: 1px solid var(--border); box-shadow: none; padding: .7rem 1.5rem; min-height: 64px;
+    }
+    :root body .header::after { display: none; }
+    :root body .logo { gap: .6rem; cursor: pointer; border-radius: 10px; }
+    .logo-img { display: none !important; }
+    .bv-mark { width: 30px; height: 30px; flex-shrink: 0; color: var(--primary); display: block; }
+    :root body .logo-word { font-size: 1.15rem; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+    :root body .logo-word span { color: inherit; }
+    :root body .hbtn {
+      background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
+      border-radius: 10px; min-height: 40px; padding: .45rem .8rem; font-weight: 500; transform: none;
+    }
+    :root body .hbtn-icon { width: 40px; padding: 0; justify-content: center; }
+    :root body .hbtn:hover { color: var(--text); border-color: var(--border-strong); background: var(--surface2); transform: none; }
+    :root body .btn-login-header {
+      background: var(--primary); color: var(--primary-ink); border-radius: 10px; min-height: 40px;
+      padding: .5rem 1rem; font-weight: 600; box-shadow: none;
+    }
+    :root body .btn-login-header:hover { transform: none; box-shadow: none; filter: brightness(1.08); }
+    :root body .user-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; min-height: 40px; }
+    :root body .user-pill .avatar { background: rgba(var(--primary-rgb), .16); color: rgb(var(--primary-light-rgb)); font-weight: 700; }
+    body.light-theme .user-pill .avatar { background: #E8EEFF; color: #2F5BEA; }
+
+    /* ── App shell: full-height sidebar + content column ── */
+    :root body .app { max-width: none; margin: 0; padding: 0; animation: none; }
+    :root body .sidebar-layout { margin-top: 0; align-items: stretch; min-height: calc(100vh - var(--sticky-offset)); }
+    :root body .sidebar {
+      width: var(--sidebar-w); min-width: var(--sidebar-w); border-radius: 0; border: 0;
+      border-right: 1px solid var(--border); background: var(--bg-1); box-shadow: none;
+      backdrop-filter: none; -webkit-backdrop-filter: none; padding: 1.1rem .75rem 2rem;
+      position: sticky; top: var(--sticky-offset); align-self: flex-start;
+      height: calc(100vh - var(--sticky-offset)); max-height: none;
+    }
+    :root body .sidebar-label {
+      font-size: .68rem; font-weight: 600; letter-spacing: .08em; opacity: 1;
+      color: var(--text-muted); padding: 1.1rem .75rem .4rem;
+    }
+    :root body .sidebar-label:first-child { padding-top: .2rem; }
+    :root body .tab {
+      font-size: .875rem; font-weight: 500; color: var(--text); opacity: .86; border-radius: 8px;
+      padding: .58rem .75rem; gap: .7rem; min-height: 40px;
+    }
+    :root body .tab::before { display: none; }
+    :root body .tab .tab-icon { color: var(--text-muted); }
+    :root body .tab:hover { background: var(--surface2); opacity: 1; }
+    :root body .tab:hover .tab-icon { color: var(--text); }
+    :root body .tab.active { background: rgba(var(--primary-rgb), .13); color: rgb(var(--primary-light-rgb)); font-weight: 600; opacity: 1; }
+    body.light-theme .tab.active { background: #EDF1FF; color: #1E3FB0; }
+    :root body .tab.active .tab-icon { color: inherit; }
+    :root body .tab-flagship::before { display: none; }
+    :root body .tab-flagship:not(.active), :root body .tab-flagship:hover { background: transparent; }
+    :root body .tab-flagship:hover { background: var(--surface2); }
+    :root body .tab-flagship .tab-icon { color: var(--text-muted); }
+    :root body .tab-flagship.active .tab-icon { color: inherit; }
+    :root body .tab-new {
+      background: transparent; color: rgb(var(--primary-light-rgb)); border: 1px solid rgba(var(--primary-rgb), .45);
+      font-size: .62rem; font-weight: 600; letter-spacing: .02em; padding: .05rem .4rem; border-radius: 999px; text-transform: none;
+    }
+    body.light-theme .tab-new { color: #2F5BEA; border-color: #C9D6FF; }
+    :root body .tab-badge { box-shadow: none; }
+    :root body .sidebar-content { padding: 1.75rem 2.25rem 3rem; min-width: 0; }
+    :root body .sidebar-content > * { max-width: 1180px; }
+
+    /* ── Overview strip (stats, wallet, activity) ── */
+    .app-overview { margin-bottom: 1.25rem; }
+    :root body .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; margin-bottom: .6rem; }
+    :root body .stat-card {
+      background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-2);
+      backdrop-filter: none; -webkit-backdrop-filter: none; padding: 1rem 1.1rem; border-radius: 12px;
+      flex-direction: row; align-items: center; gap: .85rem; animation: none; transform: none;
+    }
+    :root body .stat-card::before, :root body .stat-card::after { display: none; }
+    :root body .stat-card:hover { transform: none; box-shadow: var(--shadow-2); border-color: var(--border-strong); }
+    :root body .stat-ico { width: 38px; height: 38px; margin: 0; border: 0; border-radius: 10px; background: rgba(var(--primary-rgb), .12); color: rgb(var(--primary-light-rgb)); }
+    body.light-theme .stat-ico { background: #EDF1FF; color: #2F5BEA; }
+    :root body .stat-val { font-size: 1.35rem; font-weight: 700; order: 2; color: var(--text); -webkit-text-fill-color: var(--text); }
+    :root body .stat-lbl { font-size: .72rem; letter-spacing: .06em; margin: 0; order: 3; flex-basis: 100%; }
+    :root body .stat-card { flex-wrap: wrap; row-gap: .1rem; }
+    :root body .stat-card .stat-ico { order: 1; }
+    :root body .stat-card .stat-val { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    :root body .stat-card .stat-lbl { padding-left: calc(38px + .85rem); margin-top: -.2rem; }
+    :root body #walletAddrBar { margin: .2rem 0 .9rem !important; justify-content: flex-start !important; }
+
+    /* ── Cards ── */
+    :root body .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      box-shadow: var(--shadow-2); backdrop-filter: none; -webkit-backdrop-filter: none; padding: 1.6rem 1.75rem;
+    }
+    :root body .card h2 { font-size: 1.22rem; font-weight: 650; letter-spacing: -0.015em; }
+    :root body .card .subtitle { font-size: .9rem; color: var(--text-muted); line-height: 1.55; }
+    :root body .card-title-ico { width: 36px; height: 36px; border: 0; border-radius: 10px; background: rgba(var(--primary-rgb), .12); color: rgb(var(--primary-light-rgb)); }
+    body.light-theme .card-title-ico { background: #EDF1FF; color: #2F5BEA; }
+    :root body .card h2 .ico { color: inherit; }
+    :root body .chrome-collapse-head { background: transparent; }
+    :root body .tab-content.active, :root body .tab-content.active > .card { animation: bvFade .25s ease-out; }
+    @keyframes bvFade { from { opacity: 0; } to { opacity: 1; } }
+
+    /* ── Buttons ── */
+    :root body .btn {
+      background: var(--primary); color: var(--primary-ink); border: 1px solid transparent; border-radius: 10px;
+      font-weight: 600; font-size: .92rem; padding: .7rem 1.25rem; min-height: 42px;
+      box-shadow: none; transform: none; transition: filter .15s, background .15s, border-color .15s;
+    }
+    :root body .btn::after { display: none; }
+    :root body .btn:hover { transform: none; box-shadow: none; filter: brightness(1.08); }
+    :root body .btn:active { transform: none; filter: brightness(.96); }
+    :root body .btn-sec { background: var(--surface); border: 1px solid var(--border-strong); color: var(--text); }
+    :root body .btn-sec:hover { background: var(--surface2); filter: none; }
+    :root body .btn-danger { background: rgb(var(--danger-rgb)); color: #fff; box-shadow: none; }
+    :root body .auth-submit, :root body .tour-btn-next { background: var(--primary); color: var(--primary-ink); box-shadow: none; }
+    :root body .auth-submit:hover { transform: none; box-shadow: none; filter: brightness(1.08); }
+
+    /* ── Forms ── */
+    :root body input[type="text"], :root body input[type="password"], :root body input[type="number"],
+    :root body input[type="search"], :root body input[type="email"], :root body textarea, :root body select,
+    :root body .auth-field input, :root body .welcome-user-row input {
+      background: var(--bg-1); border: 1px solid var(--border-strong); border-radius: 10px; color: var(--text);
+      box-shadow: none; font-family: var(--font);
+    }
+    body.light-theme input[type="text"], body.light-theme input[type="password"], body.light-theme textarea { background: #FFFFFF; }
+    :root body input[type="text"]:focus, :root body input[type="password"]:focus, :root body textarea:focus,
+    :root body select:focus, :root body .auth-field input:focus {
+      border-color: rgb(var(--primary-rgb)); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), .18); outline: none;
+    }
+    :root body .fg label { color: var(--text); font-weight: 500; font-size: .85rem; }
+    :root body .file-drop {
+      border: 1.5px dashed var(--border-strong); background: var(--bg-1); border-radius: 12px; transform: none;
+    }
+    body.light-theme .file-drop { background: #FAFBFD; }
+    :root body .file-drop::before { display: none; }
+    :root body .file-drop:hover, :root body .file-drop.dragover {
+      border-color: rgb(var(--primary-rgb)); background: rgba(var(--primary-rgb), .05); transform: none; box-shadow: none; animation: none;
+    }
+    :root body .file-drop .icon-wrap { border: 0; background: rgba(var(--primary-rgb), .12); color: rgb(var(--primary-light-rgb)); }
+    body.light-theme .file-drop .icon-wrap { background: #EDF1FF; color: #2F5BEA; }
+
+    /* ── Status: verified is green, info is blue ── */
+    :root body .badge-ok { background: rgba(var(--success-rgb), .14); color: rgb(var(--success-rgb)); border-color: rgba(var(--success-rgb), .35); }
+    :root body .toast { background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-3); backdrop-filter: none; }
+    :root body .toast.ok { border-left: 3px solid rgb(var(--success-rgb)); }
+    :root body .hash-box { background: var(--bg-1); border: 1px solid var(--border); color: var(--text); }
+    body.light-theme .hash-box { background: #F6F7FA; color: #0F1626; }
+
+    /* ── Tables ── */
+    :root body .tbl th { color: var(--text-muted); font-weight: 600; font-size: .72rem; letter-spacing: .05em; }
+    :root body .tbl td { background: transparent; border-color: var(--border); }
+    :root body .tbl tr:hover td { background: var(--surface2); }
+
+    /* ── Modals ── */
+    :root body .modal-box, :root body .auth-box, :root body .welcome-box {
+      background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-3); border-radius: 18px;
+    }
+    :root body .modal-head { background: var(--surface); }
+    :root body .logo-badge { background: rgba(var(--primary-rgb), .12); border: 0; box-shadow: none; color: rgb(var(--primary-light-rgb)); }
+    :root body .auth-tab.active { background: var(--primary); color: var(--primary-ink); }
+    :root body .qs-card { background: var(--surface); border: 1px solid var(--border); }
+    :root body .qs-card:hover { border-color: rgba(var(--primary-rgb), .5); box-shadow: none; transform: none; }
+
+    /* ── Assistant button ── */
+    :root body .chatbot-btn {
+      background: var(--primary); border: 0; border-radius: 14px; width: 52px; height: 52px;
+      box-shadow: var(--shadow-3); bottom: 28px; right: 24px;
+    }
+    :root body .chatbot-btn:before { display: none; }
+    :root body .chatbot-btn:hover { background: var(--primary); transform: none; box-shadow: var(--shadow-3); filter: brightness(1.08); }
+    :root body .chatbot-btn svg { fill: var(--primary-ink); filter: none; }
+
+    /* ── Responsive app shell ── */
+    @media (max-width: 900px) {
+      :root body .sidebar-layout { flex-direction: column; min-height: 0; }
+      :root body .sidebar {
+        position: sticky; top: var(--sticky-offset); z-index: 50; width: 100%; min-width: 0; height: auto;
+        border-right: 0; border-bottom: 1px solid var(--border); padding: .5rem .75rem;
+        display: flex; flex-wrap: nowrap; overflow-x: auto; gap: .25rem; scrollbar-width: none;
+      }
+      :root body .sidebar::-webkit-scrollbar { display: none; }
+      :root body .sidebar-label { display: none; }
+      :root body .tab { width: auto; flex: 0 0 auto; padding: .5rem .75rem; min-height: 40px; }
+      :root body .tab.active::after { display: none; }
+      :root body .sidebar-content { padding: 1.1rem 1rem 3rem; }
+      :root body .stats { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      :root body .header { flex-direction: row; padding: .6rem 1rem; }
+      :root body .hbtn-tx { display: none; }
+      :root body .card { padding: 1.2rem 1.1rem; }
+    }
+
+    /* ══ Landing page ═══════════════════════════════════════════════ */
+    #landing { display: none; }
+    body.landing-mode #landing { display: block; }
+    body.landing-mode .header, body.landing-mode .app, body.landing-mode #insecureBanner { display: none !important; }
+    .lp { color: var(--text); background: var(--bg); font-family: var(--font); }
+    .lp a { color: rgb(var(--primary-light-rgb)); text-decoration: none; }
+    .lp a:hover { text-decoration: underline; }
+    .lp-wrap { max-width: 1200px; margin: 0 auto; padding-left: 24px; padding-right: 24px; }
+    .lp-nav { border-bottom: 1px solid var(--border); background: var(--bg); position: sticky; top: 0; z-index: 100; }
+    .lp-nav .lp-wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; padding-bottom: 14px; }
+    .lp-brand { display: flex; align-items: center; gap: 10px; color: var(--text) !important; text-decoration: none !important; font-family: var(--display); font-weight: 700; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .lp-links { display: flex; flex-wrap: wrap; gap: 26px; font-size: .9rem; }
+    .lp-links a { color: var(--text-muted); }
+    .lp-links a:hover { color: var(--text); text-decoration: none; }
+    .lp-actions { display: flex; align-items: center; gap: 8px; }
+    .lp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 11px; font-weight: 600; font-size: .95rem; border: 1px solid transparent; cursor: pointer; font-family: var(--font); text-decoration: none !important; transition: filter .15s, background .15s; }
+    .lp-btn-primary { background: var(--primary); color: var(--primary-ink) !important; }
+    .lp-btn-primary:hover { filter: brightness(1.08); }
+    .lp-btn-ghost { background: var(--surface); color: var(--text) !important; border-color: var(--border-strong); }
+    .lp-btn-ghost:hover { background: var(--surface2); }
+    .lp-btn-plain { background: transparent; color: var(--text) !important; }
+    .lp-icon-btn { width: 44px; height: 44px; border-radius: 11px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+    .lp-icon-btn:hover { color: var(--text); }
+    .lp-hero { display: flex; flex-wrap: wrap; gap: 56px; align-items: center; padding-top: 88px; padding-bottom: 80px; }
+    .lp-hero-copy { flex: 1 1 460px; min-width: 0; }
+    .lp-hero-card { flex: 1 1 400px; min-width: 0; }
+    .lp-chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px; font-size: .82rem; color: var(--text-muted); background: var(--surface); }
+    .lp-dot { width: 8px; height: 8px; border-radius: 50%; background: rgb(var(--success-rgb)); flex-shrink: 0; }
+    .lp-h1 { font-family: var(--display); font-weight: 700; font-size: clamp(2.5rem, 5.4vw, 4rem); line-height: 1.04; letter-spacing: -0.03em; margin: 24px 0 20px; }
+    .lp-lead { font-size: 1.18rem; line-height: 1.6; color: var(--text-muted); margin: 0 0 32px; max-width: 34em; }
+    .lp-cta { display: flex; flex-wrap: wrap; gap: 12px; }
+    .lp-trust { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 40px; font-size: .84rem; color: var(--text-muted); }
+    .lp-trust span { display: inline-flex; align-items: center; gap: 8px; }
+    .lp-trust svg { width: 16px; height: 16px; }
+    .lp-receipt { border: 1px solid var(--border); border-radius: 18px; background: var(--surface); overflow: hidden; box-shadow: var(--shadow-3); }
+    .lp-receipt-head, .lp-receipt-foot { padding: 14px 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+    .lp-receipt-head { border-bottom: 1px solid var(--border); }
+    .lp-receipt-foot { border-top: 1px solid var(--border); background: var(--bg-1); font-size: .84rem; }
+    .lp-receipt-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+    .lp-k { font-size: .76rem; color: var(--text-muted); margin-bottom: 4px; }
+    .lp-v { font-size: .95rem; font-weight: 500; }
+    .lp-mono { font-family: var(--mono); font-size: .82rem; color: var(--text); word-break: break-all; line-height: 1.6; }
+    .lp-muted-mono { font-family: var(--mono); font-size: .8rem; color: var(--text-muted); }
+    .lp-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .lp-checks { border-top: 1px dashed var(--border-strong); padding-top: 16px; display: flex; flex-direction: column; gap: 10px; font-size: .9rem; }
+    .lp-checks div { display: flex; align-items: center; gap: 10px; }
+    .lp-checks svg, .lp-ok svg { width: 18px; height: 18px; color: rgb(var(--success-rgb)); flex-shrink: 0; }
+    .lp-ok { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: rgba(var(--success-rgb), .14); color: rgb(var(--success-rgb)); font-size: .74rem; font-weight: 700; letter-spacing: .03em; }
+    .lp-ok svg { width: 14px; height: 14px; }
+    .lp-band { border-top: 1px solid var(--border); background: var(--bg-1); }
+    .lp-section { padding-top: 84px; padding-bottom: 84px; }
+    .lp-eyebrow { font-size: .8rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: rgb(var(--primary-light-rgb)); margin-bottom: 12px; }
+    body.light-theme .lp-eyebrow { color: #2F5BEA; }
+    .lp-h2 { font-family: var(--display); font-size: clamp(1.9rem, 3.4vw, 2.5rem); line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 44px; max-width: 20em; }
+    .lp-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 20px; }
+    .lp-card { border: 1px solid var(--border); border-radius: 16px; background: var(--surface); padding: 28px; display: flex; flex-direction: column; gap: 14px; }
+    .lp-card h3 { font-family: var(--display); font-size: 1.35rem; margin: 0; }
+    .lp-card p { margin: 0; color: var(--text-muted); line-height: 1.6; font-size: .95rem; }
+    .lp-card ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: .88rem; }
+    .lp-card li { display: flex; gap: 8px; }
+    .lp-card li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: rgb(var(--primary-rgb)); margin-top: .55em; flex-shrink: 0; }
+    .lp-card .lp-more { margin-top: auto; font-weight: 600; font-size: .9rem; background: none; border: 0; padding: 0; text-align: left; color: rgb(var(--primary-light-rgb)); font-family: var(--font); }
+    body.light-theme .lp-card .lp-more, body.light-theme .lp a { color: #2F5BEA; }
+    .lp-card-ico { width: 44px; height: 44px; border-radius: 12px; background: rgba(var(--primary-rgb), .12); color: rgb(var(--primary-light-rgb)); display: flex; align-items: center; justify-content: center; }
+    body.light-theme .lp-card-ico { background: #EDF1FF; color: #2F5BEA; }
+    .lp-card-ico svg { width: 22px; height: 22px; }
+    .lp-new { font-size: .72rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(var(--primary-rgb), .45); color: rgb(var(--primary-light-rgb)); }
+    .lp-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+    .lp-steps li { padding: 30px; background: var(--surface); border-right: 1px solid var(--border); }
+    .lp-steps li:last-child { border-right: 0; }
+    .lp-steps h3 { font-family: var(--display); font-size: 1.2rem; margin: 0 0 10px; }
+    .lp-steps p { margin: 0; color: var(--text-muted); line-height: 1.6; font-size: .95rem; }
+    .lp-step-n { font-family: var(--mono); font-size: .8rem; color: rgb(var(--primary-light-rgb)); margin-bottom: 18px; }
+    .lp-code { margin-top: 20px; font-family: var(--mono); font-size: .76rem; color: var(--text-muted); background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .lp-code.ok { color: rgb(var(--success-rgb)); }
+    .lp-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 32px; padding-top: 52px; padding-bottom: 52px; }
+    .lp-fact-v { font-family: var(--display); font-size: 1.35rem; font-weight: 600; }
+    .lp-final { text-align: center; }
+    .lp-final .lp-h2 { margin: 0 auto 16px; }
+    .lp-final .lp-lead { margin: 0 auto 32px; }
+    .lp-final .lp-cta { justify-content: center; }
+    .lp-foot { border-top: 1px solid var(--border); }
+    .lp-foot .lp-wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; padding-top: 28px; padding-bottom: 28px; font-size: .84rem; color: var(--text-muted); }
+    .lp-foot nav { display: flex; flex-wrap: wrap; gap: 20px; }
+    .lp-foot a { color: var(--text-muted) !important; }
+    @media (max-width: 760px) {
+      .lp-links { display: none; }
+      .lp-actions .lp-btn-plain { display: none; }
+      .lp-hero { padding-top: 48px; padding-bottom: 56px; gap: 40px; }
+      .lp-steps li { border-right: 0; border-bottom: 1px solid var(--border); }
+      .lp-steps li:last-child { border-bottom: 0; }
+      .lp-section { padding-top: 60px; padding-bottom: 60px; }
+      .lp-cta .lp-btn { flex: 1 1 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) { .lp *, .app * { transition: none !important; } }
+
+    /* ── Recompute the derived colours on body, so body.light-theme's RGB tokens reach them
+       (declared on :root they were resolved once, with the dark values) ── */
+    :root body {
+      --primary: rgb(var(--primary-rgb)); --primary-h: rgb(var(--primary-light-rgb));
+      --accent: rgb(var(--accent-rgb)); --success: rgb(var(--success-rgb));
+      --danger: rgb(var(--danger-rgb)); --warn: rgb(var(--warn-rgb));
+    }
+    :root body .lp .lp-links a { color: var(--text-muted); }
+    :root body .lp .lp-links a:hover { color: var(--text); }
+    :root body .lp .lp-foot a { color: var(--text-muted); }
+
+    /* ── Refinements ── */
+    .lp-h1 { letter-spacing: -0.022em; }
+    :root body .card h2, .lp-h2, .lp-card h3, .lp-steps h3 { letter-spacing: -0.008em; }
+    /* The overview strip (stats, wallet, activity) belongs on the home tab, not above every tool. */
+    :root body .sidebar-content:has(.tab-content.active:not(#tab-register)) .app-overview { display: none; }
+    @media (max-width: 900px) {
+      :root body .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+      :root body .stat-card { padding: .7rem .75rem; flex-direction: column; align-items: flex-start; gap: .15rem; }
+      :root body .stat-card .stat-ico { display: none; }
+      :root body .stat-card .stat-val { font-size: 1.05rem; width: 100%; }
+      :root body .stat-card { flex-wrap: nowrap; }
+      :root body .stat-card .stat-lbl { padding-left: 0; margin-top: 0; font-size: .6rem; flex-basis: auto; line-height: 1.3; }
+    }
+    @media (max-width: 560px) {
+      :root body .header { flex-wrap: nowrap; }
+      :root body .header .user-box { gap: .4rem; }
+      :root body #headerLoggedIn .hbtn:not(.btn-logout), :root body #userLabel { display: none; }
+      :root body .user-pill { padding: 0 .3rem; }
+      .lp-wrap { padding-left: 16px; padding-right: 16px; }
+      .lp-nav .lp-wrap { flex-wrap: nowrap; }
+      .lp-actions .lp-btn-primary { padding: 0 14px; font-size: .9rem; }
+    }
+    @media (max-width: 420px) { .lp-actions .lp-icon-btn { display: none; } }
+  </style>
 </head>
 <body>
+<script>/* landing route before first paint (CLAUDE.md A16) */(function(){var h=location.hash;if(!h||h==='#'||h==='#home')document.body.classList.add('landing-mode');})();</script>
 <canvas id="bg-canvas"></canvas>
 
 <!-- ── SVG icon sprite (Lucide-style, stroke=currentColor) ── -->
@@ -1955,8 +2331,166 @@
   <symbol id="i-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M21 3l-9 9M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6"/></symbol>
 </svg>
 
+<!-- ══ Landing page (UI redesign, CLAUDE.md A16). Shown at "/" and "#home"; any tab hash opens the app. ══ -->
+<div id="landing" class="lp">
+  <header class="lp-nav">
+    <div class="lp-wrap">
+      <a class="lp-brand" href="#home" aria-label="BlockVerify home">
+        <svg class="bv-mark" viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" stroke="currentColor" stroke-width="2"/><path d="M8 14.5l4 4 8-9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        BlockVerify
+      </a>
+      <nav class="lp-links" aria-label="Sections">
+        <a href="#lp-products" onclick="return bvScrollTo('lp-products')">Products</a>
+        <a href="#lp-how" onclick="return bvScrollTo('lp-how')">How it works</a>
+        <a href="#lp-proof" onclick="return bvScrollTo('lp-proof')">On-chain proof</a>
+        <a href="https://github.com/Shubhangam-Singh/BlockVerify" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </nav>
+      <div class="lp-actions">
+        <button type="button" class="lp-icon-btn" onclick="toggleTheme();bvSyncLandingTheme()" aria-label="Toggle light or dark theme" id="lpThemeBtn">
+          <svg width="18" height="18" aria-hidden="true"><use href="#i-sun"/></svg>
+        </button>
+        <button type="button" class="lp-btn lp-btn-plain" id="lpSignIn" onclick="bvEnterApp('register', true)">Sign in</button>
+        <button type="button" class="lp-btn lp-btn-primary" onclick="bvEnterApp('register')"><span id="lpOpenLabel">Open the app</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="lp-wrap lp-hero">
+      <div class="lp-hero-copy">
+        <span class="lp-chip"><span class="lp-dot"></span>Live on Algorand Testnet · Bitcoin Testnet checkpoints</span>
+        <h1 class="lp-h1">Prove it hasn’t changed.</h1>
+        <p class="lp-lead">BlockVerify fingerprints AI models, federated-learning updates and personal photos, anchors the fingerprints on a public blockchain, and lets anyone verify a copy without trusting our server.</p>
+        <div class="lp-cta">
+          <button type="button" class="lp-btn lp-btn-primary" onclick="bvEnterApp('register')">Register a model</button>
+          <button type="button" class="lp-btn lp-btn-ghost" onclick="bvEnterApp('verify')">Verify a file</button>
+        </div>
+        <div class="lp-trust">
+          <span><svg aria-hidden="true"><use href="#i-lock"/></svg>Hashed in your browser</span>
+          <span><svg aria-hidden="true"><use href="#i-ledger"/></svg>Open, public ledger</span>
+          <span><svg aria-hidden="true"><use href="#i-shield"/></svg>No weights or pixels uploaded</span>
+        </div>
+      </div>
+
+      <div class="lp-hero-card">
+        <div class="lp-receipt" aria-label="Example verification receipt">
+          <div class="lp-receipt-head">
+            <span class="lp-muted-mono">example receipt</span>
+            <span class="lp-ok"><svg aria-hidden="true"><use href="#i-check"/></svg>VERIFIED</span>
+          </div>
+          <div class="lp-receipt-body">
+            <div><div class="lp-k">File</div><div class="lp-v">resnet50-health-v1.safetensors</div></div>
+            <div><div class="lp-k">SHA-256 (computed in the browser)</div><div class="lp-mono">6d663676e061888c9b95197db01d2d0ca8a279bad809116c8ccc4f2ff2a80aae</div></div>
+            <div class="lp-grid2">
+              <div><div class="lp-k">Layer manifest</div><div class="lp-muted-mono">Merkle root + leaf count</div></div>
+              <div><div class="lp-k">Smart contract</div><div class="lp-muted-mono">App 764828342</div></div>
+            </div>
+            <div class="lp-checks">
+              <div><svg aria-hidden="true"><use href="#i-check"/></svg>Hash matches the anchored record</div>
+              <div><svg aria-hidden="true"><use href="#i-check"/></svg>Merkle proof folds to the on-chain root</div>
+              <div><svg aria-hidden="true"><use href="#i-check"/></svg>Checked against the public Algorand indexer</div>
+            </div>
+          </div>
+          <div class="lp-receipt-foot">
+            <span class="lp-muted-mono">Algorand Testnet · note transaction</span>
+            <a href="https://lora.algokit.io/testnet/application/764828342" target="_blank" rel="noopener noreferrer">View contract ↗</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-band" id="lp-products">
+      <div class="lp-wrap lp-section">
+        <div class="lp-eyebrow">One integrity layer, three applications</div>
+        <h2 class="lp-h2">From a model file to a training round to a selfie.</h2>
+        <div class="lp-cards">
+          <article class="lp-card">
+            <div class="lp-card-ico"><svg aria-hidden="true"><use href="#i-models"/></svg></div>
+            <h3>BlockVerify</h3>
+            <p>Register an AI model’s hash and its per-layer Merkle root. Verification pinpoints tampering to the layer: changed weights, a rogue layer, a removed one, or a reordering.</p>
+            <ul><li>SHA-256 plus a layer-manifest Merkle tree</li><li>TEAL smart-contract registry</li><li>PDF certificates and an audit trail</li></ul>
+            <button type="button" class="lp-more" onclick="bvEnterApp('register')">Register a model →</button>
+          </article>
+          <article class="lp-card">
+            <div class="lp-card-ico"><svg aria-hidden="true"><use href="#i-globe"/></svg></div>
+            <h3>FedVerify</h3>
+            <p>Each federated-learning round commits its client updates to one Merkle root on chain. Any client can prove its update was included, and forensics flags poisoned updates.</p>
+            <ul><li>Per-round commitments and lineage</li><li>Client inclusion proofs</li><li>Differential privacy and robust aggregation</li></ul>
+            <button type="button" class="lp-more" onclick="bvEnterApp('federated')">Explore a run →</button>
+          </article>
+          <article class="lp-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div class="lp-card-ico"><svg aria-hidden="true"><use href="#i-shield"/></svg></div>
+              <span class="lp-new">New</span>
+            </div>
+            <h3>PhotoShield</h3>
+            <p>Sign and anchor your photos’ fingerprints from the browser. Re-compressed copies are still recognised, and an optional cloak makes Stable-Diffusion edits of them harder.</p>
+            <ul><li>SHA-256 plus a calibrated perceptual hash</li><li>Your Ed25519 key, never the server’s</li><li>The photo never leaves your device</li></ul>
+            <button type="button" class="lp-more" onclick="bvEnterApp('photoshield')">Protect a photo →</button>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-wrap lp-section" id="lp-how">
+      <div class="lp-eyebrow">How it works</div>
+      <h2 class="lp-h2">Three steps. No trust required.</h2>
+      <ol class="lp-steps">
+        <li>
+          <div class="lp-step-n">01 / fingerprint</div>
+          <h3>Hash it locally</h3>
+          <p>Your browser computes the fingerprints. The file itself is never uploaded.</p>
+          <div class="lp-code">sha256(file) → 6d66…0aae</div>
+        </li>
+        <li>
+          <div class="lp-step-n">02 / anchor</div>
+          <h3>Write it to the chain</h3>
+          <p>A proof-of-work stamp stops spam, then the fingerprint is anchored on Algorand, timestamped and immutable.</p>
+          <div class="lp-code">note → Algorand Testnet transaction</div>
+        </li>
+        <li>
+          <div class="lp-step-n">03 / verify</div>
+          <h3>Check it anywhere</h3>
+          <p>Anyone re-hashes a copy, and the page checks it against the public indexer itself, not against our database.</p>
+          <div class="lp-code ok">indexer ✓ root matches</div>
+        </li>
+      </ol>
+    </section>
+
+    <section class="lp-band" id="lp-proof" style="border-bottom:1px solid var(--border);">
+      <div class="lp-wrap lp-facts">
+        <div><div class="lp-k">Ledger</div><div class="lp-fact-v">Algorand Testnet</div><div class="lp-muted-mono" style="margin-top:6px;">App ID 764828342</div></div>
+        <div><div class="lp-k">Settlement</div><div class="lp-fact-v">Bitcoin Testnet</div><div class="lp-muted-mono" style="margin-top:6px;">OP_RETURN checkpoints</div></div>
+        <div><div class="lp-k">Live registry</div><div class="lp-fact-v"><span id="lpModels">—</span> models · <span id="lpPhotos">—</span> photos</div><div class="lp-muted-mono" style="margin-top:6px;">read from the API just now</div></div>
+        <div><div class="lp-k">Source</div><div class="lp-fact-v">Open on GitHub</div><div style="margin-top:6px;font-size:.84rem;"><a href="https://github.com/Shubhangam-Singh/BlockVerify" target="_blank" rel="noopener noreferrer">Shubhangam-Singh/BlockVerify</a></div></div>
+      </div>
+    </section>
+
+    <section class="lp-wrap lp-section lp-final">
+      <h2 class="lp-h2">Put a fingerprint on it.</h2>
+      <p class="lp-lead">Registering takes under a minute and needs nothing but a browser.</p>
+      <div class="lp-cta">
+        <button type="button" class="lp-btn lp-btn-primary" onclick="bvEnterApp('register')">Open the app</button>
+        <button type="button" class="lp-btn lp-btn-ghost" onclick="bvEnterApp('help')">Read the FAQ</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="lp-foot">
+    <div class="lp-wrap">
+      <span>BlockVerify · a VIT project by team razor_hats</span>
+      <nav aria-label="Footer">
+        <a href="#help">Help &amp; FAQ</a>
+        <a href="https://github.com/Shubhangam-Singh/BlockVerify/blob/main/docs/API_REFERENCE.md" target="_blank" rel="noopener noreferrer">API</a>
+        <a href="https://github.com/Shubhangam-Singh/BlockVerify/blob/main/photoshield/docs/THREAT_MODEL.md" target="_blank" rel="noopener noreferrer">Threat model</a>
+      </nav>
+    </div>
+  </footer>
+</div>
+
 <header class="header">
   <div class="logo">
+    <svg class="bv-mark" viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" stroke="currentColor" stroke-width="2"/><path d="M8 14.5l4 4 8-9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <img src="assets/logo.png" alt="Logo" class="logo-img" />
     <span class="logo-word">Block<span>Verify</span></span>
   </div>
@@ -1987,6 +2521,31 @@
 
 <div class="app">
 
+  <!-- Sidebar Layout -->
+  <div class="sidebar-layout">
+    <nav class="sidebar">
+      <div class="sidebar-label">Models</div>
+      <button class="tab active" onclick="switchTab('register',this)"><span class="tab-icon"><svg class="ico"><use href="#i-register"/></svg></span><span class="tab-label">Register</span></button>
+      <button class="tab" onclick="switchTab('verify',this)"><span class="tab-icon"><svg class="ico"><use href="#i-verify"/></svg></span><span class="tab-label">Verify</span></button>
+      <button class="tab" onclick="switchTab('compare',this)"><span class="tab-icon"><svg class="ico"><use href="#i-compare"/></svg></span><span class="tab-label">Compare</span></button>
+      <button class="tab" onclick="switchTab('versions',this)"><span class="tab-icon"><svg class="ico"><use href="#i-versions"/></svg></span><span class="tab-label">Versions</span></button>
+      <button class="tab" onclick="switchTab('audit',this)"><span class="tab-icon"><svg class="ico"><use href="#i-audit"/></svg></span><span class="tab-label">Audit Trail</span></button>
+      <button class="tab" onclick="switchTab('alerts',this)"><span class="tab-icon"><svg class="ico"><use href="#i-bell"/></svg></span><span class="tab-label">Live Alerts</span><span class="tab-badge" id="alertsBadge"></span></button>
+      <button class="tab" onclick="switchTab('models',this)"><span class="tab-icon"><svg class="ico"><use href="#i-models"/></svg></span><span class="tab-label">My Models</span></button>
+      <div class="sidebar-label">Network</div>
+      <button class="tab" onclick="switchTab('analytics',this)"><span class="tab-icon"><svg class="ico"><use href="#i-chart"/></svg></span><span class="tab-label">Analytics</span></button>
+      <button class="tab" onclick="switchTab('registry',this)"><span class="tab-icon"><svg class="ico"><use href="#i-registry"/></svg></span><span class="tab-label">Registry</span></button>
+      <button class="tab" onclick="switchTab('explorer',this)"><span class="tab-icon"><svg class="ico"><use href="#i-explorer"/></svg></span><span class="tab-label">Explorer</span></button>
+      <button class="tab" onclick="switchTab('proof',this)"><span class="tab-icon"><svg class="ico"><use href="#i-proof"/></svg></span><span class="tab-label">Chain Proof</span></button>
+      <button class="tab" onclick="switchTab('ledger',this)"><span class="tab-icon"><svg class="ico"><use href="#i-ledger"/></svg></span><span class="tab-label">Ledger</span></button>
+      <div class="sidebar-label">Extensions</div>
+      <button class="tab tab-flagship" onclick="switchTab('federated',this)"><span class="tab-icon"><svg class="ico"><use href="#i-globe"/></svg></span><span class="tab-label">Federated</span><span class="tab-new">New</span></button>
+      <button class="tab tab-flagship" onclick="switchTab('photoshield',this)"><span class="tab-icon"><svg class="ico"><use href="#i-shield"/></svg></span><span class="tab-label">Photo Shield</span><span class="tab-new">New</span></button>
+      <div class="sidebar-label">Help</div>
+      <button class="tab" onclick="switchTab('help',this)"><span class="tab-icon"><svg class="ico"><use href="#i-help"/></svg></span><span class="tab-label">Help & FAQ</span></button>
+    </nav>
+    <div class="sidebar-content">
+  <div class="app-overview">
   <!-- Stats -->
   <div class="stats">
     <div class="stat-card"><div class="stat-ico"><svg class="ico"><use href="#i-models"/></svg></div><div class="stat-val" id="sModels">—</div><div class="stat-lbl">Models Registered</div></div>
@@ -2042,29 +2601,7 @@
     </div>
   </div>
 
-  <!-- Sidebar Layout -->
-  <div class="sidebar-layout">
-    <nav class="sidebar">
-      <div class="sidebar-label">Core</div>
-      <button class="tab active" onclick="switchTab('register',this)"><span class="tab-icon"><svg class="ico"><use href="#i-register"/></svg></span><span class="tab-label">Register</span></button>
-      <button class="tab" onclick="switchTab('verify',this)"><span class="tab-icon"><svg class="ico"><use href="#i-verify"/></svg></span><span class="tab-label">Verify</span></button>
-      <button class="tab" onclick="switchTab('compare',this)"><span class="tab-icon"><svg class="ico"><use href="#i-compare"/></svg></span><span class="tab-label">Compare</span></button>
-      <button class="tab" onclick="switchTab('versions',this)"><span class="tab-icon"><svg class="ico"><use href="#i-versions"/></svg></span><span class="tab-label">Versions</span></button>
-      <button class="tab" onclick="switchTab('audit',this)"><span class="tab-icon"><svg class="ico"><use href="#i-audit"/></svg></span><span class="tab-label">Audit Trail</span></button>
-      <button class="tab" onclick="switchTab('alerts',this)"><span class="tab-icon"><svg class="ico"><use href="#i-bell"/></svg></span><span class="tab-label">Live Alerts</span><span class="tab-badge" id="alertsBadge"></span></button>
-      <button class="tab" onclick="switchTab('models',this)"><span class="tab-icon"><svg class="ico"><use href="#i-models"/></svg></span><span class="tab-label">My Models</span></button>
-      <div class="sidebar-label">Blockchain</div>
-      <button class="tab" onclick="switchTab('analytics',this)"><span class="tab-icon"><svg class="ico"><use href="#i-chart"/></svg></span><span class="tab-label">Analytics</span></button>
-      <button class="tab" onclick="switchTab('registry',this)"><span class="tab-icon"><svg class="ico"><use href="#i-registry"/></svg></span><span class="tab-label">Registry</span></button>
-      <button class="tab" onclick="switchTab('explorer',this)"><span class="tab-icon"><svg class="ico"><use href="#i-explorer"/></svg></span><span class="tab-label">Explorer</span></button>
-      <button class="tab" onclick="switchTab('proof',this)"><span class="tab-icon"><svg class="ico"><use href="#i-proof"/></svg></span><span class="tab-label">Chain Proof</span></button>
-      <button class="tab" onclick="switchTab('ledger',this)"><span class="tab-icon"><svg class="ico"><use href="#i-ledger"/></svg></span><span class="tab-label">Ledger</span></button>
-      <button class="tab tab-flagship" onclick="switchTab('federated',this)"><span class="tab-icon"><svg class="ico"><use href="#i-globe"/></svg></span><span class="tab-label">Federated</span><span class="tab-new">NEW</span></button>
-      <button class="tab tab-flagship" onclick="switchTab('photoshield',this)"><span class="tab-icon"><svg class="ico"><use href="#i-shield"/></svg></span><span class="tab-label">Photo Shield</span><span class="tab-new">NEW</span></button>
-      <div class="sidebar-label">System</div>
-      <button class="tab" onclick="switchTab('help',this)"><span class="tab-icon"><svg class="ico"><use href="#i-help"/></svg></span><span class="tab-label">Help & FAQ</span></button>
-    </nav>
-    <div class="sidebar-content">
+  </div>
 
   <!-- Register -->
   <div class="tab-content active" id="tab-register">
@@ -6355,8 +6892,8 @@ function initUser() {
   if (_authUser) {
     updateAuthUI();
   } else {
-    // Small delay so page renders first
-    setTimeout(() => openAuthModal('login'), 400);
+    // Small delay so page renders first. On the landing page it waits until the visitor enters the app.
+    if (!document.body.classList.contains('landing-mode')) setTimeout(() => openAuthModal('login'), 400);
   }
 }
 
@@ -8096,7 +8633,7 @@ function endGuidedTour() {
 window.addEventListener('DOMContentLoaded', () => {
   syncHeaderH();
   warnInsecureOrigin();
-  if (!bvLSGet('bv_tour_done')) {
+  if (!bvLSGet('bv_tour_done') && !document.body.classList.contains('landing-mode')) {
     setTimeout(() => {
       toast('info', `New to BlockVerify? <br><a href="#" onclick="startGuidedTour();return false;" style="color:var(--primary-h);font-weight:700;">Take the guided tour 🧭</a>`, 12000, true);
     }, 2000);
@@ -10016,6 +10553,68 @@ async function psLoadStatus() {
   } catch (e) { box.innerHTML = '<span class="ps-pill ps-bad">API unreachable (the free backend may be waking up; retry in a minute)</span>'; }
 }
 function loadPhotoShield() { psLoadStatus(); psRenderKey(); psLoadMine(); }
+</script>
+
+<!-- Landing routing (UI redesign, CLAUDE.md A16): "/" or "#home" shows the landing page, any tab hash shows the app. -->
+<script>
+function bvIsLandingHash() { const h = location.hash; return !h || h === '#' || h === '#home'; }
+function bvSetLanding(on) {
+  document.body.classList.toggle('landing-mode', on);
+  if (!on && typeof syncHeaderH === 'function') syncHeaderH();
+}
+function bvSyncLandingTheme() {
+  const b = document.getElementById('lpThemeBtn');
+  if (b) b.innerHTML = '<svg width="18" height="18" aria-hidden="true"><use href="#i-' +
+    (document.body.classList.contains('light-theme') ? 'moon' : 'sun') + '"/></svg>';
+}
+function bvScrollTo(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  return false;
+}
+function bvEnterApp(tab, forceLogin) {
+  tab = (typeof _TAB_IDS !== 'undefined' && _TAB_IDS.includes(tab)) ? tab : 'register';
+  if (location.hash !== '#' + tab) location.hash = tab;   // fires hashchange → applyTabFromHash + bvRoute
+  else bvRoute();
+  window.scrollTo(0, 0);
+  if ((forceLogin || !_authUser) && typeof openAuthModal === 'function' && !_authUser) {
+    setTimeout(() => openAuthModal('login'), 150);
+  }
+}
+function bvGoHome() { location.hash = 'home'; }
+function bvRoute() {
+  const landing = bvIsLandingHash();
+  bvSetLanding(landing);
+  if (landing) { window.scrollTo(0, 0); bvLoadLandingStats(); }
+}
+async function bvLoadLandingStats() {
+  try {
+    const r = await fetch(API + '/stats'); const d = await r.json();
+    const m = document.getElementById('lpModels');
+    if (m && typeof d.totalModels === 'number') m.textContent = d.totalModels.toLocaleString();
+  } catch (e) {}
+  try {
+    const r = await fetch(API + '/photo/stats'); const d = await r.json();
+    const p = document.getElementById('lpPhotos');
+    if (p && typeof d.photos === 'number') p.textContent = d.photos.toLocaleString();
+  } catch (e) {}
+}
+(function () {
+  window.addEventListener('hashchange', bvRoute);
+  const logo = document.querySelector('.header .logo');
+  if (logo) {
+    logo.setAttribute('role', 'link'); logo.setAttribute('tabindex', '0');
+    logo.setAttribute('aria-label', 'BlockVerify home'); logo.title = 'Home';
+    logo.addEventListener('click', bvGoHome);
+    logo.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bvGoHome(); } });
+  }
+  if (typeof _authUser !== 'undefined' && _authUser) {
+    const l = document.getElementById('lpOpenLabel'); if (l) l.textContent = 'Open dashboard';
+    const s = document.getElementById('lpSignIn'); if (s) s.style.display = 'none';
+  }
+  bvSyncLandingTheme();
+  if (bvIsLandingHash()) bvLoadLandingStats();
+})();
 </script>
 
 </body>
