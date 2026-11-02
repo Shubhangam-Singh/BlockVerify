@@ -228,6 +228,16 @@ Challenges are single-use.
 - `{album, manifests[]}`: accepted only if the manifests rebuild the anchored root and count, and
   the album manifest matches the anchored digest.
 
+### Origin reports (PhotoShield v2, design §15)
+
+- **Manifest field.** A manifest may carry `"regions": {"algo": "tile-phash@1", "grid", "n", "root"}`,
+  the Merkle root of the photo's per-tile fingerprints. It is covered by the manifest digest, so
+  the on-chain note format is unchanged. Records and `GET /api/photo/<id>` include `regions`.
+- **Thresholds.** `GET /api/photo/stats` returns `calibration.tile` = `{tau_match, tau_alter,
+  delta_level, k_min, source}`, measured by `study e8`.
+- **No report route.** Reports are made and verified in the browser or with the CLI
+  (`python -m photoshield origin` / `origin-verify`). The original photo never reaches the server.
+
 ### Server configuration
 
 Set with environment variables (design §6.11):
