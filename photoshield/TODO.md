@@ -20,3 +20,14 @@ Parked here per CLAUDE.md "Scope" and A13. Nothing here is in scope for the curr
       before it can go on chain; experiments may use it earlier (E6).
 - [ ] Contract global-state anchoring for albums under a namespaced key (`p:<id>`), only if the
       TEAL app is redeployed with more slots (§6.1).
+
+## From P6 (experiments)
+- **Low-information images.** E6 found that near-flat images (a binary silhouette's white corners)
+  have an unstable pHash: JPEG 50 or a brightness shift flipped about half the bits. The verifier
+  should flag such images ("perceptual match unreliable") instead of returning SIMILAR/UNRELATED,
+  e.g. from the spread of the 63 AC coefficients around their median. Needs its own calibration.
+- **Calibration corpus.** `photoshield/calibration.json` comes from scikit-image's sample photos
+  (14 photos, 56 crops). Recalibrate on a larger public corpus (or the user's own photos via
+  `--images DIR`) before treating near-match verdicts as more than indicative.
+- **Real-model E1-E3** need the SD-VAE weights (huggingface.co is blocked in the container): run
+  `python -m photoshield study e1 --model sdvae` and `e3` on the laptop, then `make_tables`.

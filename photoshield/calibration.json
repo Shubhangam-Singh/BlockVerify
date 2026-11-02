@@ -1,0 +1,16 @@
+{
+  "dataset": "skimage (14 photos, 56 crops)",
+  "fpr_far": 0.042582417582417584,
+  "fpr_near": 0.007554945054945055,
+  "fpr_target": 0.01,
+  "fpr_target_far": 0.05,
+  "generated_by": "python -m photoshield study e6 --install",
+  "n_neg": 1456,
+  "n_pos": 672,
+  "note": "Calibrated on scikit-image sample photos. Recalibrate on your own corpus with --images DIR before relying on near matches.",
+  "results": "photoshield/results/e6/calibration_skimage/seed0",
+  "tau_far": 25,
+  "tau_near": 21,
+  "tpr_far": 1.0,
+  "tpr_near": 0.9940476190476191
+}
