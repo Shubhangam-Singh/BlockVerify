@@ -1,0 +1,29 @@
+{
+  "spec": "PHOTOSHIELD_DESIGN.md \u00a77",
+  "unhashable": [
+    "unhashable_31x40.png"
+  ],
+  "vectors": {
+    "alpha_circle_64x64.png": "3c61c19f8f381c71",
+    "alpha_ramp_48x48.png": "55d48d6c2a4aaab5",
+    "checker_64x64.png": "46a87f28ffa8aa20",
+    "checker_fine_96x96.png": "56aa552aa4aad72a",
+    "grad_diag_100x75.png": "20aa2aaa37aa3faa",
+    "grad_h_64x64.png": "2aaa512a7daaaa55",
+    "grad_v_64x48.png": "56c6119705ce52dd",
+    "min_32x32.png": "79d0e66c5a1a6274",
+    "noise_gray_64x64.png": "58387155959eb532",
+    "noise_rgb_80x60.png": "22276eac1d1c976c",
+    "palette_70x50.png": "724d48530fce6ab8",
+    "photo_astronaut.png": "42924c5532bddfc8",
+    "photo_brick.png": "22850b396eff06e1",
+    "photo_camera.png": "3ff1c1c0434e8cbc",
+    "photo_chelsea.png": "215fe6465121975e",
+    "photo_coffee.png": "3b8320376c0f3637",
+    "photo_coins.png": "64d5b5a92956523a",
+    "photo_hubble_deep_field.png": "04cc4f9cba45333e",
+    "photo_rocket.png": "40371bec1be4126f",
+    "tall_33x200.png": "62a17096191fdae5",
+    "wide_300x40.png": "1494ebdc4b94946b"
+  }
+}

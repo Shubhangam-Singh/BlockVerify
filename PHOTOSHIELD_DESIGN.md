@@ -9,6 +9,8 @@ them, so it cannot go stale.
 ## Revision log
 
 Revision 2 (P0) folds in the review of revision 1. Each change is marked **(r2)** where it lands.
+Revision 3 (P1) records two decisions made while building, marked **(r3)**: no floats in a
+manifest (§5.1), and the separable DCT order (§7 step 5).
 
 | # | Change | Section |
 |---|---|---|
@@ -166,13 +168,17 @@ uses PyNaCl, which is already installed as a dependency of `py-algorand-sdk` (se
   "cloaked":  { "sha256": "<64 hex>", "phash": "<16 hex>", "format": "png" },
   "cloak": {
     "model": "sdvae", "eps": 8, "steps": 40, "size": 256, "eot": ["resize","blur"],
-    "seed": 0, "psnr": 0.0, "ssim": 0.0, "latent_shift": 0.0, "recon_psnr_drop": 0.0,
+    "seed": 0, "psnr": "<decimal string>", "ssim": "<decimal string>",
+    "latent_shift": "<decimal string>", "recon_psnr_drop": "<decimal string>",
     "tool_version": "photoshield 0.1.0"
   }
 }
 ```
 
-The zeros are placeholders; real values come from the run. `cloaked` and `cloak` are `null` for a
+**(r3) No floats anywhere in a manifest.** Python prints `1.0` and JavaScript prints `1`, so
+a float would make the browser's digest differ from the server's and break every owner
+signature. Parameters are integers; measured metrics are decimal strings with 4 places
+(`"psnr": "34.1200"`), written by `manifest.metric()`. `validate()` rejects any float. `cloaked` and `cloak` are `null` for a
 provenance-only registration (no cloak). The manifest is the owner's **backup** of everything that
 is not on chain (§6.9), so the UI tells them to keep it.
 
@@ -421,17 +427,23 @@ Steps, implemented by hand in both languages (no library resize, no BLAS):
    - Bin edges: rows `floor(i·H/32)` to `floor((i+1)·H/32)`, and the same for columns.
    - Sum each bin as an **integer**. This is exact: at 50 MP, a bin sum is about 1.3·10¹⁰, below 2⁵³.
    - Then divide once by the pixel count (one IEEE division, rounded identically in JS and Python).
-5. **DCT-II (orthonormal), only the 8 × 8 low-frequency block.**
-   `F[u][v] = s(u)·s(v)·Σₓ Σᵧ C[u][x]·C[v][y]·f[x][y]`, where `s(0) = √(1/32)`, `s(k>0) = √(2/32)`,
-   and `C[k][n] = cos(π(2n+1)k/64)`.
-   - `C` and `s` come from a **precomputed table committed as decimal literals with 17 significant
-     digits** (`provenance/dct_table.py` and the same literals in the JS). They are never computed
-     with `Math.cos` or `math.cos` at runtime, because libm results can differ in the last ulp
-     between engines.
-   - The loop order is fixed: for each `(u, v)`, sum over `x` (outer, ascending) and `y` (inner,
-     ascending), accumulating `C[u][x]·(C[v][y]·f[x][y])` left to right.
-   - No FMA, no numpy matmul in the canonical implementation. A numpy version may exist for
-     experiments only if a test proves it bit-equal on the vectors.
+5. **DCT-II (orthonormal), only the 8 × 8 low-frequency block, computed separably (r3).**
+   ```
+   g[x][v] = Σ_{y=0..31} C[v][y] · f[x][y]                 (y ascending, accumulator starts at 0.0)
+   F[u][v] = (s(u) · s(v)) · Σ_{x=0..31} C[u][x] · g[x][v]  (x ascending, accumulator starts at 0.0)
+   ```
+   where `x` indexes rows and `y` columns of the 32 × 32 means, `s(0) = √(1/32)`,
+   `s(k>0) = √(2/32)`, and `C[k][n] = cos(π(2n+1)k/64)`.
+   - `C` and `s` come from a **precomputed table of 17-significant-digit literals**
+     (`provenance/dct_table.py` and `PS_DCT_COS`/`PS_DCT_S` in the JS), both emitted by
+     `provenance/gen_dct_table.py`. They are never computed with `Math.cos` or `math.cos` at
+     runtime, because libm results can differ in the last ulp between engines. A test checks
+     that the JS literals equal the Python table.
+   - The separable form needs about 10,000 multiplications instead of 65,000. It rounds
+     differently from the nested double sum, which is why this exact order is the spec: both
+     languages do these operations in this order.
+   - No FMA and no numpy matmul in the canonical implementation. Integer luma and integer bin
+     sums (steps 3–4) may use numpy, because integer arithmetic below 2⁵³ is exact.
 6. **Median and bits.**
    - Take the 63 coefficients excluding `F[0][0]`, sort them, and use `median = sorted[31]`.
    - `bit(u, v) = F[u][v] > median`, with the DC bit fixed at 0.
