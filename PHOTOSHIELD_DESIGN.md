@@ -11,6 +11,9 @@ them, so it cannot go stale.
 Revision 2 (P0) folds in the review of revision 1. Each change is marked **(r2)** where it lands.
 Revision 3 (P1) records two decisions made while building, marked **(r3)**: no floats in a
 manifest (§5.1), and the separable DCT order (§7 step 5).
+Revision 4 (P8) records what P4–P7 settled while building, marked **(r4)**: the ownership-proof
+and rehydrate routes, the `PHOTOSHIELD_*` environment variables, the album manifest schema, the
+calibration file's real path and command, and the results layout.
 
 | # | Change | Section |
 |---|---|---|
@@ -26,6 +29,11 @@ manifest (§5.1), and the separable DCT order (§7 step 5).
 | 10 | The Ledger tab learns to label photo anchors | §6.10 |
 | 11 | The tab id goes into `_TAB_IDS` as well as `switchTab` | §9 |
 | 12 | Network limits of the cloud container; real-weight runs happen on the laptop | §8, CLAUDE.md A15 |
+| 13 (r4) | Ownership proof: `GET /api/photo/challenge` + `POST /api/photo/prove`; manifest re-attach: `POST /api/photo/rehydrate` | §6.4, §6.9 |
+| 14 (r4) | Album manifest schema `photoshield/album@1`, whose digest is the anchored `amd` | §6.2 |
+| 15 (r4) | Calibration lives at `photoshield/calibration.json`, written by `python -m photoshield study e6 --install` | §6.3, §10 |
+| 16 (r4) | Server configuration through `PHOTOSHIELD_*` environment variables | §6.11 |
+| 17 (r4) | Results layout `photoshield/results/<exp>/<cell>/seed<N>/{config.json, records.jsonl}` (gitignored) | §10, §11 |
 
 ---
 
@@ -278,6 +286,14 @@ root, leaves, order = compute_layer_merkle({photoId_i: manifestDigest_i, ...}, [
 - One transaction anchors `{pmr, plc}`.
 - Each photo stores its inclusion proof from `merkle_inclusion_proof(leaves, i)`.
 
+**(r4) Album manifest.** The `amd` in the album note is the canonical digest (§5.1) of
+```json
+{"schema": "photoshield/album@1", "title": "<albumTitle>", "photos": [["<photoId_0>", "<manifestDigest_0>"], ...]}
+```
+in album order. `POST /api/photo/rehydrate` with `{album, manifests[]}` restores an album after a
+restart only if the manifests rebuild the anchored root and count and the album manifest hashes to
+the anchored `amd`.
+
 ### 6.3 `POST /api/photo/verify` (public, no auth, rate-limited by IP)
 Body: `{sha256, phash}` computed in the browser. Decision order:
 
@@ -290,7 +306,8 @@ Body: `{sha256, phash}` computed in the browser. Decision order:
 | `UNKNOWN` | otherwise | Not in the registry |
 
 **Thresholds.** τ_near and τ_far are **never hard-coded**.
-- They come from `results/photoshield/calibration.json`, written by `experiments/study.py --calibrate`.
+- They come from `photoshield/calibration.json` **(r4)**, written by
+  `python -m photoshield study e6 --install` (or `PHOTOSHIELD_CALIBRATION=<path>`).
   That run covers JPEG q 95 to 30, resize, crop 5 to 10% and brightness, against unrelated photos,
   and chooses τ for FPR ≤ 1% on unrelated pairs. The file is loaded at startup.
 - If the file is missing, near-matching is **disabled**: only the exact and `UNKNOWN` verdicts are
@@ -311,6 +328,15 @@ Body: `{sha256, phash}` computed in the browser. Decision order:
 - `GET /api/photo/owner/<pkOrUser>`
 - `GET /api/photo/proof/<photoId>` (album proof + root + txid)
 - `GET /api/photo/stats` (counts, plus ledger sync status from §6.8)
+
+**(r4) Ownership proof.** `GET /api/photo/challenge` returns a one-time random challenge that
+expires after a few minutes. `POST /api/photo/prove {photoId, challenge, sig}` checks
+`sig` = Ed25519 over `photoshield/prove@1|<photoId>|<challenge>` (§5.4) against the key that
+registered the photo. With a login it also links that key to the account, which is how a user
+recovers "My photos" after a restart (the chain holds keys, never usernames).
+
+**(r4) Re-attach.** `POST /api/photo/rehydrate {manifest}` (auth) restores the pHash, title and
+cloak parameters of a hash-only photo, accepted only if the manifest hashes to the anchored `md`.
 
 ### 6.5 Certificate
 `GET /api/photo/certificate/<photoId>` reuses the visual style of the existing ReportLab certificate
@@ -385,6 +411,21 @@ at registration time and in the README.
 There is no server-side backup copy: the free tier has no persistent disk, and keeping one
 elsewhere would put pHashes back in a third party's hands. An external store
 (`PHOTOSHIELD_BACKUP_URL`) is recorded in `photoshield/TODO.md` as future work.
+
+### 6.11 Server configuration (r4)
+
+| Variable | Default | Effect |
+|---|---|---|
+| `PHOTOSHIELD_ANCHOR` | `algorand` | `algorand` (Testnet note), `local` (BlockVerify's in-memory PoW chain) or `mock` |
+| `PHOTOSHIELD_LEDGER_SYNC` | `1` | `0` disables the indexer rebuild (tests, offline demos) |
+| `PHOTOSHIELD_ANCHOR_ADDRESSES` | the server wallet | Extra comma-separated sender addresses to rebuild from (e.g. a previous wallet) |
+| `PHOTOSHIELD_INDEXER` | AlgoNode Testnet indexer | Indexer base URL for the rebuild |
+| `PHOTOSHIELD_CALIBRATION` | `photoshield/calibration.json` | Threshold file; missing → near matching disabled |
+| `PHOTOSHIELD_SERVER_CLOAK` | `0` | `1` enables `POST /api/photo/cloak` (§6.6) |
+| `PHOTOSHIELD_SERVER_MODEL`, `PHOTOSHIELD_SERVER_THREADS` | `sdvae`, `1` | Server cloak encoder and torch threads |
+
+The wallet, App ID and JWT secret come from the existing `ALGO_MNEMONIC`/`ALGO_PRIVATE_KEY`,
+`ALGO_APP_ID` and `JWT_SECRET`, so a Render restart keeps the same anchoring address.
 
 ### 6.10 Ledger tab labelling (r2)
 `get_transaction_ledger` (`algorand_client.py:347`) currently labels every JSON note as a model
@@ -473,7 +514,8 @@ Steps, implemented by hand in both languages (no library resize, no BLAS):
 - **Determinism (CLAUDE.md, A1, A5):**
   - `--seed` seeds random, numpy and torch. `torch.use_deterministic_algorithms(True)`.
   - `--threads` is pinned and recorded.
-  - Each run writes `results/photoshield/<exp>/<cell>/seed<N>/config.json` + `metrics.jsonl`.
+  - Each run writes `photoshield/results/<exp>/<cell>/seed<N>/config.json` + `records.jsonl`
+    **(r4)** (gitignored; `make_tables.py` renders them, CLAUDE.md "Numbers").
 - **CPU budget:** sdvae at 256 px is *estimated* at a few seconds per step on a laptop. That is
   measured in P2 and reported, not assumed.
 - **Where real runs happen:** the cloud container cannot download the SD VAE (CLAUDE.md A15).
@@ -566,6 +608,21 @@ hand.
 | E6 pHash calibration | Can we recognise shared copies? Does a purified copy still match? | Positives: transformed and purified copies. Negatives: unrelated pairs. Plus the browser-vs-Python JPEG decode gap (§7) | ROC, τ at FPR ≤ 1%, TPR per transform, cross-decoder Hamming |
 | E7 chain cost | What does provenance cost? | single vs album (N = 1, 10, 100), mock/local/algorand; full ledger rebuild time | latency ms, bytes, fee, rebuild time and pages |
 
+**(r4) How each experiment is run.**
+
+| Exp | Command | Where |
+|---|---|---|
+| E1, E2 | `python -m photoshield study e1 --model sdvae` | laptop (SD-VAE download) |
+| E3 | `python -m photoshield study e3 --model sdvae --eps 8` | laptop |
+| E4, E5 | `photoshield/experiments/colab_edit_test.ipynb` | Colab GPU |
+| E6 | `python -m photoshield study e6 --install`, plus `e6p` (cloaked copies) and `e6-browser` (Chromium decode) | anywhere |
+| E7 | `python -m photoshield study e7` (mock/local; the live Algorand latency is measured on the laptop) | anywhere |
+| tables | `python -m photoshield.analysis.make_tables` → `photoshield/results/TABLES.md` | anywhere |
+
+E6 uses scikit-image's bundled photos, except `cat` (the same photo as `chelsea`) and `horse` (a
+binary silhouette with no stable pHash). The cloud container runs E1–E3 only with the random-weight
+`tiny` encoder; `make_tables` marks those rows *pipeline check*, never findings.
+
 E6 answers the central claim from the literature review: **the provenance layer still delivers
 value after the cloak is broken.**
 
@@ -645,7 +702,7 @@ trailer (CLAUDE.md A12), and a stop.
 | P4 | `backend/photo_routes.py` + the 2-line `app.py` registration + the ledger-tab branch | Route tests pass, backend ≥ 99, fedverify at baseline |
 | P5 | Frontend tab, JS pHash, key management, Node vector test | JS vectors byte-match Python; manual browser check incl. export/import |
 | P6 | `experiments/study.py` E1–E3, E6, E7 + `make_tables.py` | Results files and generated tables, none typed |
-| P7 | Colab notebook E4/E5 | Grids + metrics files committed |
+| P7 | Colab notebook E4/E5 | Notebook + tested `edit_test.py`; grids and metrics come back from a Colab run **(r4)** |
 | P8 | Docs: WHAT_IS_PHOTOSHIELD, THREAT_MODEL, API_REFERENCE section, README section | Links checked |
 
 ## 14. Positioning

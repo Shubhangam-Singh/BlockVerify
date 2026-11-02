@@ -186,6 +186,12 @@ Regression gates, measured at PhotoShield P0 and recorded in `photoshield/INVENT
 - `python3 -m pytest fedverify/tests/ -q`: 0 failed; in the cloud container 299 passed + 134 skipped
   (gitignored data and results absent). Details in `photoshield/INVENTORY.md` §9.
 - PhotoShield's own suite is added to the gate as each phase lands.
+  At P8: `python3 -m pytest photoshield/tests/ -q` gives 0 failed and 123 passed in the
+  container venv (torch, scikit-image, Node and Playwright present). Tests that need a missing
+  optional dependency skip rather than fail.
+- Experiments: `photoshield/results/` is gitignored, as `fedverify/results/` is. The one result
+  that is committed is `photoshield/calibration.json`, because the backend reads it. It is written
+  only by `python -m photoshield study e6 --install` and names its results folder.
 
 ## A15. The cloud session's network
 In the Claude Code cloud container used from PhotoShield P0 onwards, the egress proxy refuses

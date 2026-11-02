@@ -28,6 +28,7 @@
 - [Getting Started](#getting-started)
 - [Test Suite](#test-suite)
 - [Team](#team)
+- [Photo Shield](#photo-shield)
 
 ---
 
@@ -390,6 +391,37 @@ backend/tests/test_blockchain.py .                                   [100%]
 > All Algorand network calls are **mocked** using `monkeypatch` — tests run offline in ~0.7 seconds.
 
 ---
+
+## Photo Shield
+
+The third application of the BlockVerify integrity layer, after AI models and federated updates
+(FedVerify): **photo provenance plus optional AI-edit cloaking.** Code is in [`photoshield/`](photoshield/).
+The UI is the **Photo Shield** tab, and the API is `/api/photo/*`.
+
+**Provenance.**
+- The browser computes the photo's SHA-256 and a canonical 64-bit pHash.
+- It signs them with an Ed25519 key that lives only in the browser.
+- The server anchors them as an Algorand Testnet note.
+
+**Verification.**
+- Anyone can check a copy. The result is exact, derived (re-compressed or resized) or similar.
+- The derived and similar thresholds are measured, not guessed.
+- The browser re-checks the anchor on the public indexer itself.
+
+**Privacy and durability.** The photo never leaves the browser. After a restart, the registry
+rebuilds itself from the ledger.
+
+**Cloak.** `python -m photoshield protect photo.jpg --out shielded/` runs on your own machine. It
+adds an invisible PGD+EOT perturbation against the Stable Diffusion VAE, so editors built on it
+(for example InstructPix2Pix) produce damaged edits. It does **not** protect against closed models,
+and heavy re-processing can remove it. The provenance layer works either way.
+
+Docs:
+- [What is PhotoShield?](photoshield/docs/WHAT_IS_PHOTOSHIELD.md)
+- [Threat model](photoshield/docs/THREAT_MODEL.md)
+- [Design](PHOTOSHIELD_DESIGN.md)
+- [API](docs/API_REFERENCE.md#photo-shield-apiphoto)
+- [PhotoShield README](photoshield/README.md)
 
 ## Team
 
