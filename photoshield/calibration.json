@@ -11,6 +11,18 @@
   "results": "photoshield/results/e6/calibration_skimage/seed0",
   "tau_far": 25,
   "tau_near": 21,
+  "tile": {
+    "dataset": "skimage (14 photos, synthetic local edits)",
+    "delta_level": 2,
+    "fpr_alter": 0.01,
+    "fpr_pair": 0.01,
+    "fpr_tile": 0.005,
+    "generated_by": "python -m photoshield study e8 --install",
+    "k_min": 3,
+    "results": "photoshield/results/e8/e8_skimage/seed0",
+    "tau_alter": 25,
+    "tau_match": 21
+  },
   "tpr_far": 1.0,
   "tpr_near": 0.9940476190476191
 }

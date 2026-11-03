@@ -89,3 +89,24 @@ def test_pkcs8_import_of_a_python_seed_gives_the_same_public_key(tmp_path):
     got = _node("(async () => { const k = await psKeyFromPkcs8(psUnhex('%s'));"
                 " console.log(JSON.stringify(k.pkHex)); })();" % pkcs8, tmp_path)
     assert got == py_pk
+
+
+def test_cli_reads_the_browser_key_backup(tmp_path):
+    """A key created in the browser signs CLI origin reports (design §15)."""
+    from photoshield.chain.client import load_key
+    got = _node("""(async () => {
+      const kp = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
+      const key = { impl: 'webcrypto', privateKey: kp.privateKey, publicKey: kp.publicKey };
+      const pk = psHex(new Uint8Array(await crypto.subtle.exportKey('raw', kp.publicKey)));
+      key.pkHex = pk;
+      const enc = await psEncryptBackup(key, pk, 'correct horse');
+      const sig = await psSignRaw(key, 'photoshield/origin@1|abc');
+      console.log(JSON.stringify({ enc, pk, sig }));
+    })();""", tmp_path)
+    p = tmp_path / "backup.json"
+    p.write_text(json.dumps(got["enc"]))
+    sk, pk = load_key(str(p), passphrase="correct horse")
+    assert pk == got["pk"]
+    assert S.verify(pk, S.sign(sk, b"x"), b"x") and S.verify(pk, got["sig"], b"photoshield/origin@1|abc")
+    with pytest.raises(ValueError, match="passphrase"):
+        load_key(str(p), passphrase="wrong")

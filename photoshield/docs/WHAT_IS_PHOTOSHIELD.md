@@ -74,6 +74,40 @@ cloak settings). Register them together in the tab, choosing "Cloaked photo".
 That is why provenance is the core and the cloak is the extra: **even when the cloak is broken,
 the purified copy still matches your registration** (E6p measures exactly this).
 
+## Layer 3: origin reports ("was this fake made from my photo?")
+
+A deepfake changes *part* of a photo: a swapped face, a new background, an inpainted body. Its
+fingerprint no longer matches yours, so a plain check says "Unknown". That's exactly when you need
+evidence most.
+
+When you register a photo, PhotoShield also commits a **region map**:
+- The photo is split into a grid of regions (an 8 × 8 grid for normal photos).
+- Each region gets its own fingerprint, plus a "detail level" that notices smoothing.
+- Only one summary hash of the whole grid (a Merkle root) goes into your anchored record.
+
+Later, the **Origin report** card compares your original with a suspect copy, region by region:
+- **Green** regions are still identical to what you anchored.
+- **Red** regions were changed.
+- If enough regions match, the verdict is **Derived from your registered photo**.
+
+The report you download is signed with your key and carries a proof for every region. Anyone can
+check it, in the tab or with `python -m photoshield origin-verify`, without ever seeing your
+original.
+
+- **Copies that keep the framing** are handled in the browser.
+- **Cropped or rotated copies:** run
+  `python -m photoshield origin original.jpg copy.jpg --manifest manifest.json --out report/ --key backup.json`.
+  It aligns the copy automatically and writes a PDF you can attach to a takedown request.
+- **Where the thresholds come from:** they are measured on test photos with known edits (E8),
+  never guessed, and real AI inpainting is tested in the Colab notebook (E9).
+
+What it can't do:
+- It needs your original, and a registration made after region maps were added.
+- A global edit, such as turning the whole photo into a painting, changes every region, so the
+  report shows nothing.
+- A matching region proves that region existed under your key at that time. It does not prove
+  who made the fake.
+
 ## Your key
 
 Your signing key lives in your browser (IndexedDB). That is what makes the registration yours

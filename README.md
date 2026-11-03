@@ -411,6 +411,10 @@ The UI is the **Photo Shield** tab, and the API is `/api/photo/*`.
 **Privacy and durability.** The photo never leaves the browser. After a restart, the registry
 rebuilds itself from the ledger.
 
+**Origin reports.** When someone posts an edited copy, such as a face swap or an AI edit, you
+can show which regions are still identical to the photo you anchored and which were changed. The
+report is signed, carries a Merkle proof for each region, and never contains your original.
+
 **Cloak.** `python -m photoshield protect photo.jpg --out shielded/` runs on your own machine. It
 adds an invisible PGD+EOT perturbation against the Stable Diffusion VAE, so editors built on it
 (for example InstructPix2Pix) produce damaged edits. It does **not** protect against closed models,

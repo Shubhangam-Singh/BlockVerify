@@ -30,6 +30,7 @@ _DECIMAL = re.compile(r"^-?(\d{1,6})(\.\d{1,6})?$|^inf$")
 CLOAK_INT = ("eps", "steps", "size", "seed", "threads", "alpha_div", "full_res")
 CLOAK_STR = ("model", "tool_version", "jpeg_mode", "target")
 CLOAK_METRICS = ("psnr", "ssim", "latent_shift", "recon_psnr_drop", "linf")
+REGIONS_ALGO = "tile-phash@1"          # design §15.2
 
 
 class ManifestError(ValueError):
@@ -121,11 +122,22 @@ def _cloak_part(c: Any) -> None:
     _need("model" in c and "eps" in c, "cloak needs at least model and eps")
 
 
+def _regions_part(r: Any) -> None:
+    _need(isinstance(r, dict), "regions must be an object")
+    _need(set(r) == {"algo", "grid", "n", "root"}, "regions needs exactly algo, grid, n and root")
+    _need(r["algo"] == REGIONS_ALGO, f"regions.algo must be {REGIONS_ALGO!r}")
+    g = r["grid"]
+    _need(isinstance(g, int) and not isinstance(g, bool) and 2 <= g <= 16, "regions.grid must be 2..16")
+    _need(r["n"] == g * g and not isinstance(r["n"], bool), "regions.n must equal grid * grid")
+    _need(isinstance(r["root"], str) and HEX64.match(r["root"]) is not None,
+          "regions.root must be 64 lowercase hex characters")
+
+
 def validate(manifest: Any) -> dict:
     """Return the manifest unchanged if valid; raise ManifestError otherwise."""
     _need(isinstance(manifest, dict), "manifest must be a JSON object")
     _reject_floats(manifest)
-    allowed = {"schema", "title", "original", "cloaked", "cloak"}
+    allowed = {"schema", "title", "original", "cloaked", "cloak", "regions"}
     extra = set(manifest) - allowed
     _need(not extra, f"unknown field(s) {sorted(extra)}")
     _need(manifest.get("schema") == SCHEMA, f"schema must be {SCHEMA!r}")
@@ -142,13 +154,17 @@ def validate(manifest: Any) -> dict:
     if cloak is not None:
         _need(cloaked is not None, "cloak parameters given without a cloaked image")
         _cloak_part(cloak)
+    if "regions" in manifest:
+        _regions_part(manifest["regions"])
     _need(len(canonical_json(manifest).encode("utf-8")) <= MAX_CANONICAL_BYTES,
           f"manifest is larger than {MAX_CANONICAL_BYTES} bytes")
     return manifest
 
 
 def build(title: str, original: dict, cloaked: Optional[dict] = None,
-          cloak: Optional[dict] = None) -> dict:
+          cloak: Optional[dict] = None, regions: Optional[dict] = None) -> dict:
     m = {"schema": SCHEMA, "title": title, "original": original,
          "cloaked": cloaked, "cloak": cloak}
+    if regions is not None:              # absent, not null: v1 manifests keep their digests
+        m["regions"] = regions
     return validate(m)

@@ -193,3 +193,78 @@ def clip_directional(device: str = "cuda", repo: str = "openai/clip-vit-large-pa
         di, dt = emb_img(edit) - emb_img(src), emb_txt(prompt) - src_t
         return float(torch.nn.functional.cosine_similarity(di, dt).item())
     return score
+
+
+# ── E9: origin reports against real Stable Diffusion inpainting (design §15.7) ──────────────────
+INPAINT_PROMPTS = ("a different person's face", "a plain studio background", "a red sports car",
+                   "a wooden table", "a person wearing sunglasses")
+
+
+def run_e9(images: List[Tuple[str, np.ndarray]], inpaint: Callable, *, prompts: Sequence[str] = INPAINT_PROMPTS,
+           seeds: Sequence[int] = (0, 1), size: int = 512, seed: int = 0,
+           transforms: Sequence[str] = study.E8_TRANSFORMS, results: Optional[str] = None,
+           inpaint_info: Optional[dict] = None, thresholds: Optional[dict] = None,
+           grids: bool = True, threads: Optional[int] = None) -> str:
+    """inpaint(rgb, mask_bool, prompt, seed) -> rgb (same size). Masks are random rectangles
+    covering 10-30 % of the photo, drawn from `seed`; the result is shared with the E8 transforms
+    and scored tile by tile against the photo's region map (records as in E8)."""
+    from ..origin.report import load_thresholds
+    thr = thresholds or load_thresholds()
+    rng = np.random.default_rng(seed)
+    d = _out(results, "e9", f"inpaint_size{size}", seed)
+    if grids:
+        os.makedirs(os.path.join(d, "grids"), exist_ok=True)
+    recs = []
+    for name, a in images:
+        base = _resize_max(a, size)
+        base = np.ascontiguousarray(base[: base.shape[0] // 8 * 8, : base.shape[1] // 8 * 8])
+        h, w = base.shape[:2]
+        for p_i, prompt in enumerate(prompts):
+            y, x, rh, rw = study._e8_rect(rng, h, w)
+            mask = np.zeros((h, w), bool)
+            mask[y:y + rh, x:x + rw] = True
+            for s in seeds:
+                t0 = time.perf_counter()
+                edited = np.asarray(inpaint(base, mask, prompt, int(s)), dtype=np.uint8)
+                wall = time.perf_counter() - t0
+                if edited.shape != base.shape:
+                    from PIL import Image
+                    edited = np.asarray(Image.fromarray(edited).resize((w, h)))
+                outside = ~mask
+                drift = float(np.abs(edited.astype(int) - base.astype(int))[outside].mean())
+                for tname in transforms:
+                    method, rows = study._e8_tiles(base, study._e8_share(edited, tname), mask)
+                    recs.append({"kind": "inpaint", "image": name, "prompt": prompt, "edit_seed": int(s),
+                                 "transform": tname, "aligned": rows is not None, "method": method,
+                                 "edited_fraction": round(float(mask.mean()), 4),
+                                 "outside_mask_drift": round(drift, 3), "tiles": rows, "inpaint_wall_s": wall})
+                if grids and s == seeds[0]:
+                    save_grid(os.path.join(d, "grids", f"{name}_p{p_i}.png"), [[base, (mask[..., None] * 255).repeat(3, 2).astype(np.uint8), edited]],
+                              ("original", "mask", "inpainted"))
+    write_run(d, {"exp": "e9", "size": size, "seed": seed, "threads": threads, "prompts": list(prompts),
+                  "edit_seeds": [int(s) for s in seeds], "transforms": list(transforms),
+                  "images": [n for n, _ in images], "inpaint": inpaint_info or {},
+                  "thresholds": {k: thr[k] for k in ("tau_match", "tau_alter", "delta_level", "k_min")},
+                  "thresholds_source": thr.get("source")}, recs)
+    return d
+
+
+def sd_inpaint(device: str = "cuda", repo: str = "stabilityai/stable-diffusion-2-inpainting", steps: int = 30,
+               guidance: float = 7.5):
+    """Return (inpaint, info). Only the masked area is meant to change; the pipeline's VAE round
+    trip also perturbs the rest slightly, which E9 records as outside_mask_drift."""
+    import torch
+    from diffusers import StableDiffusionInpaintPipeline
+    from PIL import Image
+    dtype = torch.float16 if device == "cuda" else torch.float32
+    pipe = StableDiffusionInpaintPipeline.from_pretrained(repo, torch_dtype=dtype, safety_checker=None).to(device)
+    pipe.set_progress_bar_config(disable=True)
+
+    def inpaint(rgb, mask, prompt, seed):
+        g = torch.Generator(device=device).manual_seed(int(seed))
+        h, w = rgb.shape[:2]
+        out = pipe(prompt=prompt, image=Image.fromarray(rgb), mask_image=Image.fromarray((mask * 255).astype(np.uint8)),
+                   height=h, width=w, num_inference_steps=steps, guidance_scale=guidance, generator=g).images[0]
+        return np.asarray(out.convert("RGB").resize((w, h)))
+    return inpaint, {"pipeline": "StableDiffusionInpaint", "repo": repo, "steps": steps, "guidance": guidance,
+                     "dtype": str(dtype)}

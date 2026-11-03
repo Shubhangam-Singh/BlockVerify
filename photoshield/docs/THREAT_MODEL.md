@@ -42,6 +42,10 @@ the ledger rebuild) and the cloak (PGD + EOT against one image encoder). Design 
 | A12 | **Server restart wipes the registry** (Render free tier) | Rebuild from the ledger by paging the indexer (§6.8); deterministic photo ids; manifest re-attach for hash-only photos (§6.9) | Hash-only photos are exact-match only until re-attached |
 | A13 | **Key theft** from an exported backup | Backups are passphrase-encrypted by default (PBKDF2 + AES-GCM); a plain export needs an explicit acknowledgement | A weak passphrase is guessable offline |
 | A14 | **Malformed manifests / notes** (floats, oversize, injection in titles) | Strict schema validation, no floats, size caps, title character filter; notes are size-checked before sending | — |
+| A15 | **Deepfake from your photo**: a face or background is swapped, so the whole-image match fails | Origin reports: the committed region map, alignment and per-region verdicts show which regions still match the anchored photo (design §15) | Global edits change every region; extreme crops or perspective changes can defeat alignment |
+| A16 | **Forged origin report**: claim regions matched, or move tiles around | Each tile carries a Merkle proof to the root inside the anchored manifest (positions are in the leaves); statuses must follow from the hashes and the calibrated thresholds; the owner key signs the report; the verifier checks the anchored digest and key | A signer can choose *which* suspect to report on; the suspect's SHA-256 binds the report to one specific copy |
+| A17 | **Detail-preserving or low-frequency edits** that keep a tile's coarse look | Tiles commit a detail level as well as a pHash, so smoothing and inpainting fills shift it (E8 ablation) | Edits that keep both layout and detail statistics can still pass as matches. The report says "evidence, not proof" |
+| A18 | **Probing the region map** | Only the root is public; tile values are revealed only in reports the owner chooses to publish | A published report reveals coarse per-tile hashes of that photo |
 
 ## Out of scope
 

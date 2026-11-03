@@ -98,8 +98,6 @@ fedverify/
   core/server.py     Aggregator ABC, FedAvg, evaluate (loss/acc/macro-F1/per-class)
   core/runner.py     run(cfg), seeding, JSONL logging, pre_aggregate hook
   tests/             27 tests
-  INVENTORY.md       Phase-0 ground truth about the existing BlockVerify code
-  TODO.md            deferred items
 ```
 
 ---

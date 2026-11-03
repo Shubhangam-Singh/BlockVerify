@@ -7,6 +7,8 @@
     python -m photoshield keygen --out my.pskey                       # CLI signing key
     python -m photoshield register shielded/manifest.json --api URL --token JWT --key my.pskey
     python -m photoshield study ...                                   # experiments (P6)
+    python -m photoshield origin ORIGINAL SUSPECT --manifest manifest.json --out report/ --key my.pskey
+    python -m photoshield origin-verify report/origin-report.json [SUSPECT] [--recheck] [--api URL]
 
 `protect` runs entirely on this machine. Nothing is uploaded; `register` sends only the
 manifest, a proof-of-work nonce and a signature.
@@ -87,6 +89,72 @@ def _cmd_study(ns) -> int:
     return study_main(ns.rest)
 
 
+def _cmd_origin(ns) -> int:
+    from .chain.client import load_key
+    from .origin import heatmap as HM, report as OR
+    with open(ns.manifest, encoding="utf-8") as f:
+        man = json.load(f)
+    with open(ns.original, "rb") as f:
+        ob = f.read()
+    with open(ns.suspect, "rb") as f:
+        sb = f.read()
+    try:
+        thr = OR.load_thresholds(ns.calibration)
+        sk = load_key(ns.key)[0] if ns.key else None
+        out = OR.build_report(ob, sb, man, thr, sk, mode=ns.align)
+    except (OR.OriginError, ValueError) as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    rep = out["report"]
+    os.makedirs(ns.out, exist_ok=True)
+    jp = os.path.join(ns.out, "origin-report.json")
+    with open(jp, "w", encoding="utf-8") as f:
+        json.dump(rep, f, indent=1, ensure_ascii=False)
+        f.write("\n")
+    heat = HM.heatmap(out["original"], out["alignment"]["warped"], rep["tiles"], rep["grid"])
+    hp = os.path.join(ns.out, "heatmap.png")
+    heat.save(hp)
+    pp = os.path.join(ns.out, "origin-report.pdf")
+    HM.pdf(rep, heat, pp, include_original=ns.include_original)
+    s = rep["summary"]
+    print(f"{s['verdict']}: {s['match']} regions match, {s['altered']} altered, {s['uncertain']} uncertain, "
+          f"{s['uncovered']} not in the suspect, {s['flat']} flat ({rep['grid']}x{rep['grid']} grid)")
+    print(f"alignment {rep['alignment']['method']} ({rep['alignment']['inliers']} inliers)")
+    print(f"report  -> {jp}" + ("" if rep.get("sig") else "   (UNSIGNED: pass --key to sign it)"))
+    print(f"heatmap -> {hp}  (shows your original: share the PDF instead)")
+    print(f"pdf     -> {pp}")
+    return 0
+
+
+def _cmd_origin_verify(ns) -> int:
+    from .origin import report as OR
+    with open(ns.report, encoding="utf-8") as f:
+        rep = json.load(f)
+    sb = None
+    if ns.suspect:
+        with open(ns.suspect, "rb") as f:
+            sb = f.read()
+    anchored = None
+    if ns.api:
+        import requests
+        pid = rep.get("photo", {}).get("photoId", "")
+        try:
+            p = requests.get(ns.api.rstrip("/") + "/photo/proof/" + pid, timeout=20).json()
+            if p.get("success"):
+                anchored = {"manifestDigest": p.get("manifestDigest"), "ownerPk": p.get("ownerPk")}
+            else:
+                print(f"registry: {p.get('error')}", file=sys.stderr)
+        except Exception as e:                       # noqa: BLE001 - report and continue offline
+            print(f"registry unreachable: {e}", file=sys.stderr)
+    res = OR.verify_report(rep, sb, recheck=ns.recheck, anchored=anchored)
+    for c in res["checks"]:
+        print(f"{'ok  ' if c['ok'] else 'FAIL'} {c['name']}" + (f"  ({c['detail']})" if c["detail"] else ""))
+    if anchored is None:
+        print("note: the anchor was not checked (pass --api URL, or verify in the Photo Shield tab)")
+    print("REPORT VALID" if res["ok"] else "REPORT INVALID")
+    return 0 if res["ok"] else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     from .config import add_args
     p = argparse.ArgumentParser(prog="python -m photoshield", description=__doc__,
@@ -126,6 +194,25 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--key", required=True, help="key file from `keygen`")
     r.add_argument("--privacy", choices=("full", "hash-only"), default="full")
     r.set_defaults(fn=_cmd_register)
+
+    o = sub.add_parser("origin", help="origin report: which regions of SUSPECT match your registered ORIGINAL")
+    o.add_argument("original")
+    o.add_argument("suspect")
+    o.add_argument("--manifest", required=True, help="the manifest.json of the registration")
+    o.add_argument("--out", required=True)
+    o.add_argument("--key", help="the registering key: a `keygen` file or the browser's exported key backup "
+                                 "(passphrase from $PHOTOSHIELD_KEY_PASSPHRASE or a prompt)")
+    o.add_argument("--calibration", help="threshold file (default photoshield/calibration.json)")
+    o.add_argument("--align", choices=("auto", "features", "resize"), default="auto")
+    o.add_argument("--include-original", action="store_true", help="put your original in the PDF too")
+    o.set_defaults(fn=_cmd_origin)
+
+    ov = sub.add_parser("origin-verify", help="check an origin report (proofs, signature, anchor)")
+    ov.add_argument("report")
+    ov.add_argument("suspect", nargs="?")
+    ov.add_argument("--recheck", action="store_true", help="recompute the suspect's tile hashes")
+    ov.add_argument("--api", help="registry API to read the anchored digest and key from")
+    ov.set_defaults(fn=_cmd_origin_verify)
 
     s = sub.add_parser("study", help="run experiments (see photoshield/experiments/study.py)")
     s.add_argument("rest", nargs=argparse.REMAINDER)

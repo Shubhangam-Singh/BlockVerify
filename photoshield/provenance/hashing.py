@@ -130,7 +130,17 @@ def _dct_low(f: list) -> list:
 
 def phash_from_rgb(rgb: np.ndarray) -> str:
     """64-bit pHash as 16 lowercase hex characters (MSB first, row-major over u then v)."""
-    F = _dct_low(_bin_means(rgb))
+    return phash_from_bins(_bin_means(rgb))
+
+
+def bin_means(rgb: np.ndarray) -> list:
+    """The 32 x 32 luma bin means (x1000 luma units) that the pHash is computed from."""
+    return _bin_means(rgb)
+
+
+def phash_from_bins(f: list) -> str:
+    """§7 steps 5-6 on precomputed bin means (so a caller can reuse the bins, e.g. regions)."""
+    F = _dct_low(f)
     coeffs = [F[u][v] for u in range(LOW) for v in range(LOW) if (u, v) != (0, 0)]
     median = sorted(coeffs)[31]
     bits = 0

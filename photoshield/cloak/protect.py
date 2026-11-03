@@ -16,6 +16,7 @@ import numpy as np
 from .. import __version__
 from ..config import ShieldConfig, seed_everything
 from ..provenance import hashing, manifest as M
+from ..provenance.regions import region_map
 
 
 def _working_size(w: int, h: int, size: int):
@@ -95,7 +96,7 @@ def protect(src: str, cfg: ShieldConfig, out_dir: str, title: Optional[str] = No
                    "width": int(w0), "height": int(h0)},
                   {"sha256": hashing.sha256_bytes(png), "phash": hashing.phash_from_rgb(cloaked),
                    "format": "png"},
-                  cloak)
+                  cloak, regions=region_map(rgb))
     digest = M.manifest_digest(man)
     with open(os.path.join(out_dir, "manifest.json"), "w", encoding="utf-8") as f:
         json.dump(man, f, indent=2, ensure_ascii=False)

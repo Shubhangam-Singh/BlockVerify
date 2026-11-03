@@ -7,16 +7,16 @@ the same anchoring core, after AI models (BlockVerify) and federated updates (Fe
 - **Threat model:** [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md)
 - **Design spec:** [`../PHOTOSHIELD_DESIGN.md`](../PHOTOSHIELD_DESIGN.md)
 - **API:** [`../docs/API_REFERENCE.md`](../docs/API_REFERENCE.md#photo-shield-apiphoto)
-- **Reuse map and baselines:** [`INVENTORY.md`](INVENTORY.md) · **Deferred work:** [`TODO.md`](TODO.md)
 
 ## Layout
 
 ```
 photoshield/
 ├── provenance/   hashing.py (SHA-256, canonical pHash), manifest.py, signing.py (Ed25519), merkle.py
+├── origin/       align.py (ORB + RANSAC), report.py (signed origin reports), heatmap.py (PNG + PDF)
 ├── cloak/        encoders.py (sdvae, sdxlvae, resnet50, facenet, tiny), pgd.py, eot.py, metrics.py, protect.py
 ├── chain/        notes.py (≤1024-byte Algorand notes), anchor.py (mock/local/algorand), ledger_sync.py, client.py
-├── experiments/  study.py (E1–E3, E6, E7), edit_test.py + colab_edit_test.ipynb (E4, E5)
+├── experiments/  study.py (E1–E3, E6–E8), edit_test.py + colab_edit_test.ipynb (E4, E5, E9)
 ├── analysis/     make_tables.py (every table number comes from results files)
 ├── calibration.json   pHash thresholds, written by `study e6 --install`, read by the backend
 ├── cli.py        python -m photoshield ...
@@ -69,6 +69,17 @@ python -m photoshield compare a.jpg b.jpg
 python -m photoshield check shielded/manifest.json photo.jpg shielded/cloaked.png
 ```
 
+Origin report: which regions of a suspect copy still match your registered photo (design §15).
+`--key` takes a CLI key file or the key backup exported from the browser:
+
+```bash
+python -m photoshield origin me.jpg suspect.jpg --manifest manifest.json --out report/ --key backup.json
+```
+
+```bash
+python -m photoshield origin-verify report/origin-report.json suspect.jpg --recheck --api https://blockverify-api-0ojc.onrender.com/api
+```
+
 Register from the command line instead of the browser (the key file is a CLI key; keep it safe):
 
 ```bash
@@ -105,6 +116,10 @@ python -m photoshield study e3 --model sdvae --eps 8
 
 ```bash
 python -m photoshield study e7
+```
+
+```bash
+python -m photoshield study e8 --install
 ```
 
 ```bash
