@@ -14,6 +14,13 @@ const DIR = process.env.PS_E2E || '/tmp/ps_e2e';
   const errors = [];
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('dialog', d => d.accept());
+  // In-app dialogs (bvConfirm / bvPrompt) replaced the browser's confirm()/prompt().
+  const dialogOk = async (value) => {
+    const ov = await page.waitForSelector('.bv-dialog-overlay', { timeout: 15000 });
+    if (value !== undefined) await (await ov.$('#bvDlgInput')).fill(value);
+    await (await ov.$('#bvDlgOk')).click();
+    await page.waitForFunction(el => !el.isConnected, ov);   // this dialog closed (a chained one may already be open)
+  };
   await page.goto('http://localhost:8080/#photoshield');
   await page.waitForSelector('#psKeyInfo');
   await page.click('#psKeyGenBtn');
@@ -24,11 +31,13 @@ const DIR = process.env.PS_E2E || '/tmp/ps_e2e';
   const regionRow = await page.$eval('#psRegChecks', e => e.textContent.replace(/\s+/g, ' ').trim());
   const mdl = page.waitForEvent('download');
   await page.click('#psRegBtn');
+  await dialogOk();                                    // the key is not backed up yet: continue anyway
   await page.waitForFunction(() => /ANCHORED|failed|rror/.test(document.getElementById('psRegResult').textContent), null, { timeout: 120000 });
   const regText = (await page.$eval('#psRegResult', e => e.textContent)).replace(/\s+/g, ' ').trim();
   const manifestPath = DIR + '/manifest.json';
   await (await mdl).saveAs(manifestPath);
   // make a report: original + edited copy, no manifest (rebuilt from the owner's record)
+  await page.evaluate(() => psSection('origin'));
   await page.setInputFiles('#psOrFiles', [DIR + '/me.png', DIR + '/fake.jpg']);
   await page.waitForFunction(() => /DERIVED FROM|NOT SHOWN|✘/.test(document.getElementById('psOrMakeOut').textContent), null, { timeout: 60000 });
   const made = (await page.$eval('#psOrMakeOut', e => e.textContent)).replace(/\s+/g, ' ').trim();

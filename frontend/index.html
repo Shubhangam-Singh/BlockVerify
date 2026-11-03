@@ -515,8 +515,8 @@
     .toast.hide { animation: toastOut 0.3s forwards ease-in; }
     @keyframes toastIn  { to { transform: translateX(0); opacity: 1; } }
     @keyframes toastOut { to { transform: translateX(120%); opacity: 0; } }
-    .toast.ok   { border-left: 4px solid var(--success); } .toast.ok::before   { content: '✅'; }
-    .toast.err  { border-left: 4px solid var(--danger);  } .toast.err::before  { content: '❌'; }
+    .toast.ok   { border-left: 4px solid var(--success); } .toast.ok::before   { content: '✓'; color: var(--success); font-weight: 800; }
+    .toast.err  { border-left: 4px solid var(--danger);  } .toast.err::before  { content: '✕'; color: var(--danger); font-weight: 800; }
     .toast.info { border-left: 4px solid var(--primary); } .toast.info::before { content: 'ℹ️'; }
     .status { display: none !important; }
 
@@ -1100,7 +1100,7 @@
     #flViz.dOff.ph5 .fv-agg-bad, #flViz.dOff.ph6 .fv-agg-bad, #flViz.dOff.ph7 .fv-agg-bad {
       opacity: 1; animation: fvPop .55s ease-out; }
     #flViz.dOff.ph5 .fv-agg-ok, #flViz.dOff.ph6 .fv-agg-ok, #flViz.dOff.ph7 .fv-agg-ok { opacity: 0; }
-    body.light-theme #flViz .fv-agg-ok { fill: rgba(8,145,178,.55); }
+    body.light-theme #flViz .fv-agg-ok { fill: rgba(47,91,234,.55); }
 
     /* screening sweep — only when the defence is on */
     .fv-scan { opacity: 0; transition: opacity .3s ease; }
@@ -1141,7 +1141,7 @@
     #flViz.ph7 .fv-flow.toChain { opacity: .6; animation: fvDash 1.1s linear infinite; }
     @keyframes fvDash { to { stroke-dashoffset: -24; } }
 
-    body.light-theme #flViz .fv-agg-fill rect { fill: rgba(8,145,178,.55); }
+    body.light-theme #flViz .fv-agg-fill rect { fill: rgba(47,91,234,.55); }
     .flviz-cap { display:flex; gap:.7rem; align-items:flex-start; padding:.7rem .85rem; margin-top:.5rem;
                  background: var(--fv-wash-2); border:1px solid var(--border); border-radius:10px; min-height:56px; }
     .flviz-step { flex:0 0 auto; width:22px; height:22px; border-radius:50%; background:linear-gradient(135deg,#8b7cff,#22d3ee);
@@ -1184,14 +1184,14 @@
        The dark palette (cyan/violet at low alpha) is far too faint on white. */
     body.light-theme #flViz text { fill: #475569; }
     body.light-theme #flViz .fv-zonehdr { fill: #6d28d9; }
-    body.light-theme #flViz .fv-client circle.body { fill: rgba(8,145,178,.16); stroke: #0e7490; }
+    body.light-theme #flViz .fv-client circle.body { fill: rgba(47,91,234,.16); stroke: #1E3FB0; }
     body.light-theme #flViz .fv-label { fill: #0f172a; }
-    body.light-theme #flViz .fv-ring { stroke: #0e7490; }
-    body.light-theme #flViz .fv-data rect { fill: #0e7490; }
-    body.light-theme #flViz .fv-pkt circle { fill: #0891b2; stroke: #0891b2; }
+    body.light-theme #flViz .fv-ring { stroke: #1E3FB0; }
+    body.light-theme #flViz .fv-data rect { fill: #1E3FB0; }
+    body.light-theme #flViz .fv-pkt circle { fill: #2F5BEA; stroke: #2F5BEA; }
     body.light-theme #flViz .fv-pkt.bad circle { fill: #dc2626; stroke: #dc2626; }
     body.light-theme #flViz .fv-scan circle { stroke: #6d28d9; }
-    body.light-theme #flViz .fv-leaf rect { fill: rgba(8,145,178,.28); stroke: #0e7490; }
+    body.light-theme #flViz .fv-leaf rect { fill: rgba(47,91,234,.28); stroke: #1E3FB0; }
     body.light-theme #flViz .fv-lvl1 rect { fill: rgba(109,40,217,.26); stroke: #6d28d9; }
     body.light-theme #flViz .fv-lvl1 path, body.light-theme #flViz .fv-root path { stroke: #6d28d9; }
     body.light-theme #flViz .fv-root rect { fill: rgba(109,40,217,.45); stroke: #5b21b6; }
@@ -1930,6 +1930,7 @@
       --shadow-3: 0 16px 40px -18px rgba(0,0,0,.7);
       --glow: none;
       --sidebar-w: 248px;
+      --viz-a: #5B8CFF; --viz-a-rgb: 91, 140, 255; --viz-b: #A78BFA; --viz-b-rgb: 167, 139, 250;
     }
     body.light-theme {
       --bg: #F6F7FA; --bg-1: #FFFFFF; --bg-grid: transparent;
@@ -1943,6 +1944,7 @@
       --shadow-1: 0 1px 2px rgba(15,22,38,.06);
       --shadow-2: 0 1px 2px rgba(15,22,38,.05);
       --shadow-3: 0 16px 36px -18px rgba(15,22,38,.28);
+      --viz-a: #2F5BEA; --viz-a-rgb: 47, 91, 234; --viz-b: #6D28D9; --viz-b-rgb: 109, 40, 217;
     }
 
     /* ── Ground: plain, quiet ── */
@@ -2279,6 +2281,72 @@
       .lp-actions .lp-btn-primary { padding: 0 14px; font-size: .9rem; }
     }
     @media (max-width: 420px) { .lp-actions .lp-icon-btn { display: none; } }
+    /* ── Pass 1 (CLAUDE.md A16): icons that replaced emoji, status dots, in-app dialog ── */
+    .ico-ok { color: var(--success); } .ico-bad { color: var(--danger); } .ico-warn { color: var(--warn); }
+    .ico-lg { width: 1.6em; height: 1.6em; }
+    .bv-dot { display: inline-block; width: .55rem; height: .55rem; border-radius: 50%; vertical-align: .05em; }
+    .bv-dot-ok { background: var(--success); } .bv-dot-bad { background: var(--danger); } .bv-dot-warn { background: var(--warn); }
+    .empty-state .empty-icon { opacity: 1; display: inline-flex; width: 52px; height: 52px; border-radius: 14px;
+      align-items: center; justify-content: center; background: rgba(var(--primary-rgb), .12); color: rgb(var(--primary-light-rgb)); }
+    body.light-theme .empty-state .empty-icon { background: #EDF1FF; color: #2F5BEA; }
+    .empty-state .empty-icon .ico { width: 24px; height: 24px; }
+    [data-bv-key]:focus-visible { outline: 2px solid rgb(var(--primary-rgb)); outline-offset: 2px; }
+    .bv-dialog-overlay { position: fixed; inset: 0; z-index: 10050; background: rgba(5, 8, 14, .62);
+      display: flex; align-items: center; justify-content: center; padding: 16px; animation: bvFade .15s ease-out; }
+    .bv-dialog { width: min(440px, 100%); background: var(--surface); color: var(--text); border: 1px solid var(--border);
+      border-radius: 16px; box-shadow: var(--shadow-3); padding: 1.4rem 1.5rem 1.2rem; }
+    .bv-dialog h3 { font-family: var(--display); font-size: 1.12rem; margin: 0 0 .45rem; }
+    .bv-dialog p { color: var(--text-muted); font-size: .9rem; line-height: 1.55; margin: 0 0 1rem; }
+    .bv-dialog input { width: 100%; margin: 0 0 .9rem; padding: .7rem .85rem; }
+    .bv-dialog-actions { display: flex; justify-content: flex-end; gap: .5rem; flex-wrap: wrap; }
+    .bv-dialog-actions .btn { min-width: 96px; justify-content: center; }
+    /* ── Pass 2 (CLAUDE.md A16): page header, Photo Shield sections, Verify grid, skeletons, empty states ── */
+    .page-head { margin: 0 0 1.4rem; max-width: 1180px; }
+    .page-head:empty { display: none; }
+    .page-head .crumb { font-size: .8rem; color: var(--text-muted); margin-bottom: .3rem; }
+    .page-head .crumb b { color: var(--text); font-weight: 500; }
+    .page-head h1 { font-family: var(--display); font-size: 1.75rem; line-height: 1.2; letter-spacing: -0.015em; margin: 0 0 .35rem; }
+    .page-head p { margin: 0; color: var(--text-muted); font-size: .95rem; line-height: 1.55; max-width: 62ch; }
+    @media (max-width: 900px) { .page-head h1 { font-size: 1.4rem; } .page-head { margin-bottom: 1rem; } }
+    /* the Photo Shield intro card no longer repeats the page title */
+    #tab-photoshield > .card:first-of-type > div:first-child > h2,
+    #tab-photoshield > .card:first-of-type > .subtitle { display: none; }
+    #tab-photoshield > .card:first-of-type { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; padding: .85rem 1.1rem; }
+    #tab-photoshield > .card:first-of-type > div:first-child { order: 2; margin-left: auto; }
+    #tab-photoshield > .card:first-of-type > #psStatus { order: 1; margin-top: 0 !important; flex: 1 1 320px; }
+    #tab-photoshield > .card:first-of-type > #psHelp { order: 3; flex-basis: 100%; margin-top: 0 !important; }
+    .ps-seg { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; margin: 0 0 1rem; border: 1px solid var(--border);
+      border-radius: 12px; background: var(--surface); width: fit-content; max-width: 100%; }
+    .ps-seg button { font: inherit; font-size: .88rem; font-weight: 500; min-height: 40px; padding: 0 1rem; border: 0;
+      border-radius: 9px; background: transparent; color: var(--text-muted); cursor: pointer; }
+    .ps-seg button:hover { color: var(--text); background: var(--surface2); }
+    .ps-seg button[aria-pressed="true"] { background: rgba(var(--primary-rgb), .14); color: rgb(var(--primary-light-rgb)); font-weight: 600; }
+    body.light-theme .ps-seg button[aria-pressed="true"] { background: #EDF1FF; color: #1E3FB0; }
+    [data-ps-section][hidden] { display: none !important; }
+    @media (max-width: 640px) { .ps-seg { flex-wrap: nowrap; overflow-x: auto; width: 100%; scrollbar-width: none; }
+      .ps-seg::-webkit-scrollbar { display: none; } .ps-seg button { flex: 0 0 auto; white-space: nowrap; } }
+    #flEmpty > div[style*="inline-block"] { display: block !important; width: fit-content; max-width: 100%; margin: .7rem auto 0 !important; overflow-x: auto; }
+    .ver-grid { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+    .ver-out #verResult:empty { display: flex; align-items: center; justify-content: center; min-height: 260px; border: 1.5px dashed var(--border-strong);
+      border-radius: 12px; padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: .9rem; line-height: 1.6; }
+    .ver-out #verResult:empty::before { content: "Your result appears here: whether the file matches its anchored hash and, if not, which layers changed."; max-width: 34ch; }
+    @media (max-width: 1100px) { .ver-grid { grid-template-columns: 1fr; } .ver-out #verResult:empty { min-height: 120px; } }
+    .bv-skel { display: inline-block; height: .9em; width: 4.5em; border-radius: 6px; vertical-align: middle;
+      background: linear-gradient(90deg, var(--surface2) 0%, var(--border) 50%, var(--surface2) 100%); background-size: 200% 100%;
+      animation: bvShimmer 1.3s ease-in-out infinite; }
+    .bv-skel-rows { display: flex; flex-direction: column; gap: .55rem; padding: .4rem 0; }
+    .bv-skel-rows .bv-skel { width: 100%; height: .8rem; }
+    .bv-skel-rows .bv-skel:nth-child(2) { width: 82%; } .bv-skel-rows .bv-skel:nth-child(3) { width: 64%; }
+    .bv-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    @keyframes bvShimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+    @media (prefers-reduced-motion: reduce) { .bv-skel { animation: none; } }
+    .empty-state { padding: 2.2rem 1.5rem; }
+    .empty-state p { color: var(--text-muted); margin: .9rem auto 1rem; max-width: 46ch; }
+    .empty-state.empty-compact { padding: 1rem; } .empty-state.empty-compact p { margin: 0 0 .6rem; font-size: .85rem; }
+    .bv-empty-ico { display: inline-flex; width: 48px; height: 48px; border-radius: 14px; align-items: center; justify-content: center;
+      margin-bottom: .6rem; background: rgba(var(--primary-rgb), .12); color: rgb(var(--primary-light-rgb)); }
+    body.light-theme .bv-empty-ico { background: #EDF1FF; color: #2F5BEA; }
+    .bv-empty-ico .ico { width: 22px; height: 22px; }
   </style>
 </head>
 <body>
@@ -2328,6 +2396,10 @@
   <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-11"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8M17 6l3 3M14.5 8.5l2 2"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></symbol>
   <symbol id="i-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M21 3l-9 9M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6"/></symbol>
 </svg>
 
@@ -2544,12 +2616,13 @@
       <button class="tab" onclick="switchTab('help',this)"><span class="tab-icon"><svg class="ico"><use href="#i-help"/></svg></span><span class="tab-label">Help & FAQ</span></button>
     </nav>
     <div class="sidebar-content">
+  <header class="page-head" id="bvPageHead" aria-live="polite"></header>
   <div class="app-overview">
   <!-- Stats -->
   <div class="stats">
-    <div class="stat-card"><div class="stat-ico"><svg class="ico"><use href="#i-models"/></svg></div><div class="stat-val" id="sModels">—</div><div class="stat-lbl">Models Registered</div></div>
-    <div class="stat-card"><div class="stat-ico"><svg class="ico"><use href="#i-verify"/></svg></div><div class="stat-val" id="sVerify">—</div><div class="stat-lbl">Verifications</div></div>
-    <div class="stat-card"><div class="stat-ico"><svg class="ico"><use href="#i-cube"/></svg></div><div class="stat-val" id="sBlocks">—</div><div class="stat-lbl">Testnet round</div></div>
+    <div class="stat-card"><div class="stat-ico"><svg class="ico"><use href="#i-models"/></svg></div><div class="stat-val" id="sModels"><span class="bv-skel" aria-hidden="true"></span><span class="bv-sr">Loading</span></div><div class="stat-lbl">Models Registered</div></div>
+    <div class="stat-card"><div class="stat-ico"><svg class="ico"><use href="#i-verify"/></svg></div><div class="stat-val" id="sVerify"><span class="bv-skel" aria-hidden="true"></span><span class="bv-sr">Loading</span></div><div class="stat-lbl">Verifications</div></div>
+    <div class="stat-card"><div class="stat-ico"><svg class="ico"><use href="#i-cube"/></svg></div><div class="stat-val" id="sBlocks"><span class="bv-skel" aria-hidden="true"></span><span class="bv-sr">Loading</span></div><div class="stat-lbl">Testnet round</div></div>
   </div>
 
   <!-- Algorand Wallet Link -->
@@ -2588,14 +2661,14 @@
       <div style="display:flex;align-items:center;gap:.5rem;">
         <svg class="ico" style="width:1em;height:1em;color:var(--primary);"><use href="#i-feed"/></svg>
         <span style="font-size:.85rem;font-weight:700;">Live Activity Feed</span>
-        <span id="feedPulse" style="width:8px;height:8px;border-radius:50%;background:#00b894;display:inline-block;animation:feedPulse 2s ease-in-out infinite;"></span>
+        <span id="feedPulse" style="width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;animation:feedPulse 2s ease-in-out infinite;"></span>
         <span id="feedCount" style="font-size:.7rem;color:var(--text-muted);font-weight:600;"></span>
       </div>
       <span id="feedToggleArrow" style="font-size:.7rem;color:var(--text-muted);transition:transform .3s;">▼</span>
     </div>
     <div id="feedPanel" style="max-height:0;overflow:hidden;transition:max-height .4s cubic-bezier(0.4,0,0.2,1);">
       <div id="feedList" style="padding:.5rem .8rem .8rem;max-height:260px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;">
-        <div style="text-align:center;padding:1rem;color:var(--text-muted);font-size:.8rem;">Loading activity feed...</div>
+        <div class="bv-skel-rows" aria-label="Loading activity"><span class="bv-skel"></span><span class="bv-skel"></span><span class="bv-skel"></span></div>
       </div>
     </div>
   </div>
@@ -2633,6 +2706,8 @@
     <div class="card">
       <h2><span class="card-title-ico"><svg class="ico"><use href="#i-verify"/></svg></span> Verify Model Integrity</h2>
       <p class="subtitle">Upload a model file and provide its Model ID to check against the blockchain record.</p>
+      <div class="ver-grid">
+      <div class="ver-inputs">
       <div class="fg">
         <label>Model File</label>
         <div class="file-drop" id="verDrop" onclick="document.getElementById('verFile').click()">
@@ -2648,7 +2723,9 @@
       </div>
       <div class="fg"><label>Model ID</label><input type="text" id="verModelId" placeholder="Paste the model ID you received at registration"></div>
       <button class="btn" id="verBtn" onclick="verifyModel()">Verify Integrity</button>
-      <div id="verResult"></div>
+      </div>
+      <div class="ver-out"><div id="verResult"></div></div>
+      </div>
     </div>
 
     <!-- Batch Verification -->
@@ -2803,7 +2880,7 @@
       </div>
       <div id="alertsFeed" class="alerts-feed">
         <div class="empty-state" id="alertsEmpty">
-          <span class="empty-icon"><svg class="ico" style="width:3rem;height:3rem;"><use href="#i-bell"/></svg></span>
+          <span class="empty-icon"><svg class="ico" aria-hidden="true"><use href="#i-bell"/></svg></span>
           <p>No verification events yet.<br>Alerts appear here the instant anyone verifies a model.</p>
         </div>
       </div>
@@ -2835,7 +2912,7 @@
 
     <div class="analytics-grid">
       <div class="card an-card">
-        <div class="an-title"><svg class="ico" style="color:#22d3ee;width:1em;height:1em;"><use href="#i-chart"/></svg> Models Registered Over Time</div>
+        <div class="an-title"><svg class="ico" style="color:var(--viz-a);width:1em;height:1em;"><use href="#i-chart"/></svg> Models Registered Over Time</div>
         <div class="an-sub">New registrations per day</div>
         <div class="an-canvas-wrap"><canvas id="anLine"></canvas></div>
       </div>
@@ -2847,7 +2924,7 @@
       </div>
 
       <div class="card an-card">
-        <div class="an-title"><svg class="ico" style="color:#8b7cff;width:1em;height:1em;"><use href="#i-models"/></svg> Top Registrars</div>
+        <div class="an-title"><svg class="ico" style="color:var(--viz-b);width:1em;height:1em;"><use href="#i-models"/></svg> Top Registrars</div>
         <div class="an-sub">Users ranked by models registered</div>
         <div class="an-canvas-wrap"><canvas id="anBar"></canvas><div class="an-empty" id="anBarEmpty" style="display:none;">No models registered yet.</div></div>
       </div>
@@ -2858,7 +2935,7 @@
         <div class="an-health">
           <div class="an-gauge-wrap">
             <canvas id="anGauge"></canvas>
-            <div class="an-gauge-center"><div class="an-metric-val" id="anGaugeVal" style="font-size:1.35rem;color:#22d3ee;">0</div><div class="an-metric-lbl">avg mine (s)</div></div>
+            <div class="an-gauge-center"><div class="an-metric-val" id="anGaugeVal" style="font-size:1.35rem;color:var(--viz-a);">0</div><div class="an-metric-lbl">avg mine (s)</div></div>
           </div>
           <div class="an-metrics">
             <div class="an-metric"><div class="an-metric-val" id="anHealthBlocks" style="color:var(--accent);">—</div><div class="an-metric-lbl">Total Blocks</div></div>
@@ -2968,7 +3045,7 @@
 
       <div style="margin-top:1.4rem;border-top:1px solid var(--border);padding-top:1.2rem;">
         <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:.8rem;display:flex;align-items:center;gap:.4rem;"><svg class="ico" style="width:1em;height:1em;color:var(--primary);"><use href="#i-proof"/></svg> Smart Contract Registry</div>
-        <div id="contractInfo" style="font-size:.88rem;color:var(--text-muted);">Loading contract info…</div>
+        <div id="contractInfo" style="font-size:.88rem;color:var(--text-muted);"><div class="bv-skel-rows" aria-label="Loading contract info"><span class="bv-skel"></span><span class="bv-skel"></span></div></div>
       </div>
     </div>
 
@@ -2976,7 +3053,7 @@
     <div class="card" style="margin-top:1rem;">
       <h2><span class="card-title-ico"><svg class="ico"><use href="#i-wallet"/></svg></span> Server Wallet — Algorand Testnet</h2>
       <p class="subtitle">Live account stats for the BlockVerify server wallet that signs every transaction.</p>
-      <div id="walletInfo" style="min-height:60px;">Loading…</div>
+      <div id="walletInfo" style="min-height:60px;"><div class="bv-skel-rows" aria-label="Loading wallet"><span class="bv-skel"></span><span class="bv-skel"></span></div></div>
     </div>
 
     <!-- Live Algorand Network Stats -->
@@ -3062,7 +3139,7 @@
           </p>
         </div>
         <div id="btcWalletBadge" style="font-size:.75rem;background:rgba(247,147,26,.1);border:1px solid rgba(247,147,26,.35);border-radius:8px;padding:.4rem .8rem;color:#f7931a;">
-          🟡 Loading wallet…
+          <span class="bv-dot bv-dot-warn" aria-hidden="true"></span> Loading wallet…
         </div>
       </div>
 
@@ -3145,7 +3222,7 @@
       </div>
 
       <div id="flHelp" style="display:none;margin-top:.8rem;padding:.85rem 1rem;border:1px solid var(--border);border-radius:10px;background:rgba(34,211,238,.04);font-size:.82rem;line-height:1.65;color:var(--text);">
-        <b style="color:#22d3ee;">Federated learning</b> trains one model across many parties without pooling their data. Each round, every client trains locally and sends back a <em>delta</em> &mdash; how much it wants to change the model. The server averages those deltas.
+        <b style="color:var(--viz-a);">Federated learning</b> trains one model across many parties without pooling their data. Each round, every client trains locally and sends back a <em>delta</em> &mdash; how much it wants to change the model. The server averages those deltas.
         <div style="margin-top:.55rem;">Two things can go wrong, and this page shows how both are handled:</div>
         <div style="margin-top:.4rem;padding-left:.9rem;">
           <div style="margin-bottom:.3rem;"><b style="color:#ef4444;">A malicious client</b> sends a poisoned delta to corrupt or backdoor the model. The <b>Accept / Reject Lineage</b> shows which clients the aggregator screened out, round by round.</div>
@@ -3155,7 +3232,7 @@
       </div>
 
       <div id="flEmpty" style="display:none;margin-top:.6rem;padding:1.4rem;text-align:center;color:var(--text-muted);font-size:.86rem;line-height:1.8;border:1px dashed var(--border);border-radius:10px;">
-        <div style="font-size:1.5rem;margin-bottom:.4rem;">&#127760;</div>
+        <div class="bv-empty-ico"><svg class="ico" aria-hidden="true"><use href="#i-globe"/></svg></div>
         <div style="color:var(--text);font-weight:600;margin-bottom:.5rem;">No federated runs committed yet</div>
         Train with <code>--commit</code>, then publish the run:
         <div style="margin-top:.6rem;text-align:left;display:inline-block;background:var(--fv-inset);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;font-size:.74rem;color:var(--text-muted);">
@@ -3171,12 +3248,12 @@
       <div class="card" style="margin-bottom:.9rem;padding:.9rem 1.1rem;">
         <div class="fl-cmp-pickers">
           <div>
-            <div class="fl-cmp-tag" style="--c:#22d3ee;">RUN A</div>
+            <div class="fl-cmp-tag" style="--c:var(--viz-a);">RUN A</div>
             <select id="flCmpA" onchange="loadFlCompare()" class="fl-cmp-sel"></select>
           </div>
           <div class="fl-cmp-vs">vs</div>
           <div>
-            <div class="fl-cmp-tag" style="--c:#8b7cff;">RUN B</div>
+            <div class="fl-cmp-tag" style="--c:var(--viz-b);">RUN B</div>
             <select id="flCmpB" onchange="loadFlCompare()" class="fl-cmp-sel"></select>
           </div>
         </div>
@@ -3184,7 +3261,7 @@
       </div>
 
       <div class="card" style="margin-bottom:.9rem;">
-        <div class="an-title"><svg class="ico" style="color:#22d3ee;width:1em;height:1em;"><use href="#i-chart"/></svg> Accuracy, Side by Side</div>
+        <div class="an-title"><svg class="ico" style="color:var(--viz-a);width:1em;height:1em;"><use href="#i-chart"/></svg> Accuracy, Side by Side</div>
         <div class="an-sub">Does the defence cost accuracy? Both runs on one axis, so the answer is read directly rather than remembered.</div>
         <div class="an-canvas-wrap" style="margin-top:.5rem;"><canvas id="flCmpChart"></canvas>
           <div class="an-empty" id="flCmpChartEmpty" style="display:none;">Neither run was committed with per-round metrics.</div></div>
@@ -3208,7 +3285,7 @@
       </div>
 
       <div class="card">
-        <div class="an-title"><svg class="ico" style="color:#8b7cff;width:1em;height:1em;"><use href="#i-compare"/></svg> Metric by Metric</div>
+        <div class="an-title"><svg class="ico" style="color:var(--viz-b);width:1em;height:1em;"><use href="#i-compare"/></svg> Metric by Metric</div>
         <div class="an-sub" style="margin-bottom:.6rem;">Δ is B minus A. Green favours B, red favours A.</div>
         <div style="overflow:auto;"><table id="flCmpTable" style="width:100%;border-collapse:collapse;font-size:.8rem;"></table></div>
       </div>
@@ -3226,7 +3303,7 @@
       <div class="card" id="flHowCard" style="margin-bottom:.9rem;">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
           <div>
-            <div class="an-title"><svg class="ico" style="color:#8b7cff;width:1em;height:1em;"><use href="#i-compass"/></svg> How One Round Works</div>
+            <div class="an-title"><svg class="ico" style="color:var(--viz-b);width:1em;height:1em;"><use href="#i-compass"/></svg> How One Round Works</div>
             <div class="an-sub">Teaching diagram of a single round &mdash; local training, screening, averaging, and the on-chain commitment. Z-scores here are illustrative, not this run’s numbers.</div>
           </div>
           <button class="flviz-btn" onclick="flVizToggleCard()" id="flVizCollapse">Hide</button>
@@ -3258,7 +3335,7 @@
 
       <div class="analytics-grid" style="margin-bottom:.9rem;">
         <div class="card an-card">
-          <div class="an-title"><svg class="ico" style="color:#22d3ee;width:1em;height:1em;"><use href="#i-chart"/></svg> Model Accuracy per Round</div>
+          <div class="an-title"><svg class="ico" style="color:var(--viz-a);width:1em;height:1em;"><use href="#i-chart"/></svg> Model Accuracy per Round</div>
           <div class="an-sub">Is the global model still learning while under attack?</div>
           <div class="an-canvas-wrap"><canvas id="flAccChart"></canvas><div class="an-empty" id="flAccEmpty" style="display:none;">This run was committed without per-round metrics.</div></div>
         </div>
@@ -3278,7 +3355,7 @@
       </div>
 
       <div class="card" id="flProofCard" style="display:none;">
-        <div class="an-title" style="margin-bottom:.2rem;"><svg class="ico" style="color:#8b7cff;width:1em;height:1em;"><use href="#i-proof"/></svg> Inclusion Proof Verification</div>
+        <div class="an-title" style="margin-bottom:.2rem;"><svg class="ico" style="color:var(--viz-b);width:1em;height:1em;"><use href="#i-proof"/></svg> Inclusion Proof Verification</div>
         <div class="an-sub" style="margin-bottom:.7rem;">Four steps, all run in <em>your</em> browser. Nothing below is taken on this server&rsquo;s word.</div>
         <div id="flProofSteps" style="display:grid;gap:.42rem;"></div>
         <div id="flProofVerdict" style="margin-top:.8rem;"></div>
@@ -3292,7 +3369,7 @@
       .ps-row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
       .ps-pill{display:inline-block;padding:.18rem .55rem;border-radius:999px;font-size:.72rem;font-weight:700;border:1px solid var(--border);color:var(--text-muted)}
       .ps-ok{color:#22c55e;border-color:rgba(34,197,94,.45)} .ps-bad{color:#ef4444;border-color:rgba(239,68,68,.45)}
-      .ps-warn{color:#eab308;border-color:rgba(234,179,8,.45)} .ps-info{color:#22d3ee;border-color:rgba(34,211,238,.45)}
+      .ps-warn{color:#eab308;border-color:rgba(234,179,8,.45)} .ps-info{color:var(--viz-a);border-color:rgba(var(--viz-a-rgb),.45)}
       .ps-box{border:1px solid var(--border);border-radius:10px;padding:.8rem 1rem;font-size:.82rem;line-height:1.6;background:rgba(255,255,255,.02)}
       .ps-mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.74rem;word-break:break-all}
       .ps-banner{border:1px solid rgba(234,179,8,.5);background:rgba(234,179,8,.08);color:var(--text);border-radius:10px;padding:.7rem .9rem;font-size:.8rem;margin-top:.7rem}
@@ -3315,15 +3392,23 @@
       </div>
       <p class="subtitle" style="margin-top:.5rem;">Prove that a photo is yours and existed at a given time, and make AI edits of it harder. Your photo is hashed <b>in this browser</b>; only fingerprints are sent.</p>
       <div id="psHelp" class="ps-box" style="display:none;margin-top:.6rem;">
-        <b>Two layers.</b> <b style="color:#22d3ee;">Provenance</b>: the photo's SHA-256 and a perceptual hash (pHash) are signed with <i>your</i> key and anchored on Algorand. Anyone can later check a copy against the public ledger, without trusting this server. The pHash still recognises copies that were re-compressed or resized.
-        <b style="color:#a78bfa;">Cloak</b> (optional, runs on your own computer): a tiny, invisible perturbation that makes Stable-Diffusion-based editors produce damaged edits. It raises the cost of misuse on some open models. It does not stop closed models.
+        <b>Two layers.</b> <b style="color:var(--viz-a);">Provenance</b>: the photo's SHA-256 and a perceptual hash (pHash) are signed with <i>your</i> key and anchored on Algorand. Anyone can later check a copy against the public ledger, without trusting this server. The pHash still recognises copies that were re-compressed or resized.
+        <b style="color:var(--viz-b);">Cloak</b> (optional, runs on your own computer): a tiny, invisible perturbation that makes Stable-Diffusion-based editors produce damaged edits. It raises the cost of misuse on some open models. It does not stop closed models.
         <div style="margin-top:.5rem;color:var(--text-muted);font-size:.76rem;">Design and limits: <code>PHOTOSHIELD_DESIGN.md</code>, <code>photoshield/docs/WHAT_IS_PHOTOSHIELD.md</code></div>
       </div>
-      <div id="psStatus" class="ps-row" style="margin-top:.6rem;"></div>
+      <div id="psStatus" class="ps-row" style="margin-top:.6rem;"><span class="bv-skel" style="width:7em;"></span><span class="bv-skel" style="width:9em;"></span><span class="bv-skel" style="width:8em;"></span><span class="bv-sr">Loading status</span></div>
     </div>
 
+    <!-- Section switcher (PhotoShield sections, CLAUDE.md A16) -->
+    <nav class="ps-seg" id="psSeg" aria-label="Photo Shield sections">
+      <button type="button" data-sec="register" aria-pressed="true" onclick="psSection('register')">Register</button>
+      <button type="button" data-sec="check" aria-pressed="false" onclick="psSection('check')">Check a photo</button>
+      <button type="button" data-sec="origin" aria-pressed="false" onclick="psSection('origin')">Origin report</button>
+      <button type="button" data-sec="mine" aria-pressed="false" onclick="psSection('mine')">My photos</button>
+    </nav>
+
     <!-- Owner key -->
-    <div class="card" style="margin-bottom:.9rem;" id="psKeyCard">
+    <div class="card" style="margin-bottom:.9rem;" id="psKeyCard" data-ps-section="register">
       <h2 style="margin:0 0 .4rem;"><span class="card-title-ico"><svg class="ico"><use href="#i-lock"/></svg></span> Your signing key</h2>
       <p class="subtitle">Every registration is signed with an Ed25519 key that lives only in this browser. The server never sees it.</p>
       <div id="psKeyInfo" class="ps-box">Checking for a key…</div>
@@ -3333,11 +3418,11 @@
         <label class="btn btn-sec" style="cursor:pointer;">Import backup<input type="file" accept=".json,application/json" style="display:none" onchange="psImportKey(this)"></label>
         <label style="font-size:.74rem;color:var(--text-muted);display:flex;gap:.35rem;align-items:center;"><input type="checkbox" id="psPlainExport"> I understand an unencrypted backup can be stolen</label>
       </div>
-      <div id="psKeyWarn" class="ps-banner" style="display:none;">&#9888; Your signing key exists only in this browser. Clearing site data, a private window or another device loses it, and with it the ability to prove that your registrations are yours. <b>Export a backup now.</b></div>
+      <div id="psKeyWarn" class="ps-banner" style="display:none;"><svg class="ico ico-warn" aria-hidden="true"><use href="#i-alert"/></svg> Your signing key exists only in this browser. Clearing site data, a private window or another device loses it, and with it the ability to prove that your registrations are yours. <b>Export a backup now.</b></div>
     </div>
 
     <!-- Register -->
-    <div class="card" id="psRegCard" style="margin-bottom:.9rem;">
+    <div class="card" id="psRegCard" data-ps-section="register" style="margin-bottom:.9rem;">
       <h2 style="margin:0 0 .4rem;"><span class="card-title-ico"><svg class="ico"><use href="#i-register"/></svg></span> Register a photo</h2>
       <div class="ps-row" style="margin-bottom:.6rem;">
         <label style="font-size:.8rem;"><input type="radio" name="psMode" value="plain" checked onchange="psModeChanged()"> Provenance only (any photo)</label>
@@ -3368,7 +3453,7 @@
     </div>
 
     <!-- Verify -->
-    <div class="card" id="psVerCard" style="margin-bottom:.9rem;">
+    <div class="card" id="psVerCard" data-ps-section="check" style="margin-bottom:.9rem;">
       <h2 style="margin:0 0 .4rem;"><span class="card-title-ico"><svg class="ico"><use href="#i-verify"/></svg></span> Check a photo</h2>
       <p class="subtitle">Drop any image. Its fingerprints are computed here and compared with the registry, then you can check the anchor on the public ledger yourself.</p>
       <div class="file-drop" onclick="document.getElementById('psVerFile').click()">
@@ -3381,7 +3466,7 @@
     </div>
 
     <!-- Origin report (PhotoShield v2, PHOTOSHIELD_DESIGN.md §15) -->
-    <div class="card" id="psOriginCard" style="margin-bottom:.9rem;">
+    <div class="card" id="psOriginCard" data-ps-section="origin" style="margin-bottom:.9rem;">
       <h2 style="margin:0 0 .4rem;"><span class="card-title-ico"><svg class="ico"><use href="#i-merkle"/></svg></span> Origin report <span class="tab-new" style="margin-left:.4rem;">New</span></h2>
       <p class="subtitle">Found an edited copy of your photo, such as a face swap or an AI edit? Show which regions are still identical to the photo you anchored, and which were changed. Every region claim carries a Merkle proof against your registration. The report never contains your original.</p>
       <div class="ps-row" style="margin-bottom:.7rem;">
@@ -3408,7 +3493,7 @@
     </div>
 
     <!-- My photos -->
-    <div class="card" id="psMineCard" style="margin-bottom:.9rem;">
+    <div class="card" id="psMineCard" data-ps-section="mine" style="margin-bottom:.9rem;">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;">
         <h2 style="margin:0;"><span class="card-title-ico"><svg class="ico"><use href="#i-models"/></svg></span> My photos</h2>
         <label class="btn btn-sec" style="cursor:pointer;font-size:.76rem;padding:.4rem .8rem;">Re-attach manifest<input type="file" accept=".json,application/json" style="display:none" onchange="psRehydrate(this)"></label>
@@ -3460,9 +3545,9 @@
             <h4>4. Chain Explorer</h4>
             <p>Registrations are live Algorand Testnet transactions. The Explorer tab also shows this server’s local PoW chain as a teaching visualiser.</p>
           </div>
-          <div class="qs-card" onclick="switchTab('federated')" style="border-color:#8b7cff;">
-            <div class="qs-icon" style="color:#8b7cff;"><svg class="ico"><use href="#i-globe"/></svg></div>
-            <h4>5. Federated Learning <span style="font-size:.6rem;background:#8b7cff;color:var(--fv-chip-ink);padding:.1rem .35rem;border-radius:4px;vertical-align:middle;margin-left:.2rem;">NEW</span></h4>
+          <div class="qs-card" onclick="switchTab('federated')">
+            <div class="qs-icon"><svg class="ico"><use href="#i-globe"/></svg></div>
+            <h4>5. Federated Learning</h4>
             <p>Train one AI across many hospitals without sharing patient data — and prove on-chain exactly whose updates went in.</p>
           </div>
           <div class="qs-card" onclick="switchTab('photoshield')">
@@ -3549,7 +3634,7 @@
 
         <!-- Federated Learning -->
         <div class="faq-category">
-          <h3 style="font-size: .85rem; font-weight: 700; color: #8b7cff; margin: 1.5rem 0 .6rem; text-transform: uppercase;display:flex;align-items:center;gap:.45rem;"><svg class="ico" style="width:1em;height:1em;"><use href="#i-globe"/></svg> Federated Learning</h3>
+          <h3 style="font-size: .85rem; font-weight: 700; color: var(--viz-b); margin: 1.5rem 0 .6rem; text-transform: uppercase;display:flex;align-items:center;gap:.45rem;"><svg class="ico" style="width:1em;height:1em;"><use href="#i-globe"/></svg> Federated Learning</h3>
           <div class="faq-item">
             <button class="faq-q" onclick="toggleFaq(this)">What is Federated Learning, in simple terms? <span class="faq-arrow">▼</span></button>
             <div class="faq-a">Imagine ten hospitals that each want a better heart-scan AI. Alone, none has enough patients to train a good one — but patient records legally cannot leave the building, so they can't pool their data.<br><br><strong>Federated learning</strong> solves this: nobody sends data anywhere. Each hospital trains on its own patients and sends back only <em>the adjustment it wants to make to the shared model</em> — just a list of numbers. A server averages everyone's adjustments into one improved model and sends it back. Repeat for a few dozen "rounds" and everyone ends up with a model far better than any of them could have trained alone.</div>
@@ -3757,6 +3842,11 @@ const API = window.location.hostname === 'localhost' || window.location.hostname
   ? 'http://localhost:5000/api'
   : 'https://blockverify-api-0ojc.onrender.com/api';
 const hashes = {};
+// Theme token as a colour string, for canvas/SVG/Chart.js code that cannot use var() (CLAUDE.md A16).
+function bvTok(name, fallback) {
+  try { const v = getComputedStyle(document.body).getPropertyValue(name).trim(); return v || fallback || ''; }
+  catch (e) { return fallback || ''; }
+}
 const layerHashesMap = {};
 const layerDataMap = {};   // raw per-layer weight arrays — stays client-side, used for forensic analysis
 let _allModels = [];
@@ -3876,7 +3966,7 @@ async function doLogin() {
     _saveAuth(d.token, d.username);
     updateAuthUI();
     closeAuthModal();
-    toast('ok', `Welcome back, ${d.username}! 👋`);
+    toast('ok', `Welcome back, ${d.username}!`);
     refreshStats(); loadWalletAddressBar();
   } catch(e) { _showAuthErr('loginErr', 'Network error. Is the backend running?'); }
   finally { _setAuthLoading('loginBtn', false, 'Login →'); }
@@ -3901,7 +3991,7 @@ async function doRegister() {
     _saveAuth(d.token, d.username);
     updateAuthUI();
     closeAuthModal();
-    toast('ok', `Account created! Welcome, ${d.username} 🎉`);
+    toast('ok', `Account created. Welcome, ${d.username}!`);
     refreshStats();
   } catch(e) { _showAuthErr('registerErr', 'Network error. Is the backend running?'); }
   finally { _setAuthLoading('registerBtn', false, 'Create Account →'); }
@@ -4134,7 +4224,7 @@ async function onFile(s) {
     return;
   }
 
-  document.getElementById(s+'FN').textContent = `📄 ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+  document.getElementById(s+'FN').textContent = `${file.name} (${(file.size/1024).toFixed(1)} KB)`;
 
   // Show instant spinner while hashing
   const hashWrap = document.getElementById(s+'HashWrap');
@@ -4218,14 +4308,14 @@ async function refreshStats() {
     const d = await r.json();
     document.getElementById('sModels').textContent = d.totalModels  ?? '—';
     document.getElementById('sVerify').textContent = d.totalVerifications ?? '—';
-    document.getElementById('sBlocks').textContent = d.totalBlocks  ?? '—';
+    if (typeof d.totalBlocks === 'number') document.getElementById('sBlocks').textContent = d.totalBlocks;   // else the network poller shows the live round
     
     // Help tab quick stats
     const hsModels = document.getElementById('helpStatModels'); if (hsModels) hsModels.textContent = d.totalModels ?? '—';
     const hsVerify = document.getElementById('helpStatVerify'); if (hsVerify) hsVerify.textContent = d.totalVerifications ?? '—';
-    const hsBlocks = document.getElementById('helpStatBlocks'); if (hsBlocks) hsBlocks.textContent = d.totalBlocks ?? '—';
+    const hsBlocks = document.getElementById('helpStatBlocks'); if (hsBlocks && typeof d.totalBlocks === 'number') hsBlocks.textContent = d.totalBlocks;
   } catch(e) {
-    ['sModels','sVerify','sBlocks','helpStatModels','helpStatVerify','helpStatBlocks'].forEach(id => {
+    ['sModels','sVerify','helpStatModels','helpStatVerify'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.textContent = '—';
     });
@@ -4333,12 +4423,12 @@ async function minePoW(modelHash) {
 
   // ── Phase 3: Success reveal ───────────────────────────────────────
   powLog(`<span style="color:#888;">────────────────────────────────────────────────</span>`);
-  powLog(`<strong style="color:#fff;">⛏ BLOCK MINED!</strong>`, '#00ff41');
+  powLog(`<strong style="color:#fff;"><svg class="ico" aria-hidden="true"><use href="#i-cube"/></svg> BLOCK MINED!</strong>`, 'var(--success)');
   powLog(`Nonce: <strong style="color:#fff;">${found.nonce}</strong>`);
   powLog(`Hash:  <strong style="color:#fff;">${found.hash}</strong>`);
   powLog(`Time:  <strong style="color:#fff;">${totalElapsed}s</strong>  (${Math.round(found.nonce / parseFloat(totalElapsed)).toLocaleString()} H/s)`);
   powLog(`<span style="color:#888;">────────────────────────────────────────────────</span>`);
-  powLog(`<strong>✅ Proof-of-Work accepted. Submitting to Algorand...</strong>`, '#00ff41');
+  powLog(`<strong><svg class="ico ico-ok" aria-hidden="true"><use href="#i-check"/></svg> Proof-of-Work accepted. Submitting to Algorand...</strong>`, 'var(--success)');
 
   await new Promise(r => setTimeout(r, 1200)); // let the user read it
   hidePowTerminal();
@@ -4385,7 +4475,7 @@ async function registerModel() {
       fallbackCopy(d.modelId, null);
       document.getElementById('regModelResult').innerHTML = `
         <div class="model-id-box">
-          <label>✅ Model registered — ID copied to clipboard automatically</label>
+          <label><svg class="ico ico-ok" aria-hidden="true"><use href="#i-check"/></svg> Model registered — ID copied to clipboard automatically</label>
           <div style="display:flex;align-items:center;gap:.8rem;margin:.6rem 0;">
             ${hashIdenticon(hash, 48)}
             <div>
@@ -4399,9 +4489,9 @@ async function registerModel() {
           </div>
           <div style="font-size:.75rem;color:var(--text-muted);margin-top:.5rem;">Algo TxID: <a href="https://lora.algokit.io/testnet/transaction/${encodeURIComponent(d.algoTxId || '')}" target="_blank" rel="noopener noreferrer" style="color:var(--primary)">${escapeHtml((d.algoTxId || '').substring(0,8))}...</a> · Owner: ${escapeHtml(user)} · PoW nonce: ${escapeHtml(String(powNonce))}</div>
           <div style="margin-top:.8rem;">
-            <button class="btn" style="font-size:.8rem;padding:.45rem 1rem;background:linear-gradient(135deg,#00e5a0,#2de2c5);border:none;"
+            <button class="btn" style="font-size:.8rem;padding:.45rem 1rem;"
               onclick="downloadAlgoCertificate('${escapeHtml(d.modelId)}')">
-              📄 Download Blockchain Certificate
+              <svg class="ico" aria-hidden="true"><use href="#i-download"/></svg> Download Blockchain Certificate
             </button>
           </div>
         </div>`;
@@ -4428,7 +4518,7 @@ async function updateRateLimitBar(owner) {
     if (!bar) return;
     const color = d.remaining <= 2 ? 'var(--danger)' : d.remaining <= 5 ? 'var(--warn)' : 'var(--success)';
     bar.style.display = 'block';
-    bar.innerHTML = `⚡ Rate limit: <strong style="color:${color}">${d.remaining}/${d.limit}</strong> operations remaining in the next ${d.windowSeconds}s window`;
+    bar.innerHTML = `Rate limit: <strong style="color:${color}">${d.remaining}/${d.limit}</strong> operations remaining in the next ${d.windowSeconds}s window`;
   } catch(_) {}
 }
 
@@ -4452,7 +4542,7 @@ async function verifyModel() {
     const valid = d.isValid;
     document.getElementById('verResult').innerHTML = `
       <div class="verify-result ${valid ? 'valid' : 'invalid'}">
-        <div class="verify-result-header">${valid ? '✅ Integrity Verified' : '❌ Integrity Mismatch'}</div>
+        <div class="verify-result-header">${valid ? '<svg class="ico ico-ok" aria-hidden="true"><use href="#i-check"/></svg> Integrity Verified' : '<svg class="ico ico-bad" aria-hidden="true"><use href="#i-x"/></svg> Integrity Mismatch'}</div>
         <div class="verify-result-body">
           <div class="hash-compare-row">
             <label>Stored Hash (on-chain)</label>
@@ -4477,7 +4567,7 @@ async function verifyModel() {
 
           <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.05);">
             <button class="btn btn-sec" style="width:100%;font-size:.8rem;padding:.5rem;border-color:#bb86fc;color:#bb86fc;" onclick='runZkProof()'>
-              🧮 Generate zk-SNARK Execution Proof <span style="font-size:.65rem;opacity:.8;font-weight:700;letter-spacing:.04em;">SIMULATION</span>
+              Generate zk-SNARK Execution Proof <span style="font-size:.65rem;opacity:.8;font-weight:700;letter-spacing:.04em;">SIMULATION</span>
             </button>
             <div id="zkProofTerminal" style="display:none;margin-top:1rem;background:#050505;border:1px solid #333;border-radius:8px;padding:1rem;font-family:var(--mono);font-size:.75rem;min-height:150px;max-height:300px;overflow-y:auto;">
             </div>
@@ -4721,9 +4811,9 @@ function flVizBuild(){
   // ── zone 1: hospitals ────────────────────────────────────────────────────
   ys.forEach((y, i) => {
     const g = el('g', { class: 'fv-client' + (i === BAD ? ' bad' : '') });
-    g.appendChild(el('circle', { class: 'fv-ring', cx: CX, cy: y, r: 17, stroke: '#22d3ee' }));
+    g.appendChild(el('circle', { class: 'fv-ring', cx: CX, cy: y, r: 17, stroke: bvTok('--viz-a', '#5B8CFF') }));
     g.appendChild(el('circle', { class: 'body', cx: CX, cy: y, r: 14,
-      fill: 'rgba(34,211,238,.14)', stroke: '#22d3ee', 'stroke-width': 1.6 }));
+      fill: `rgba(${bvTok('--viz-a-rgb', '91,140,255')},.14)`, stroke: bvTok('--viz-a', '#5B8CFF'), 'stroke-width': 1.6 }));
     g.appendChild(txt(CX, y + 3.5, 'H' + (i + 1), 'fv-label'));
 
     // The robust z-score, revealed at the scoring phase. Illustrative values chosen to
@@ -4738,7 +4828,7 @@ function flVizBuild(){
     const d = el('g', { class: 'fv-data' });
     [0, 3.5, 7].forEach((o, k) => d.appendChild(el('rect', {
       x: CX - 30, y: y - 5 + o, width: 11, height: 2.4, rx: 1,
-      fill: '#22d3ee', opacity: 0.85 - k * 0.22 })));
+      fill: bvTok('--viz-a', '#5B8CFF'), opacity: 0.85 - k * 0.22 })));
     g.appendChild(d);
 
     // verdict markers, revealed only after screening
@@ -4762,7 +4852,7 @@ function flVizBuild(){
     const sx = CX + 26, ex = AX - 44, ey = AY + spread;
     z2.appendChild(el('path', {
       class: 'fv-flow toAgg', d: `M ${sx} ${y} Q ${(sx + ex) / 2} ${y} ${ex} ${ey}`,
-      fill: 'none', stroke: '#8b7cff', 'stroke-width': 1.4 }));
+      fill: 'none', stroke: bvTok('--viz-b', '#A78BFA'), 'stroke-width': 1.4 }));
   });
 
   ys.forEach((y, i) => {
@@ -4770,9 +4860,9 @@ function flVizBuild(){
     const g = el('g', { class: 'fv-pkt' + (bad ? ' bad' : '') });
     // Circles sit at the local origin: offset-path positions the group along the curve.
     // The translate fallback re-adds the start point via --sx/--sy.
-    g.appendChild(el('circle', { cx: 0, cy: 0, r: 5.5, fill: bad ? '#ef4444' : '#22d3ee' }));
+    g.appendChild(el('circle', { cx: 0, cy: 0, r: 5.5, fill: bad ? '#ef4444' : bvTok('--viz-a', '#5B8CFF') }));
     g.appendChild(el('circle', { cx: 0, cy: 0, r: 9, fill: 'none',
-      stroke: bad ? '#ef4444' : '#22d3ee', 'stroke-width': 1, opacity: .35 }));
+      stroke: bad ? '#ef4444' : bvTok('--viz-a', '#5B8CFF'), 'stroke-width': 1, opacity: .35 }));
     // Fan the arrival points slightly. Sending every packet to one coordinate made the
     // five honest updates stack into a single dot, which read as "one update arrived".
     const spread = (i - (N - 1) / 2) * 8;   // > packet diameter, so they stay distinct
@@ -4792,11 +4882,11 @@ function flVizBuild(){
 
   // ── zone 2: aggregator + screening sweep ─────────────────────────────────
   const scan = el('g', { class: 'fv-scan' });
-  scan.appendChild(el('circle', { cx: AX, cy: AY, r: 30, fill: 'none', stroke: '#8b7cff', 'stroke-width': 2 }));
+  scan.appendChild(el('circle', { cx: AX, cy: AY, r: 30, fill: 'none', stroke: bvTok('--viz-b', '#A78BFA'), 'stroke-width': 2 }));
   z2.appendChild(scan);
 
   z2.appendChild(el('rect', { x: AX-36, y: AY-36, width: 72, height: 72, rx: 17,
-    fill: 'rgba(139,124,255,.10)', stroke: '#8b7cff', 'stroke-width': 1.8 }));
+    fill: `rgba(${bvTok('--viz-b-rgb', '167,139,250')},.10)`, stroke: bvTok('--viz-b', '#A78BFA'), 'stroke-width': 1.8 }));
   const af = el('g', { class: 'fv-agg-fill' });
   af.appendChild(el('rect', { class: 'fv-agg-ok', x: AX-21, y: AY-21, width: 42, height: 42, rx: 11 }));
   z2.appendChild(af);
@@ -4810,7 +4900,7 @@ function flVizBuild(){
 
   // ── zone 3: merkle tree ──────────────────────────────────────────────────
   z3.appendChild(el('path', { class: 'fv-flow toTree', d: `M ${AX+42} ${AY} L ${TX-64} ${AY}`,
-    fill: 'none', stroke: '#22d3ee', 'stroke-width': 1.4 }));
+    fill: 'none', stroke: bvTok('--viz-a', '#5B8CFF'), 'stroke-width': 1.4 }));
 
   const LEAF_Y = 236, L1_Y = 186, ROOT_Y = 136;
   const leafX = [TX-45, TX-15, TX+15, TX+45];
@@ -4818,16 +4908,16 @@ function flVizBuild(){
   leafX.forEach((x, i) => {
     const g = el('g', { class: 'fv-leaf' });
     g.appendChild(el('rect', { x: x-9, y: LEAF_Y-9, width: 18, height: 18, rx: 4,
-      fill: 'rgba(34,211,238,.30)', stroke: '#22d3ee', 'stroke-width': 1.2 }));
+      fill: `rgba(${bvTok('--viz-a-rgb', '91,140,255')},.30)`, stroke: bvTok('--viz-a', '#5B8CFF'), 'stroke-width': 1.2 }));
     g.appendChild(txt(x, LEAF_Y + 20, hashes[i], 'fv-hash'));
     z3.appendChild(g);
   });
   [[TX-30, leafX[0], leafX[1], 'b6d4', -1], [TX+30, leafX[2], leafX[3], '1f7c', 1]].forEach(([bx, l, r, h, side]) => {
     const g = el('g', { class: 'fv-lvl1' });
     g.appendChild(el('path', { d: `M ${l} ${LEAF_Y-11} L ${bx} ${L1_Y+10} M ${r} ${LEAF_Y-11} L ${bx} ${L1_Y+10}`,
-      fill: 'none', stroke: '#8b7cff', 'stroke-width': 1.3 }));
+      fill: 'none', stroke: bvTok('--viz-b', '#A78BFA'), 'stroke-width': 1.3 }));
     g.appendChild(el('rect', { x: bx-9, y: L1_Y-9, width: 18, height: 18, rx: 4,
-      fill: 'rgba(139,124,255,.32)', stroke: '#8b7cff', 'stroke-width': 1.2 }));
+      fill: `rgba(${bvTok('--viz-b-rgb', '167,139,250')},.32)`, stroke: bvTok('--viz-b', '#A78BFA'), 'stroke-width': 1.2 }));
     // placed to the OUTER side: directly above the node it would sit on the two
     // connector lines running up to the root.
     g.appendChild(txt(bx + side * 14, L1_Y + 3, h, 'fv-hash', side < 0 ? 'end' : 'start'));
@@ -4959,7 +5049,7 @@ function flVizInit(){
 // the browser-side verifier is literally the same code path. Only the on-chain note keys
 // differ (frr/flc for a round, lmr/lc for a manifest).
 let flRuns = [], flCurrent = null, flAccChart = null;
-const FL_EMPTY_HTML = `<div style="font-size:1.5rem;margin-bottom:.4rem;">&#127760;</div>
+const FL_EMPTY_HTML = `<div class="bv-empty-ico"><svg class="ico" aria-hidden="true"><use href="#i-globe"/></svg></div>
   <div style="color:var(--text);font-weight:600;margin-bottom:.5rem;">No federated runs committed yet</div>
   Train with <code>--commit</code>, then publish the run:
   <div style="margin-top:.6rem;text-align:left;display:inline-block;background:var(--fv-inset);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;font-size:.74rem;color:var(--text-muted);">
@@ -5026,11 +5116,11 @@ async function loadFederated(){
   if(!reachable){
     flRuns = [];
     empty.innerHTML = why === 'stale'
-      ? `<div style="font-size:1.5rem;margin-bottom:.4rem;">&#9888;</div>
+      ? `<div class="bv-empty-ico"><svg class="ico ico-warn" aria-hidden="true"><use href="#i-alert"/></svg></div>
          <div style="color:#eab308;font-weight:600;margin-bottom:.5rem;">API is running an older build</div>
          The server answered, but it has no <code>/api/fl/*</code> routes &mdash; it was started before the federated blueprint was added. Restart it:
          <div style="margin-top:.6rem;display:inline-block;background:var(--fv-inset);border:1px solid var(--border);border-radius:8px;padding:.55rem .9rem;font-size:.74rem;color:var(--text-muted);">cd backend &amp;&amp; python3 app.py</div>`
-      : `<div style="font-size:1.5rem;margin-bottom:.4rem;">&#128268;</div>
+      : `<div class="bv-empty-ico"><svg class="ico" aria-hidden="true"><use href="#i-refresh"/></svg></div>
          <div style="color:var(--danger);font-weight:600;margin-bottom:.5rem;">Cannot reach the API</div>
          <code>${escapeHtml(API)}</code> did not respond. Start the backend, then hit Refresh.
          <div style="margin-top:.6rem;display:inline-block;background:var(--fv-inset);border:1px solid var(--border);border-radius:8px;padding:.55rem .9rem;font-size:.74rem;color:var(--text-muted);">cd backend &amp;&amp; python3 app.py</div>`;
@@ -5180,7 +5270,7 @@ function renderFlStats(meta, lineage){
   const cards = [];
   cards.push(_statCard(lineage.length, 'rounds', 'var(--text)', 'Training rounds committed on-chain'));
   cards.push(_statCard(meta.numClients ?? '—', 'clients', 'var(--text)', 'Participants per round'));
-  cards.push(_statCard(acc, 'final accuracy', '#22d3ee', 'Global model accuracy after the last round'));
+  cards.push(_statCard(acc, 'final accuracy', bvTok('--viz-a', '#5B8CFF'), 'Global model accuracy after the last round'));
   if(known && f1 != null){
     const col = f1 >= 0.8 ? 'var(--success)' : (f1 >= 0.5 ? '#eab308' : 'var(--danger)');
     cards.push(_statCard((100*f1).toFixed(0)+'%', 'detection F1', col,
@@ -5212,10 +5302,10 @@ function renderFlAccuracy(lineage){
   if(!pts.length){ empty.style.display='block'; cv.style.display='none'; return; }
   empty.style.display='none'; cv.style.display='block';
   const ds = [{label:'accuracy', data: pts.map(r => +(100*r.metrics.test_acc).toFixed(2)),
-               borderColor:'#22d3ee', backgroundColor:'rgba(34,211,238,.14)', fill:true, tension:.3}];
+               borderColor:bvTok('--viz-a', '#5B8CFF'), backgroundColor:`rgba(${bvTok('--viz-a-rgb', '91,140,255')},.14)`, fill:true, tension:.3}];
   if(pts.some(r => r.metrics.macro_f1 != null))
     ds.push({label:'macro-F1', data: pts.map(r => r.metrics.macro_f1==null?null:+(100*r.metrics.macro_f1).toFixed(2)),
-             borderColor:'#8b7cff', backgroundColor:'rgba(139,124,255,.10)', fill:false, tension:.3});
+             borderColor:bvTok('--viz-b', '#A78BFA'), backgroundColor:`rgba(${bvTok('--viz-b-rgb', '167,139,250')},.10)`, fill:false, tension:.3});
   if (typeof Chart === 'undefined') {
     empty.textContent = 'Chart library unavailable (CDN blocked) — the numbers below are unaffected.';
     empty.style.display = 'block'; cv.style.display = 'none';
@@ -5315,7 +5405,7 @@ function renderFlRounds(runId, lineage, meta){
     const first = ((r.accepted||[])[0] ?? (r.rejected||[])[0]);
     html += `<tr>
       <td style="${td}"><b>${r.round}</b></td>
-      <td style="${td}"><code class="fl-root" data-root="${escapeHtml(r.root||'')}" title="click to copy the full root" style="color:#22d3ee;font-size:.72rem;cursor:pointer;">${escapeHtml((r.root||'').slice(0,18))}…</code></td>
+      <td style="${td}"><code class="fl-root" data-root="${escapeHtml(r.root||'')}" title="click to copy the full root" style="color:var(--viz-a);font-size:.72rem;cursor:pointer;">${escapeHtml((r.root||'').slice(0,18))}…</code></td>
       <td style="${td}">${r.leafCount}</td>
       <td style="${td}">${rejTxt}</td>
       <td style="${td}">${anchor}</td>
@@ -5455,9 +5545,9 @@ function renderFlCmpChart(A, B, mA, mB){
     type:'line',
     data:{ labels, datasets:[
       { label:'A · ' + _cmpName(mA), data: pa.map(r => +(100*r.metrics.test_acc).toFixed(2)),
-        borderColor:'#22d3ee', backgroundColor:'rgba(34,211,238,.10)', fill:false, tension:.3, borderWidth:2 },
+        borderColor:bvTok('--viz-a', '#5B8CFF'), backgroundColor:`rgba(${bvTok('--viz-a-rgb', '91,140,255')},.10)`, fill:false, tension:.3, borderWidth:2 },
       { label:'B · ' + _cmpName(mB), data: pb.map(r => +(100*r.metrics.test_acc).toFixed(2)),
-        borderColor:'#8b7cff', backgroundColor:'rgba(139,124,255,.10)', fill:false, tension:.3,
+        borderColor:bvTok('--viz-b', '#A78BFA'), backgroundColor:`rgba(${bvTok('--viz-b-rgb', '167,139,250')},.10)`, fill:false, tension:.3,
         borderWidth:2, borderDash:[6,4] },
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
@@ -5475,8 +5565,8 @@ function renderFlCmpGrids(A, B, mA, mB){
       + `<span>${tag} · ${escapeHtml(_cmpName(m))}</span>`
       + (det === false ? `<span style="font-size:.66rem;color:#eab308;font-weight:600;">not a detector</span>` : '');
   };
-  head('flCmpHeadA', '#22d3ee', 'A', mA, mA.detector);
-  head('flCmpHeadB', '#8b7cff', 'B', mB, mB.detector);
+  head('flCmpHeadA', bvTok('--viz-a', '#5B8CFF'), 'A', mA, mA.detector);
+  head('flCmpHeadB', bvTok('--viz-b', '#A78BFA'), 'B', mB, mB.detector);
   renderFlGrid(A.lineage, mA, document.getElementById('flCmpGridA'), document.getElementById('flCmpLegA'));
   renderFlGrid(B.lineage, mB, document.getElementById('flCmpGridB'), document.getElementById('flCmpLegB'));
 }
@@ -5647,7 +5737,7 @@ async function runDeepInspection(storedLayers, storedOrder, modelId){
     map.appendChild(c); cellByName[name]=c;
   });
 
-  log(`<span style="color:#888;">[manifest]</span> on-chain layers: <b style="color:#ccc;">${cls.sN.length}</b> &middot; uploaded layers: <b style="color:#ccc;">${cls.cN.length}</b> &middot; probes: <span style="color:#22d3ee">hash · outlier · NaN/Inf · entropy · topology</span>`);
+  log(`<span style="color:#888;">[manifest]</span> on-chain layers: <b style="color:#ccc;">${cls.sN.length}</b> &middot; uploaded layers: <b style="color:#ccc;">${cls.cN.length}</b> &middot; probes: <span style="color:var(--viz-a)">hash · outlier · NaN/Inf · entropy · topology</span>`);
   await wait(340);
 
   // ── Trustless anchor check: is this manifest committed on Algorand? ──
@@ -5655,7 +5745,7 @@ async function runDeepInspection(storedLayers, storedOrder, modelId){
     const aRow = log(`<span style="color:#888;">[anchor]</span> Verifying manifest Merkle commitment against Algorand… <span class="layer-ellipsis">...</span>`);
     const a = await bvVerifyManifestAnchor(modelId);
     if(a.mode === 'trustless'){
-      aRow.innerHTML = `<span style="color:#888;">[anchor]</span> <span style="color:var(--success);font-weight:bold;">TRUSTLESS ✓</span> ${a.ok}/${a.ok+a.bad} inclusion proofs valid &middot; on-chain root <span style="color:var(--success)">${a.chainRoot.slice(0,16)}…</span> (tx <span style="color:#22d3ee">${(a.tx||'').slice(0,8)}…</span>) — manifest verified without trusting the server`;
+      aRow.innerHTML = `<span style="color:#888;">[anchor]</span> <span style="color:var(--success);font-weight:bold;">TRUSTLESS ✓</span> ${a.ok}/${a.ok+a.bad} inclusion proofs valid &middot; on-chain root <span style="color:var(--success)">${a.chainRoot.slice(0,16)}…</span> (tx <span style="color:var(--viz-a)">${(a.tx||'').slice(0,8)}…</span>) — manifest verified without trusting the server`;
     } else {
       const rootState = !a.chainRoot ? 'on-chain root unavailable'
         : (a.chainRoot === a.root ? `${a.bad} invalid inclusion proof(s)`
@@ -5682,7 +5772,7 @@ async function runDeepInspection(storedLayers, storedOrder, modelId){
   const criticalAlert=(name)=>{
     if(alertShown) return; alertShown=true;
     const al=document.createElement('div'); al.className='ft-alert';
-    al.textContent='⚠ TAMPER SIGNATURE DETECTED — '+name;
+    al.textContent='TAMPER SIGNATURE DETECTED — '+name;
     logBox.appendChild(al);
     term.classList.add('ft-shake'); setTimeout(()=>term.classList.remove('ft-shake'),500);
     term.scrollTop=term.scrollHeight;
@@ -5918,7 +6008,7 @@ async function runSelfHealing(layerName, type) {
   const generateHex = (len) => [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
 
   dhl.innerHTML = `
-    <div style="color:var(--primary); font-weight:bold; margin-bottom:.5rem;">⚕️ INIT: DECENTRALIZED SELF-HEALING PROTOCOL</div>
+    <div style="color:var(--primary); font-weight:bold; margin-bottom:.5rem;">INIT: DECENTRALIZED SELF-HEALING PROTOCOL</div>
     <div id="healLog"></div>
   `;
   const healLog = document.getElementById('healLog');
@@ -5977,7 +6067,7 @@ async function runSelfHealing(layerName, type) {
 
   healLog.innerHTML += `
     <div style="margin-top:1rem; padding:0.8rem; background:rgba(0, 255, 100, 0.1); border:1px solid rgba(0, 255, 100, 0.4); border-radius:4px;">
-      <div style="color:var(--success); font-weight:bold; font-size:0.9rem; margin-bottom:0.3rem;">✅ 100% INTEGRITY RESTORED</div>
+      <div style="color:var(--success); font-weight:bold; font-size:0.9rem; margin-bottom:0.3rem;"><svg class="ico ico-ok" aria-hidden="true"><use href="#i-check"/></svg> 100% INTEGRITY RESTORED</div>
       <div style="color:#aaa; font-size:0.7rem;">Model architecture successfully reverted to immutable state via IPFS. The model is now safe to execute.</div>
     </div>
   `;
@@ -6037,7 +6127,7 @@ async function loadAudit() {
     if (d.count === 0) {
       document.getElementById('exportCsvBtn').style.display = 'none';
       document.getElementById('auditResult').innerHTML = `
-        <div class="empty-state"><span class="empty-icon">🔍</span><p>No verifications recorded yet.</p></div>`;
+        <div class="empty-state"><span class="empty-icon"><svg class="ico" aria-hidden="true"><use href="#i-search"/></svg></span><p>No verifications recorded yet.</p></div>`;
       return;
     }
     let h = '<table class="tbl"><tr><th>Verifier</th><th>Result</th><th>Hash Provided</th><th>Block</th><th>Time</th></tr>';
@@ -6118,7 +6208,7 @@ function renderModels(models, query) {
       : `No models registered yet under <strong>${escapeHtml(user)}</strong>.`;
     document.getElementById('modelsResult').innerHTML = `
       <div class="empty-state">
-        <span class="empty-icon">📦</span><p>${msg}</p>
+        <span class="empty-icon"><svg class="ico" aria-hidden="true"><use href="#i-models"/></svg></span><p>${msg}</p>
         ${!query ? `<button class="btn" onclick="switchTab('register')">Register your first model</button>` : ''}
       </div>`;
     return;
@@ -6130,8 +6220,8 @@ function renderModels(models, query) {
       ? '<span class="badge badge-ok">Active</span>'
       : '<span class="badge badge-err">Deactivated</span>';
     const privBadge = m.isPrivate
-      ? '<span class="badge" style="background:rgba(255,107,107,0.15);color:#ff6b6b;border:1px solid rgba(255,107,107,0.3);">🔒 Private</span>'
-      : '<span class="badge" style="background:rgba(var(--success-rgb),0.12);color:var(--success);border:1px solid rgba(var(--success-rgb),0.25);">🌐 Public</span>';
+      ? '<span class="badge" style="background:rgba(255,107,107,0.15);color:#ff6b6b;border:1px solid rgba(255,107,107,0.3);"><svg class="ico" aria-hidden="true"><use href="#i-lock"/></svg> Private</span>'
+      : '<span class="badge" style="background:rgba(var(--success-rgb),0.12);color:var(--success);border:1px solid rgba(var(--success-rgb),0.25);"><svg class="ico" aria-hidden="true"><use href="#i-globe"/></svg> Public</span>';
     h += `<div class="model-item">
       <div class="model-item-name">${escapeHtml(m.modelName)} ${statusBadge} <span class="badge badge-warn">v${escapeHtml(String(m.currentVersion ?? ''))}</span> ${privBadge}</div>
       <div style="display:flex;align-items:center;gap:.6rem;margin:.4rem 0;">
@@ -6152,11 +6242,11 @@ function renderModels(models, query) {
       <div class="model-item-actions">
         <button class="btn btn-sec" style="font-size:.8rem;padding:.45rem .9rem;" onclick="prefillVerify('${escapeHtml(m.modelId)}')" data-tip="Go to Verify tab with this model's ID pre-filled — re-upload your file to check its integrity.">Verify</button>
         <button class="btn btn-sec" style="font-size:.8rem;padding:.45rem .9rem;" onclick="prefillVersion('${escapeHtml(m.modelId)}')" data-tip="Add a new version — upload a new file and add a changelog note while keeping the full history.">Add Version</button>
-        <button class="btn btn-sec" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(var(--primary-rgb),0.2),rgba(var(--success-rgb),0.15));border-color:rgba(var(--primary-rgb),0.4);" onclick="downloadReport('${escapeHtml(m.modelId)}')" data-tip="Download a PDF integrity report — includes model metadata, hash, version history, and full audit trail.">📄 PDF Report</button>
+        <button class="btn btn-sec" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(var(--primary-rgb),0.2),rgba(var(--success-rgb),0.15));border-color:rgba(var(--primary-rgb),0.4);" onclick="downloadReport('${escapeHtml(m.modelId)}')" data-tip="Download a PDF integrity report — includes model metadata, hash, version history, and full audit trail."><svg class="ico" aria-hidden="true"><use href="#i-download"/></svg> PDF Report</button>
         <button class="btn btn-sec" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(var(--primary-rgb),0.22),rgba(var(--accent-rgb),0.15));border-color:rgba(var(--primary-rgb),0.45);" onclick="downloadCertificate('${escapeHtml(m.modelId)}')" data-tip="Download a professional PDF certificate with a QR code linking to the Algorand transaction."><svg class="ico"><use href="#i-award"/></svg> Certificate</button>
-        <button class="btn btn-sec" id="ocBtn_${escapeHtml(m.modelId)}" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(var(--success-rgb),0.2),rgba(var(--primary-rgb),0.15));border-color:rgba(var(--success-rgb),0.4);" onclick="verifyOnChain('${escapeHtml(m.modelId)}',this)" data-tip="Read the Algorand smart contract's global state and compare the on-chain hash with the local hash — proves the blockchain is used for verification.">🔗 Verify On-Chain</button>
-        <button class="btn btn-sec" id="tamperBtn_${escapeHtml(m.modelId)}" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(255,107,107,0.2),rgba(253,203,110,0.15));border-color:rgba(255,107,107,0.4);color:#ff6b6b;" onclick="tamperSimulate('${escapeHtml(m.modelId)}',this)" data-tip="DEMO: Deliberately corrupt this model's local hash, then run On-Chain Verify to prove the blockchain detects tampering.">⚠️ Tamper Demo</button>
-        <button class="btn btn-sec" id="privBtn_${escapeHtml(m.modelId)}" style="font-size:.8rem;padding:.45rem .9rem;" onclick="togglePrivacy('${escapeHtml(m.modelId)}',${!m.isPrivate})" data-tip="${m.isPrivate ? 'Make this model public — anyone can see and verify it in the Registry.' : 'Make this model private — only you can verify it, hidden from public Registry.'}">${m.isPrivate ? '🔒 Make Public' : '🌐 Make Private'}</button>
+        <button class="btn btn-sec" id="ocBtn_${escapeHtml(m.modelId)}" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(var(--success-rgb),0.2),rgba(var(--primary-rgb),0.15));border-color:rgba(var(--success-rgb),0.4);" onclick="verifyOnChain('${escapeHtml(m.modelId)}',this)" data-tip="Read the Algorand smart contract's global state and compare the on-chain hash with the local hash — proves the blockchain is used for verification."><svg class="ico" aria-hidden="true"><use href="#i-proof"/></svg> Verify On-Chain</button>
+        <button class="btn btn-sec" id="tamperBtn_${escapeHtml(m.modelId)}" style="font-size:.8rem;padding:.45rem .9rem;background:linear-gradient(135deg,rgba(255,107,107,0.2),rgba(253,203,110,0.15));border-color:rgba(255,107,107,0.4);color:#ff6b6b;" onclick="tamperSimulate('${escapeHtml(m.modelId)}',this)" data-tip="DEMO: Deliberately corrupt this model's local hash, then run On-Chain Verify to prove the blockchain detects tampering."><svg class="ico ico-warn" aria-hidden="true"><use href="#i-alert"/></svg> Tamper Demo</button>
+        <button class="btn btn-sec" id="privBtn_${escapeHtml(m.modelId)}" style="font-size:.8rem;padding:.45rem .9rem;" onclick="togglePrivacy('${escapeHtml(m.modelId)}',${!m.isPrivate})" data-tip="${m.isPrivate ? 'Make this model public — anyone can see and verify it in the Registry.' : 'Make this model private — only you can verify it, hidden from public Registry.'}">${m.isPrivate ? '<svg class="ico" aria-hidden="true"><use href="#i-lock"/></svg> Make Public' : '<svg class="ico" aria-hidden="true"><use href="#i-globe"/></svg> Make Private'}</button>
         ${m.isActive ? `<button class="btn btn-danger" style="font-size:.8rem;padding:.45rem .9rem;" onclick="deactivateModel('${escapeHtml(m.modelId)}')" data-tip="Permanently deactivate this model — it will no longer accept verifications.">Deactivate</button>` : ''}
       </div>
       <div id="ocResult_${escapeHtml(m.modelId)}" style="margin-top:.5rem;"></div>
@@ -6177,7 +6267,7 @@ function prefillVersion(modelId) {
 
 async function deactivateModel(modelId) {
   const user = getUser(); if (!user) return;
-  if (!confirm('Deactivate this model? It will no longer be verifiable.')) return;
+  if (!(await bvConfirm({ title: 'Deactivate this model?', message: 'It will no longer be verifiable.', confirmText: 'Deactivate', danger: true }))) return;
   try {
     const res = await apiFetch(API + '/deactivate', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -6231,7 +6321,7 @@ function renderBlockCard(b) {
       </button>
       <div class="bc-txns-body"><pre>${JSON.stringify(b.transactions, null, 2)}</pre></div>
     </div>
-    <div class="bc-open-hint">🔍 Click to view full details</div>
+    <div class="bc-open-hint"><svg class="ico" aria-hidden="true"><use href="#i-search"/></svg> Click to view full details</div>
   </div>`;
 }
 
@@ -6250,7 +6340,7 @@ function build3DChain(blocks) {
   destroy3DScene();
 
   const isGenColor = '#f0b429';
-  const blockColor = '#00e5a0';
+  const blockColor = bvTok('--primary', '#5B8CFF');
   const isGenGlow  = 'rgba(240,180,41,0.55)';
   const blockGlow  = 'rgba(var(--primary-rgb),0.55)';
 
@@ -6277,9 +6367,9 @@ function build3DChain(blocks) {
       .css3d-scene { width:100%; height:440px; overflow-x:auto; overflow-y:hidden;
         display:flex; align-items:center; padding:28px 50px 12px; gap:0;
         background:transparent; position:relative;
-        scrollbar-width:thin; scrollbar-color:rgba(0,229,160,.45) transparent; }
+        scrollbar-width:thin; scrollbar-color:rgba(var(--primary-rgb),.45) transparent; }
       .css3d-scene::-webkit-scrollbar { display:block; height:8px; }
-      .css3d-scene::-webkit-scrollbar-thumb { background:rgba(0,229,160,.45); border-radius:8px; }
+      .css3d-scene::-webkit-scrollbar-thumb { background:rgba(var(--primary-rgb),.45); border-radius:8px; }
       .css3d-wrap { display:flex; align-items:flex-start; gap:0; flex-shrink:0; }
       .css3d-block {
         width:90px; height:90px; position:relative; perspective:700px; cursor:pointer;
@@ -6464,7 +6554,7 @@ async function loadChain() {
     const d = await res.json();
     if (!d.success || !d.chain.length) {
       document.getElementById('chainView').innerHTML = `
-        <div class="empty-state"><span class="empty-icon">🔗</span><p>No blocks yet.</p></div>`;
+        <div class="empty-state"><span class="empty-icon"><svg class="ico" aria-hidden="true"><use href="#i-proof"/></svg></span><p>No blocks yet.</p></div>`;
       return;
     }
     _allBlocks = d.chain;
@@ -6482,11 +6572,11 @@ async function validateChain() {
     const d = await res.json();
     const el = document.getElementById('chainValid');
     if (d.isValid) {
-      el.innerHTML = `<div style="background:rgba(var(--success-rgb),0.1);border:1px solid rgba(var(--success-rgb),0.3);border-radius:10px;padding:.8rem 1.1rem;color:var(--success);font-weight:600;display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem;">✅ Blockchain is valid — all blocks pass integrity checks.</div>`;
+      el.innerHTML = `<div style="background:rgba(var(--success-rgb),0.1);border:1px solid rgba(var(--success-rgb),0.3);border-radius:10px;padding:.8rem 1.1rem;color:var(--success);font-weight:600;display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem;"><svg class="ico ico-ok" aria-hidden="true"><use href="#i-check"/></svg> Blockchain is valid — all blocks pass integrity checks.</div>`;
     } else {
       let errHtml = d.errors.map(e => `<li>${e}</li>`).join('');
       el.innerHTML = `<div style="background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);border-radius:10px;padding:.8rem 1.1rem;color:var(--danger);font-weight:600;margin-bottom:.5rem;">
-        ❌ Integrity errors detected:<ul style="margin-top:.5rem;padding-left:1.2rem;font-size:.85rem;font-weight:400;">${errHtml}</ul></div>`;
+        <svg class="ico ico-bad" aria-hidden="true"><use href="#i-x"/></svg> Integrity errors detected:<ul style="margin-top:.5rem;padding-left:1.2rem;font-size:.85rem;font-weight:400;">${errHtml}</ul></div>`;
     }
   } catch(e) { toast('err', e.message); }
   finally { setLoading('validateBtn', false, 'Validate Chain Integrity'); }
@@ -6508,7 +6598,7 @@ async function runTamperDemo() {
     el.innerHTML = `
       <div style="border-radius:12px;overflow:hidden;margin-bottom:1rem;border:1px solid rgba(255,107,107,0.4);">
         <div style="background:rgba(255,107,107,0.12);padding:.8rem 1.1rem;display:flex;align-items:center;gap:.5rem;">
-          <span style="font-size:1.1rem;">🔴</span>
+          <span class="bv-dot bv-dot-bad" aria-hidden="true"></span>
           <strong style="color:var(--danger);">Step 1 — Tamper Injected into Block #${d.targetBlock}</strong>
         </div>
         <div style="padding:.9rem 1.1rem;font-size:.85rem;color:var(--text-muted);">
@@ -6518,7 +6608,7 @@ async function runTamperDemo() {
       </div>
       <div style="border-radius:12px;overflow:hidden;margin-bottom:1rem;border:1px solid rgba(var(--success-rgb),0.4);">
         <div style="background:rgba(var(--success-rgb),0.1);padding:.8rem 1.1rem;display:flex;align-items:center;gap:.5rem;">
-          <span style="font-size:1.1rem;">🟢</span>
+          <span class="bv-dot bv-dot-ok" aria-hidden="true"></span>
           <strong style="color:var(--success);">Step 2 — Block Restored to Original State</strong>
         </div>
         <div style="padding:.9rem 1.1rem;font-size:.85rem;color:var(--text-muted);">
@@ -6526,12 +6616,12 @@ async function runTamperDemo() {
         </div>
       </div>
       <div style="font-size:.78rem;color:var(--text-muted);text-align:center;margin-bottom:.5rem;">
-        ⚠️ This is a non-destructive simulation — no real data was harmed.
+        <svg class="ico ico-warn" aria-hidden="true"><use href="#i-alert"/></svg> This is a non-destructive simulation — no real data was harmed.
       </div>`;
     el.style.display = 'block';
     toast('ok', 'Tamper demo complete — blockchain caught the attack!');
   } catch(e) { toast('err', 'Network error: ' + e.message); }
-  finally { setLoading('tamperBtn', false, '⚠️ Simulate Tamper Attack'); _tamperRunning = false; }
+  finally { setLoading('tamperBtn', false, 'Simulate Tamper Attack'); _tamperRunning = false; }
 }
 
 // ── Block Details Modal ──
@@ -6541,12 +6631,12 @@ function openBlockModal(blockIndex) {
   const isGenesis = b.index === 0;
   const ts = new Date(b.timestamp * 1000).toLocaleString();
 
-  const txTypeIcon   = { register: '📝', verify: '✅', genesis: '🌱', add_version: '🔄' };
+  const txTypeIcon   = { register: '<svg class="ico" aria-hidden="true"><use href="#i-register"/></svg>', verify: '<svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>', genesis: '<svg class="ico" aria-hidden="true"><use href="#i-spark"/></svg>', add_version: '<svg class="ico" aria-hidden="true"><use href="#i-refresh"/></svg>' };
   const txTypeLabels = { register: 'Register', verify: 'Verify', genesis: 'Genesis', add_version: 'Add Version' };
 
   // Pretty-print a single tx field value
   function fmtVal(k, v) {
-    if (typeof v === 'boolean') return v ? '✅ Yes' : '❌ No';
+    if (typeof v === 'boolean') return v ? 'Yes' : 'No';
     if (typeof v === 'object' && v !== null) return JSON.stringify(v);
     const s = String(v);
     if ((k === 'timestamp') && !isNaN(v))
@@ -6557,7 +6647,7 @@ function openBlockModal(blockIndex) {
 
   const txHtml = b.transactions.map(tx => {
     const type  = tx.type || 'unknown';
-    const icon  = txTypeIcon[type]   || '📄';
+    const icon  = txTypeIcon[type]   || '<svg class="ico" aria-hidden="true"><use href="#i-ledger"/></svg>';
     const label = txTypeLabels[type] || type;
     // Render pairs directly into one grid — NO nested divs
     const pairs = Object.entries(tx)
@@ -6593,7 +6683,7 @@ function openBlockModal(blockIndex) {
         <span class="modal-kv-val">${b.transactions.length}</span>
         ${b.mining_time != null ? `
         <span class="modal-kv-label">Mining Time</span>
-        <span class="modal-kv-val"><span class="mining-badge" style="margin:0;font-size:.75rem;">⛏ ${b.mining_time}s</span></span>` : ''}
+        <span class="modal-kv-val"><span class="mining-badge" style="margin:0;font-size:.75rem;"><svg class="ico" aria-hidden="true"><use href="#i-cube"/></svg> ${b.mining_time}s</span></span>` : ''}
         ${b.attempts != null ? `
         <span class="modal-kv-label">Hash Attempts</span>
         <span class="modal-kv-val">${b.attempts.toLocaleString()}</span>` : ''}
@@ -6620,7 +6710,7 @@ function openBlockModal(blockIndex) {
     <div class="modal-section" style="border-top:1px solid var(--border);padding-top:1rem;">
       <div class="modal-section-title">Merkle Tree</div>
       <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:.6rem;">Visualize how all transaction hashes are combined into a single cryptographic Merkle root.</p>
-      <button class="btn btn-sec" style="font-size:.82rem;padding:.5rem 1.1rem;" onclick="openMerkleModal(${b.index})">🌲 View Merkle Tree</button>
+      <button class="btn btn-sec" style="font-size:.82rem;padding:.5rem 1.1rem;" onclick="openMerkleModal(${b.index})"><svg class="ico" aria-hidden="true"><use href="#i-merkle"/></svg> View Merkle Tree</button>
     </div>`;
 
   document.getElementById('blockModal').classList.add('open');
@@ -6666,7 +6756,7 @@ document.addEventListener('keydown', e => {
 
 
 // ═══════════════════════════════════════════════════════
-//  🌲  MERKLE TREE VISUALIZATION
+//  MERKLE TREE VISUALIZATION
 // ═══════════════════════════════════════════════════════
 async function openMerkleModal(blockIndex) {
   document.getElementById('merkleModal').classList.add('open');
@@ -6716,8 +6806,8 @@ function _drawMerkleTree(tree, leaves) {
   container.innerHTML = '';
 
   const isDark   = !document.body.classList.contains('light-theme');
-  const leafCol  = isDark ? '#00e5a0' : '#7c6af7';   // purple  = leaf
-  const intCol   = isDark ? '#00b894' : '#00897b';   // green   = internal
+  const leafCol  = bvTok('--viz-a', '#5B8CFF');   // leaf nodes
+  const intCol   = bvTok('--viz-b', '#A78BFA');   // internal nodes
   const rootCol  = isDark ? '#fd79a8' : '#e84393';   // pink    = root
   const lineCol  = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)';
   const labelCol = isDark ? '#feca57' : '#e67e22';
@@ -6856,10 +6946,10 @@ function _drawMerkleTree(tree, leaves) {
 
 
 // ═══════════════════════════════════════════════════════
-//  🔒  MODEL ACCESS CONTROL (PRIVACY)
+//  MODEL ACCESS CONTROL (PRIVACY)
 // ═══════════════════════════════════════════════════════
 async function togglePrivacy(modelId, makePrivate) {
-  const label = makePrivate ? 'private 🔒' : 'public 🌐';
+  const label = makePrivate ? 'private' : 'public';
   try {
     const res = await apiFetch(`${API}/model/${encodeURIComponent(modelId)}/privacy`, {
       method: 'POST',
@@ -6912,7 +7002,7 @@ function startFromWelcome() {
   // With JWT auth, username is set via login/register — just close the welcome modal
   bvLSSet('blockverify_visited', '1');
   closeWelcome();
-  toast('ok', `Welcome${val ? ', ' + val : ''}! Start by registering a model. 👆`);
+  toast('ok', `Welcome${val ? ', ' + val : ''}! Start by registering a model.`);
 }
 
 // ── FAQ Toggle & Filter ──
@@ -6959,7 +7049,7 @@ function initUser() {
 }
 
 // ═══════════════════════════════════════════════════════
-//  📊  ACTIVITY CHART
+//  ACTIVITY CHART
 // ═══════════════════════════════════════════════════════
 let _chartInstance = null;
 let _activeDays = 14;
@@ -7040,7 +7130,7 @@ async function loadActivityChart(days = 14) {
 }
 
 // ═══════════════════════════════════════════════════════
-//  🌐  PUBLIC REGISTRY
+//  PUBLIC REGISTRY
 // ═══════════════════════════════════════════════════════
 let _regPage = 1;
 let _regPages = 1;
@@ -7095,7 +7185,7 @@ function renderRegistry(models, total, page, pages) {
   if (models.length === 0) {
     document.getElementById('registryResult').innerHTML = `
       <div class="empty-state">
-        <span class="empty-icon">🌐</span>
+        <span class="empty-icon"><svg class="ico" aria-hidden="true"><use href="#i-globe"/></svg></span>
         <p>No models registered yet. Be the first!</p>
         <button class="btn" onclick="switchTab('register')">Register a Model</button>
       </div>`;
@@ -7116,15 +7206,15 @@ function renderRegistry(models, total, page, pages) {
         <div style="flex:1;min-width:180px;">
           <div style="font-weight:700;font-size:.95rem;margin-bottom:.3rem;">${escapeHtml(m.modelName)} ${status} <span class="badge badge-warn">v${escapeHtml(String(m.currentVersion ?? ''))}</span></div>
           <div style="font-size:.78rem;color:var(--text-muted);display:flex;gap:.8rem;flex-wrap:wrap;">
-            <span>🔑 <code style="font-size:.75rem;">${escapeHtml(m.modelId)}</code></span>
-            <span>👤 ${escapeHtml(m.owner || '')}</span>
-            <span>⛓ Algorand Hosted</span>
-            <span>📅 ${fmt(m.registeredAt)}</span>
+            <span><svg class="ico" aria-hidden="true"><use href="#i-key"/></svg> <code style="font-size:.75rem;">${escapeHtml(m.modelId)}</code></span>
+            <span><svg class="ico" aria-hidden="true"><use href="#i-user"/></svg> ${escapeHtml(m.owner || '')}</span>
+            <span><svg class="ico" aria-hidden="true"><use href="#i-proof"/></svg> Algorand Hosted</span>
+            <span><svg class="ico" aria-hidden="true"><use href="#i-calendar"/></svg> ${fmt(m.registeredAt)}</span>
           </div>
         </div>
         <div style="display:flex;gap:.5rem;flex-shrink:0;align-items:center;">
           <button class="btn btn-sec" style="font-size:.78rem;padding:.35rem .8rem;" onclick="copyText('${escapeHtml(m.modelId)}',this)">Copy ID</button>
-          <button class="btn btn-sec" style="font-size:.78rem;padding:.35rem .8rem;background:linear-gradient(135deg,rgba(var(--primary-rgb),0.18),rgba(var(--success-rgb),0.12));border-color:rgba(var(--primary-rgb),0.35);" onclick="downloadReport('${escapeHtml(m.modelId)}')">📄 PDF</button>
+          <button class="btn btn-sec" style="font-size:.78rem;padding:.35rem .8rem;background:linear-gradient(135deg,rgba(var(--primary-rgb),0.18),rgba(var(--success-rgb),0.12));border-color:rgba(var(--primary-rgb),0.35);" onclick="downloadReport('${escapeHtml(m.modelId)}')"><svg class="ico" aria-hidden="true"><use href="#i-download"/></svg> PDF</button>
           <button class="btn btn-sec" style="font-size:.78rem;padding:.35rem .8rem;background:linear-gradient(135deg,rgba(var(--primary-rgb),0.2),rgba(var(--accent-rgb),0.13));border-color:rgba(var(--primary-rgb),0.4);" onclick="downloadCertificate('${escapeHtml(m.modelId)}')" data-tip="Download a blockchain certificate (PDF) with QR code."><svg class="ico"><use href="#i-award"/></svg> Cert</button>
         </div>
       </div>`;
@@ -7134,7 +7224,7 @@ function renderRegistry(models, total, page, pages) {
 }
 
 // ═══════════════════════════════════════════════════════
-//  📄  PDF REPORT DOWNLOAD
+//  PDF REPORT DOWNLOAD
 // ═══════════════════════════════════════════════════════
 function downloadReport(modelId, modelName) {
   toast('info', `Generating PDF for "${modelName || modelId}"…`, 2000);
@@ -7229,7 +7319,7 @@ function timeAgo(ts) {
 function badgeStyle(type) {
   switch (type) {
     case 'register': return 'background:rgba(var(--primary-rgb),0.15);color:#a29bfe;';
-    case 'verify':   return 'background:rgba(0,184,148,0.15);color:#00b894;';
+    case 'verify':   return 'background:rgba(var(--success-rgb),0.15);color:var(--success);';
     case 'version':  return 'background:rgba(253,203,110,0.15);color:#fdcb6e;';
     default:         return 'background:rgba(255,255,255,0.08);color:var(--text-muted);';
   }
@@ -7261,7 +7351,7 @@ async function loadActivityFeed() {
 function renderFeedItems() {
   const list = document.getElementById('feedList');
   if (!_feedEvents.length) {
-    list.innerHTML = '<div style="text-align:center;padding:1.5rem;color:var(--text-muted);font-size:.8rem;">No activity yet. Register your first model!</div>';
+    list.innerHTML = '<div class="empty-state empty-compact"><p>No activity yet.</p><button class="btn btn-sec" onclick="switchTab(\'register\')">Register a model</button></div>';
     return;
   }
   let h = '';
@@ -7369,7 +7459,7 @@ async function onBatchFiles(fileList) {
   if (!files.length) return;
 
   _batchBusy = true;
-  document.getElementById('batchFN').textContent = `📦 ${files.length} file${files.length > 1 ? 's' : ''} selected`;
+  document.getElementById('batchFN').textContent = `${files.length} file${files.length > 1 ? 's' : ''} selected`;
   document.getElementById('batchResults').innerHTML = '';
   const prog = document.getElementById('batchProgress');
   prog.style.display = 'block';
@@ -7426,7 +7516,7 @@ function renderBatchResults(d) {
   });
   html += `</tbody></table></div>`;
   document.getElementById('batchResults').innerHTML = html;
-  if (s.tampered > 0) toast('err', `⚠ ${s.tampered} file(s) flagged as TAMPERED in the batch.`, 5000);
+  if (s.tampered > 0) toast('err', `${s.tampered} file(s) flagged as TAMPERED in the batch.`, 5000);
 }
 
 // drag & drop for the batch zone (accepts multiple files)
@@ -7477,7 +7567,7 @@ async function loadAnalytics() {
   const lbl = isDark ? '#9aa6b8' : '#64748b';
   const P = {
     cyan: '34,211,238', violet: '139,124,255',
-    green: _anRGB('--success-rgb', '45,226,197'), primary: _anRGB('--primary-rgb', '0,229,160'),
+    green: _anRGB('--success-rgb', '45,226,197'), primary: _anRGB('--primary-rgb', '91,140,255'),
     red: _anRGB('--danger-rgb', '255,107,107'), amber: _anRGB('--warn-rgb', '254,202,87'),
     blue: _anRGB('--accent-rgb', '91,140,255'),
   };
@@ -7576,7 +7666,7 @@ async function onCompareFile(slot) {
   if (!file) return;
   const MAX = 500;
   if (file.size > MAX * 1024 * 1024) { toast('err', `File over the ${MAX} MB limit (hashed in-browser).`); input.value = ''; return; }
-  document.getElementById('cmpFN' + slot).textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+  document.getElementById('cmpFN' + slot).textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
   const hbox = document.getElementById('cmpHash' + slot);
   hbox.style.display = 'block'; hbox.className = 'cmp-hash';
   hbox.innerHTML = `<span class="lbl">SHA-256 · ${slot}</span><span style="color:var(--text-muted)">Computing…</span>`;
@@ -8002,7 +8092,7 @@ function markAlertsRead() { _alertUnread = 0; updateAlertBadge(); }
 function clearAlerts() {
   const feed = document.getElementById('alertsFeed');
   if (feed) feed.innerHTML =
-    '<div class="empty-state" id="alertsEmpty"><span class="empty-icon"><svg class="ico" style="width:3rem;height:3rem;"><use href="#i-bell"/></svg></span>'
+    '<div class="empty-state" id="alertsEmpty"><span class="empty-icon"><svg class="ico" aria-hidden="true"><use href="#i-bell"/></svg></span>'
     + '<p>No verification events yet.<br>Alerts appear here the instant anyone verifies a model.</p></div>';
 }
 function renderAlert(a, isLive) {
@@ -8039,7 +8129,7 @@ function initSocket() {
   _socket.on('verification_alert', (a) => {
     renderAlert(a, true);
     if (!a.isValid) {
-      toast('err', '⚠ TAMPER DETECTED — ' + _escapeHtml(a.modelName || 'a model')
+      toast('err', 'Tamper detected: ' + _escapeHtml(a.modelName || 'a model')
         + ' failed verification by ' + _escapeHtml(a.verifier || 'someone'));
     }
     const onTab = document.getElementById('tab-alerts');
@@ -8083,7 +8173,7 @@ async function bootConnect() {
     clearTimeout(slow); clearTimeout(timeout);
     document.getElementById('sModels').textContent = d.totalModels ?? '—';
     document.getElementById('sVerify').textContent = d.totalVerifications ?? '—';
-    document.getElementById('sBlocks').textContent = d.totalBlocks ?? '—';
+    if (typeof d.totalBlocks === 'number') document.getElementById('sBlocks').textContent = d.totalBlocks;
     showConnecting('Connected', false);
     setTimeout(hideConnecting, 1200);
     refreshStats();            // fill the remaining stat widgets now the server is warm
@@ -8156,30 +8246,30 @@ setInterval(refreshStats, 5000);
   background:rgba(0,0,0,.82); backdrop-filter:blur(6px);
   align-items:center; justify-content:center;">
   <div style="
-    width:min(640px,96vw); background:#0d0d0d;
-    border:1px solid #00ff41; border-radius:12px;
-    font-family:'Fira Code','Courier New',monospace;
-    box-shadow:0 0 40px rgba(0,255,65,.25), 0 0 80px rgba(0,255,65,.08);
+    width:min(640px,96vw); background:var(--bg-1);
+    border:1px solid var(--border); border-radius:14px;
+    font-family:var(--mono);
+    box-shadow:var(--shadow-3);
     overflow:hidden;">
     <!-- Terminal title bar -->
-    <div style="background:#111; border-bottom:1px solid #00ff41; padding:.5rem 1rem; display:flex; align-items:center; gap:.6rem;">
+    <div style="background:var(--surface); border-bottom:1px solid var(--border); padding:.5rem 1rem; display:flex; align-items:center; gap:.6rem;">
       <span style="width:12px;height:12px;border-radius:50%;background:#ff5f57;display:inline-block;"></span>
       <span style="width:12px;height:12px;border-radius:50%;background:#febc2e;display:inline-block;"></span>
       <span style="width:12px;height:12px;border-radius:50%;background:#28c840;display:inline-block;"></span>
-      <span style="margin-left:.5rem;font-size:.72rem;color:#00ff41;letter-spacing:.08em;">BLOCKVERIFY — Bitcoin Proof-of-Work Engine v1.0</span>
+      <span style="margin-left:.5rem;font-size:.72rem;color:var(--text-muted);letter-spacing:.08em;">BLOCKVERIFY — Bitcoin Proof-of-Work Engine v1.0</span>
     </div>
     <!-- Log output -->
     <div id="pow-log" style="
       padding:1rem 1.2rem; height:240px; overflow-y:auto;
-      font-size:.78rem; line-height:1.7; color:#00ff41;
-      scrollbar-width:thin; scrollbar-color:#003300 #0d0d0d;">
+      font-size:.78rem; line-height:1.7; color:var(--text);
+      scrollbar-width:thin; scrollbar-color:var(--border) transparent;">
     </div>
     <!-- Stats bar -->
-    <div style="background:#0a0a0a; border-top:1px solid #003300; padding:.5rem 1.2rem; display:flex; gap:1.5rem; font-size:.7rem; color:#005500;">
-      <span>⛏ Nonce: <strong id="pow-stat-nonce" style="color:#00cc33;">0</strong></span>
-      <span>⏱ Time: <strong id="pow-stat-time" style="color:#00cc33;">0.0s</strong></span>
-      <span>🔢 H/s: <strong id="pow-stat-rate" style="color:#00cc33;">—</strong></span>
-      <span>🎯 Target: <strong style="color:#00cc33;">000...</strong></span>
+    <div style="background:var(--surface); border-top:1px solid var(--border); padding:.5rem 1.2rem; display:flex; flex-wrap:wrap; gap:1.5rem; font-size:.7rem; color:var(--text-muted);">
+      <span><svg class="ico" aria-hidden="true"><use href="#i-cube"/></svg> Nonce: <strong id="pow-stat-nonce" style="color:var(--text);">0</strong></span>
+      <span>Time: <strong id="pow-stat-time" style="color:var(--text);">0.0s</strong></span>
+      <span>H/s: <strong id="pow-stat-rate" style="color:var(--text);">—</strong></span>
+      <span>Target: <strong style="color:var(--text);">000...</strong></span>
     </div>
   </div>
 </div>
@@ -8261,7 +8351,7 @@ setInterval(refreshStats, 5000);
   let running = false;
   let raf = 0;
   let light = false;
-  let rgbP = [0, 229, 160], rgbA = [91, 140, 255];
+  let rgbP = [91, 140, 255], rgbA = [91, 140, 255];
   const mouse = { x: 0, y: 0, on: false };
 
   function parseRgb(name, fallback) {
@@ -8271,7 +8361,7 @@ setInterval(refreshStats, 5000);
   }
   function readTheme() {
     light = document.body.classList.contains('light-theme');
-    rgbP = parseRgb('--primary-rgb', [0, 229, 160]);
+    rgbP = parseRgb('--primary-rgb', [91, 140, 255]);
     rgbA = parseRgb('--accent-rgb', [91, 140, 255]);
   }
   function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
@@ -8413,8 +8503,8 @@ document.addEventListener('mousedown', function(e) {
   container.setAttribute('aria-hidden', 'true');
 
   const light = document.body.classList.contains('light-theme');
-  const ink = light ? '#0aa37a' : '#00e5a0';
-  const sat = light ? '#2a9d8f' : '#2de2c5';
+  const ink = bvTok('--primary', '#5B8CFF');
+  const sat = bvTok('--viz-b', '#A78BFA');
   const nSat = 2 + Math.floor(Math.random() * 2);
   let nodes = '', lines = '';
   const cx = 60, cy = 60;
@@ -8443,27 +8533,27 @@ document.addEventListener('mousedown', function(e) {
 <script>
 /* ── Guided Tour System ── */
 const TOUR_STEPS = [
-  { target: '#tab-register', chapter: 'Getting started', tab: 'register', title: '📝 Step 1 — Register a Model', body: 'This is where you register an AI model. Upload any file — your browser computes its SHA-256 hash. The hash is stored on the blockchain. The actual file never leaves your machine.', position: 'bottom' },
-  { target: '#regDrop', chapter: 'Getting started', tab: 'register', title: '📂 Upload Your Model File', body: 'Drag and drop or click to select any file (.pt, .h5, .pkl, .onnx, PDF, ZIP — anything). The SHA-256 fingerprint is computed instantly in your browser.', position: 'bottom' },
-  { target: '#tab-verify', chapter: 'Getting started', tab: 'verify', title: '✅ Step 2 — Verify Integrity', body: 'Re-upload the same file later. BlockVerify re-hashes it and compares against the blockchain record. Match = untampered. Mismatch = model was modified.', position: 'bottom' },
-  { target: '#tab-explorer', chapter: 'On-chain proof', tab: 'explorer', title: '🔗 Step 3 — Algorand Testnet Explorer', body: 'Every registration and verification is broadcast as an immutable transaction on the live Algorand Testnet. Visit the explorer to inspect your permanent on-chain proofs.', position: 'bottom' },
-  { target: '#validateBtn', chapter: 'On-chain proof', tab: 'explorer', title: '🛡 Validate Chain Integrity', body: 'Click this to confirm Algorand Testnet is live. PPoS finalizes under a ⅓-Byzantine bound — once confirmed, we cannot alter that transaction.', position: 'top' },
-  { target: '#tab-models', chapter: 'Managing models', tab: 'models', title: '📦 Step 4 — My Models', body: 'All your registered models appear here. You can verify, add new versions, download a PDF integrity report, toggle privacy, or deactivate a model.', position: 'bottom' },
-  { target: '#tab-federated', chapter: 'Federated learning', delay: 300, tab: 'federated', title: '🌐 Step 5 — Federated Learning', body: 'Everything so far protects a <b>finished</b> model. This tab protects one that is still being <b>built by many parties at once</b> — say ten hospitals training a shared AI without any of them sending patient data. Each contributes an update; nobody shares raw data.', position: 'bottom' },
-  { target: '#flHowCard', chapter: 'Federated learning', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '🎞 Watch a Round Happen', body: 'Before the numbers, watch the mechanism. This animation walks through one full round — six hospitals training privately, a poisoned update being caught and thrown out, the survivors averaged, and the whole round fingerprinted onto the blockchain. Use <b>Back</b> and <b>Next</b> under it to move at your own pace.', position: 'bottom' },
-  { target: '#flStats', chapter: 'Federated learning', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '📊 Reading a Training Run', body: 'Pick any run from the dropdown at the top. These cards summarise it: how accurate the shared model got, how many malicious participants were caught, and how many honest ones were wrongly excluded — the price of the defence.', position: 'bottom' },
-  { target: '#flGridWrap', chapter: 'Federated learning', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '🛡 Who Was Trusted, Round by Round', body: 'One square per participant per round. <b style="color:#22c55e;">Bright green</b> = a malicious participant correctly caught. <b style="color:#ef4444;">Red</b> = one that slipped through. <b style="color:#eab308;">Amber</b> = an honest participant wrongly excluded. Malicious rows are labelled, so you can see at a glance whether the defence worked.', position: 'top' },
-  { target: '#flRoundsTable', chapter: 'Federated learning', fallback: '#tab-federated', delay: 500, tab: 'federated', title: '🔗 Proving It Without Trusting Us', body: 'Each round is fingerprinted and written to the blockchain, so nobody — including this server — can rewrite history afterwards. Click <b>Verify proof</b> and your browser re-derives that fingerprint itself and checks it against the public ledger. If we lied, the check fails.', position: 'top' },
-  { target: '#tab-photoshield', chapter: 'Photo Shield', delay: 300, tab: 'photoshield', title: '🛡 Step 6 — Photo Shield', body: 'The same integrity idea, for <b>your photos</b>. It does two things: <b>provenance</b> (prove a photo is yours and existed at a given time, and recognise copies of it) and an optional <b>cloak</b> (make AI edits of it harder). Your photo is <b>never uploaded</b>: only its fingerprints leave this browser.', position: 'bottom' },
-  { target: '#psKeyCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '🔑 1. Create your signing key', body: 'Click <b>Create key</b> once. Every registration is signed with this Ed25519 key, which lives only in this browser, so the ledger shows the photo is <b>yours</b>, not the server\'s. Then click <b>Export backup</b> and keep the encrypted file safe: clearing site data or switching device loses the key. <b>Import backup</b> restores it anywhere.', position: 'bottom' },
-  { target: '#psRegCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '📷 2. Register a photo', body: 'Choose a mode. <b>Provenance only</b>: drop any photo. <b>Cloaked photo</b>: first run <code>python -m photoshield protect photo.jpg --out shielded/</code> on your own computer, then drop <code>manifest.json</code>, the original and <code>cloaked.png</code>. The page computes the SHA-256 and a perceptual hash (pHash) right here, and shows them before anything is sent.', position: 'top' },
-  { target: '#psPrivacy', chapter: 'Photo Shield', fallback: '#psRegCard', delay: 400, tab: 'photoshield', title: '🔒 Full or hash-only?', body: '<b>Full</b> puts the pHash on chain too, so re-compressed or resized copies are still recognised even after the server restarts. <b>Hash-only</b> keeps the pHash off chain for privacy: after a restart only exact copies match until you re-attach your <code>manifest.json</code> in <b>My photos</b>.', position: 'top' },
-  { target: '#psRegBtn', chapter: 'Photo Shield', fallback: '#psRegCard', delay: 400, tab: 'photoshield', title: '⛓ Sign &amp; anchor', body: 'One click signs the fingerprints with your key, solves a small proof-of-work, and anchors them as an Algorand Testnet transaction. A <code>manifest.json</code> backup downloads automatically. Then press <b>Check on public ledger</b>: your browser fetches the transaction from the public indexer itself and confirms it, without trusting this server.', position: 'top' },
-  { target: '#psVerCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '🔍 3. Check any photo', body: 'Anyone can drop a photo here. <b>EXACT</b> = byte-for-byte the registered file. <b>DERIVED</b> = very likely a re-compressed or resized copy. <b>SIMILAR</b> = possibly derived (heavier edit, crop, or a look-alike). <b>UNKNOWN</b> = not registered. The DERIVED/SIMILAR thresholds are <b>measured</b> on test photos, not guessed, and a perceptual match is evidence, not proof.', position: 'top' },
-  { target: '#psOriginCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '🧩 Origin report: was this fake made from my photo?', body: 'A deepfake changes part of a photo, so its fingerprint no longer matches. Drop your <b>original</b> and the <b>suspect copy</b> here: every region of the grid is compared, and the result shows which regions are still identical to the photo you anchored (<b style="color:#22c55e;">green</b>) and which were changed (<b style="color:#ef4444;">red</b>). Each region comes with a Merkle proof against your registration, the report is signed with your key, and it never contains your original. Anyone can check it under <b>Check a report</b>.', position: 'top' },
-  { target: '#psMineCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '🗂 4. My photos', body: 'Everything you registered: download a <b>PDF certificate</b>, <b>prove ownership</b> (your browser signs a one-time challenge with your key), or <b>re-attach a manifest</b> to restore near-matching for hash-only photos after a server restart.', position: 'top' },
-  { target: '#psLimitsCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '⚖ Honest limits', body: 'The cloak targets one open-source encoder: it gives <b>no</b> protection against closed models (Gemini, Grok, Midjourney), and heavy re-processing can remove it. First-to-register is not authorship, so <b>register before you post</b>. The provenance layer works whether or not the cloak survives.', position: 'top' },
-  { target: '#tab-help', chapter: 'Done', tab: 'help', title: '🎉 Tour Complete!', body: 'You now know the full BlockVerify workflow. Register a model → get a Model ID → verify it anytime → all history is permanently on the blockchain. With <b>Federated</b>, you can prove who helped build a model in the first place, and with <b>Photo Shield</b>, that a photo is yours and when it existed. Ready to try it yourself?', position: 'bottom' }
+  { target: '#tab-register', chapter: 'Getting started', tab: 'register', title: 'Step 1 — Register a Model', body: 'This is where you register an AI model. Upload any file — your browser computes its SHA-256 hash. The hash is stored on the blockchain. The actual file never leaves your machine.', position: 'bottom' },
+  { target: '#regDrop', chapter: 'Getting started', tab: 'register', title: 'Upload Your Model File', body: 'Drag and drop or click to select any file (.pt, .h5, .pkl, .onnx, PDF, ZIP — anything). The SHA-256 fingerprint is computed instantly in your browser.', position: 'bottom' },
+  { target: '#tab-verify', chapter: 'Getting started', tab: 'verify', title: 'Step 2 — Verify Integrity', body: 'Re-upload the same file later. BlockVerify re-hashes it and compares against the blockchain record. Match = untampered. Mismatch = model was modified.', position: 'bottom' },
+  { target: '#tab-explorer', chapter: 'On-chain proof', tab: 'explorer', title: 'Step 3 — Algorand Testnet Explorer', body: 'Every registration and verification is broadcast as an immutable transaction on the live Algorand Testnet. Visit the explorer to inspect your permanent on-chain proofs.', position: 'bottom' },
+  { target: '#validateBtn', chapter: 'On-chain proof', tab: 'explorer', title: 'Validate Chain Integrity', body: 'Click this to confirm Algorand Testnet is live. PPoS finalizes under a ⅓-Byzantine bound — once confirmed, we cannot alter that transaction.', position: 'top' },
+  { target: '#tab-models', chapter: 'Managing models', tab: 'models', title: 'Step 4 — My Models', body: 'All your registered models appear here. You can verify, add new versions, download a PDF integrity report, toggle privacy, or deactivate a model.', position: 'bottom' },
+  { target: '#tab-federated', chapter: 'Federated learning', delay: 300, tab: 'federated', title: 'Step 5 — Federated Learning', body: 'Everything so far protects a <b>finished</b> model. This tab protects one that is still being <b>built by many parties at once</b> — say ten hospitals training a shared AI without any of them sending patient data. Each contributes an update; nobody shares raw data.', position: 'bottom' },
+  { target: '#flHowCard', chapter: 'Federated learning', fallback: '#tab-federated', delay: 500, tab: 'federated', title: 'Watch a Round Happen', body: 'Before the numbers, watch the mechanism. This animation walks through one full round — six hospitals training privately, a poisoned update being caught and thrown out, the survivors averaged, and the whole round fingerprinted onto the blockchain. Use <b>Back</b> and <b>Next</b> under it to move at your own pace.', position: 'bottom' },
+  { target: '#flStats', chapter: 'Federated learning', fallback: '#tab-federated', delay: 500, tab: 'federated', title: 'Reading a Training Run', body: 'Pick any run from the dropdown at the top. These cards summarise it: how accurate the shared model got, how many malicious participants were caught, and how many honest ones were wrongly excluded — the price of the defence.', position: 'bottom' },
+  { target: '#flGridWrap', chapter: 'Federated learning', fallback: '#tab-federated', delay: 500, tab: 'federated', title: 'Who Was Trusted, Round by Round', body: 'One square per participant per round. <b style="color:#22c55e;">Bright green</b> = a malicious participant correctly caught. <b style="color:#ef4444;">Red</b> = one that slipped through. <b style="color:#eab308;">Amber</b> = an honest participant wrongly excluded. Malicious rows are labelled, so you can see at a glance whether the defence worked.', position: 'top' },
+  { target: '#flRoundsTable', chapter: 'Federated learning', fallback: '#tab-federated', delay: 500, tab: 'federated', title: 'Proving It Without Trusting Us', body: 'Each round is fingerprinted and written to the blockchain, so nobody — including this server — can rewrite history afterwards. Click <b>Verify proof</b> and your browser re-derives that fingerprint itself and checks it against the public ledger. If we lied, the check fails.', position: 'top' },
+  { target: '#tab-photoshield', chapter: 'Photo Shield', delay: 300, tab: 'photoshield', title: 'Step 6 — Photo Shield', body: 'The same integrity idea, for <b>your photos</b>. It does two things: <b>provenance</b> (prove a photo is yours and existed at a given time, and recognise copies of it) and an optional <b>cloak</b> (make AI edits of it harder). Your photo is <b>never uploaded</b>: only its fingerprints leave this browser.', position: 'bottom' },
+  { target: '#psKeyCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '1. Create your signing key', body: 'Click <b>Create key</b> once. Every registration is signed with this Ed25519 key, which lives only in this browser, so the ledger shows the photo is <b>yours</b>, not the server\'s. Then click <b>Export backup</b> and keep the encrypted file safe: clearing site data or switching device loses the key. <b>Import backup</b> restores it anywhere.', position: 'bottom' },
+  { target: '#psRegCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '2. Register a photo', body: 'Choose a mode. <b>Provenance only</b>: drop any photo. <b>Cloaked photo</b>: first run <code>python -m photoshield protect photo.jpg --out shielded/</code> on your own computer, then drop <code>manifest.json</code>, the original and <code>cloaked.png</code>. The page computes the SHA-256 and a perceptual hash (pHash) right here, and shows them before anything is sent.', position: 'top' },
+  { target: '#psPrivacy', chapter: 'Photo Shield', fallback: '#psRegCard', delay: 400, tab: 'photoshield', title: 'Full or hash-only?', body: '<b>Full</b> puts the pHash on chain too, so re-compressed or resized copies are still recognised even after the server restarts. <b>Hash-only</b> keeps the pHash off chain for privacy: after a restart only exact copies match until you re-attach your <code>manifest.json</code> in <b>My photos</b>.', position: 'top' },
+  { target: '#psRegBtn', chapter: 'Photo Shield', fallback: '#psRegCard', delay: 400, tab: 'photoshield', title: 'Sign &amp; anchor', body: 'One click signs the fingerprints with your key, solves a small proof-of-work, and anchors them as an Algorand Testnet transaction. A <code>manifest.json</code> backup downloads automatically. Then press <b>Check on public ledger</b>: your browser fetches the transaction from the public indexer itself and confirms it, without trusting this server.', position: 'top' },
+  { target: '#psVerCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '3. Check any photo', body: 'Anyone can drop a photo here. <b>EXACT</b> = byte-for-byte the registered file. <b>DERIVED</b> = very likely a re-compressed or resized copy. <b>SIMILAR</b> = possibly derived (heavier edit, crop, or a look-alike). <b>UNKNOWN</b> = not registered. The DERIVED/SIMILAR thresholds are <b>measured</b> on test photos, not guessed, and a perceptual match is evidence, not proof.', position: 'top' },
+  { target: '#psOriginCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: 'Origin report: was this fake made from my photo?', body: 'A deepfake changes part of a photo, so its fingerprint no longer matches. Drop your <b>original</b> and the <b>suspect copy</b> here: every region of the grid is compared, and the result shows which regions are still identical to the photo you anchored (<b style="color:#22c55e;">green</b>) and which were changed (<b style="color:#ef4444;">red</b>). Each region comes with a Merkle proof against your registration, the report is signed with your key, and it never contains your original. Anyone can check it under <b>Check a report</b>.', position: 'top' },
+  { target: '#psMineCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: '4. My photos', body: 'Everything you registered: download a <b>PDF certificate</b>, <b>prove ownership</b> (your browser signs a one-time challenge with your key), or <b>re-attach a manifest</b> to restore near-matching for hash-only photos after a server restart.', position: 'top' },
+  { target: '#psLimitsCard', chapter: 'Photo Shield', fallback: '#tab-photoshield', delay: 500, tab: 'photoshield', title: 'Honest limits', body: 'The cloak targets one open-source encoder: it gives <b>no</b> protection against closed models (Gemini, Grok, Midjourney), and heavy re-processing can remove it. First-to-register is not authorship, so <b>register before you post</b>. The provenance layer works whether or not the cloak survives.', position: 'top' },
+  { target: '#tab-help', chapter: 'Done', tab: 'help', title: 'Tour complete', body: 'You now know the full BlockVerify workflow. Register a model → get a Model ID → verify it anytime → all history is permanently on the blockchain. With <b>Federated</b>, you can prove who helped build a model in the first place, and with <b>Photo Shield</b>, that a photo is yours and when it existed. Ready to try it yourself?', position: 'bottom' }
 ];
 
 let _tourCurrent = 0;
@@ -8621,6 +8711,7 @@ async function renderTourStep() {
   // A hidden element still matches querySelector but measures 0x0, which would collapse
   // the spotlight onto nothing. Prefer a declared fallback; skip the step if neither is up.
   const visible = (el) => { if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 1 && r.height > 1; };
+  if (typeof bvRevealTarget === 'function') bvRevealTarget(step.target);   // open a Photo Shield section if needed
   let target = document.querySelector(step.target);
   if (!visible(target) && step.fallback) target = document.querySelector(step.fallback);
   if (!visible(target)) {
@@ -8653,7 +8744,7 @@ async function renderTourStep() {
       <div style="display:flex; gap:6px; align-items:center;">
         <button class="tour-btn tour-btn-skip" onclick="endGuidedTour()">Skip</button>
         <button class="tour-btn tour-btn-back" onclick="prevTourStep()" ${isFirst ? 'disabled' : ''}>Back</button>
-        <button class="tour-btn tour-btn-next" id="tourNextBtn" onclick="nextTourStep()">${isLast ? 'Finish 🎉' : 'Next →'}</button>
+        <button class="tour-btn tour-btn-next" id="tourNextBtn" onclick="nextTourStep()">${isLast ? 'Finish' : 'Next →'}</button>
       </div>
     </div>
     <div class="tour-kbd"><kbd>←</kbd> <kbd>→</kbd> to navigate · <kbd>Esc</kbd> to exit</div>`;
@@ -8703,7 +8794,7 @@ window.addEventListener('DOMContentLoaded', () => {
   warnInsecureOrigin();
   if (!bvLSGet('bv_tour_done') && !document.body.classList.contains('landing-mode')) {
     setTimeout(() => {
-      toast('info', `New to BlockVerify? <br><a href="#" onclick="startGuidedTour();return false;" style="color:var(--primary-h);font-weight:700;">Take the guided tour 🧭</a>`, 12000, true);
+      toast('info', `New to BlockVerify? <br><a href="#" onclick="startGuidedTour();return false;" style="color:var(--primary-h);font-weight:700;">Take the guided tour</a>`, 12000, true);
     }, 2000);
   }
 });
@@ -8724,7 +8815,7 @@ async function lookupProof() {
     const d   = await res.json();
 
     if (!d.success) {
-      out.innerHTML = `<div class="result-box err" style="margin-top:.5rem;">❌ ${d.error}</div>`;
+      out.innerHTML = `<div class="result-box err" style="margin-top:.5rem;"><svg class="ico ico-bad" aria-hidden="true"><use href="#i-x"/></svg> ${d.error}</div>`;
       return;
     }
 
@@ -8739,7 +8830,7 @@ async function lookupProof() {
     out.innerHTML = `
       <div style="border:1px solid rgba(var(--success-rgb),.3);border-radius:12px;padding:1.2rem;margin-top:.6rem;background:rgba(var(--success-rgb),.05);">
         <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;">
-          <span style="font-size:1.4rem;">✅</span>
+          <svg class="ico ico-ok ico-lg" aria-hidden="true"><use href="#i-check"/></svg>
           <div>
             <div style="font-weight:700;font-size:1rem;">Transaction Confirmed on Algorand Testnet</div>
             <div style="font-size:.78rem;color:var(--text-muted);">Block Round #${d.round} · ${ts}</div>
@@ -8761,9 +8852,9 @@ async function lookupProof() {
         </div>
       </div>`;
   } catch(e) {
-    out.innerHTML = `<div class="result-box err" style="margin-top:.5rem;">❌ ${e.message}</div>`;
+    out.innerHTML = `<div class="result-box err" style="margin-top:.5rem;"><svg class="ico ico-bad" aria-hidden="true"><use href="#i-x"/></svg> ${e.message}</div>`;
   } finally {
-    setLoading('proofBtn', false, '🔎 Fetch Proof');
+    setLoading('proofBtn', false, 'Fetch Proof');
   }
 }
 
@@ -8829,7 +8920,7 @@ async function loadContractInfo() {
     }
     out.innerHTML = `
       <div style="display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;">
-        <span style="font-size:1.5rem;">📋</span>
+        <svg class="ico ico-lg" aria-hidden="true"><use href="#i-copy"/></svg>
         <div>
           <div style="font-weight:700;">App ID: ${d.app_id}</div>
           <div style="font-size:.77rem;color:var(--text-muted);">Network: ${d.network}</div>
@@ -8958,7 +9049,7 @@ async function downloadAlgoCertificate(modelId, modelName, modelHash, txid, roun
   try {
     const qrDataUrl = await QRCode.toDataURL(explorerUrl, {
       width: 120, margin: 1,
-      color: { dark: '#00e5a0', light: '#0d111e' }
+      color: { dark: '#0A0D14', light: '#FFFFFF' }
     });
     doc.addImage(qrDataUrl, 'PNG', W / 2 - 60, y + 10, 120, 120);
     doc.setTextColor(150, 150, 180);
@@ -8981,7 +9072,7 @@ async function downloadAlgoCertificate(modelId, modelName, modelHash, txid, roun
   // ── Save ──
   const filename = `blockverify-cert-${modelId.substring(0,8)}.pdf`;
   doc.save(filename);
-  toast('ok', '📄 Certificate downloaded!');
+  toast('ok', 'Certificate downloaded.');
 }
 
 function loadScript(src) {
@@ -9016,10 +9107,10 @@ async function tamperSimulate(modelId, btn) {
         // Already tampered — offer restore
         out.innerHTML = `
           <div style="padding:.8rem 1rem;border-radius:10px;background:rgba(253,203,110,0.1);border:1px solid rgba(253,203,110,0.3);font-size:.82rem;">
-            ⚠️ Already tampered. <button class="btn btn-sec" style="font-size:.75rem;padding:.3rem .6rem;margin-left:.5rem;" onclick="tamperRestore('${modelId}')">🔄 Restore Original</button>
+            <svg class="ico ico-warn" aria-hidden="true"><use href="#i-alert"/></svg> Already tampered. <button class="btn btn-sec" style="font-size:.75rem;padding:.3rem .6rem;margin-left:.5rem;" onclick="tamperRestore('${modelId}')"><svg class="ico" aria-hidden="true"><use href="#i-refresh"/></svg> Restore Original</button>
           </div>`;
       } else {
-        out.innerHTML = `<div class="result-box err" style="font-size:.82rem;">❌ ${d.error}</div>`;
+        out.innerHTML = `<div class="result-box err" style="font-size:.82rem;"><svg class="ico ico-bad" aria-hidden="true"><use href="#i-x"/></svg> ${d.error}</div>`;
       }
       return;
     }
@@ -9027,7 +9118,7 @@ async function tamperSimulate(modelId, btn) {
     // Show dramatic tamper result
     out.innerHTML = `
       <div style="padding:.8rem 1rem;border-radius:10px;background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.35);animation:slideUpFade .4s ease;">
-        <div style="font-size:.9rem;font-weight:700;color:#ff6b6b;margin-bottom:.5rem;">💀 LOCAL DATABASE TAMPERED</div>
+        <div style="font-size:.9rem;font-weight:700;color:#ff6b6b;margin-bottom:.5rem;"><svg class="ico ico-warn" aria-hidden="true"><use href="#i-alert"/></svg> LOCAL DATABASE TAMPERED</div>
         <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.6rem;">The local hash has been deliberately corrupted. The on-chain hash in the Algorand smart contract remains unchanged — proving blockchain immutability.</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
           <div style="background:rgba(0,184,148,0.08);padding:.5rem;border-radius:6px;border:1px solid rgba(0,184,148,0.2);">
@@ -9051,19 +9142,19 @@ async function tamperSimulate(modelId, btn) {
       setTimeout(() => {
         const restoreHtml = `
           <div style="margin-top:.6rem;padding:.6rem;background:rgba(253,203,110,0.08);border:1px solid rgba(253,203,110,0.25);border-radius:8px;display:flex;align-items:center;gap:.8rem;">
-            <span style="font-size:.82rem;">🔄</span>
+            <svg class="ico" aria-hidden="true"><use href="#i-refresh"/></svg>
             <div style="flex:1;">
               <div style="font-size:.78rem;font-weight:600;color:var(--warn);">Demo Complete — Tampering Detected!</div>
               <div style="font-size:.72rem;color:var(--text-muted);">The blockchain proved the local database was corrupted. Click restore to undo.</div>
             </div>
-            <button class="btn" style="font-size:.75rem;padding:.35rem .7rem;flex-shrink:0;" onclick="tamperRestore('${modelId}')">✅ Restore Original</button>
+            <button class="btn" style="font-size:.75rem;padding:.35rem .7rem;flex-shrink:0;" onclick="tamperRestore('${modelId}')"><svg class="ico ico-ok" aria-hidden="true"><use href="#i-check"/></svg> Restore Original</button>
           </div>`;
         out.innerHTML += restoreHtml;
       }, 3000);
     }, 2000);
 
   } catch(e) {
-    out.innerHTML = `<div class="result-box err" style="font-size:.82rem;">❌ ${e.message}</div>`;
+    out.innerHTML = `<div class="result-box err" style="font-size:.82rem;"><svg class="ico ico-bad" aria-hidden="true"><use href="#i-x"/></svg> ${e.message}</div>`;
   } finally {
     btn.disabled = false;
     btn.innerHTML = origText;
@@ -9081,7 +9172,7 @@ async function tamperRestore(modelId) {
     if (d.success) {
       out.innerHTML = `
         <div style="padding:.6rem 1rem;border-radius:10px;background:rgba(0,184,148,0.1);border:1px solid rgba(0,184,148,0.3);font-size:.82rem;animation:slideUpFade .4s ease;">
-          ✅ <strong>Original hash restored.</strong> The model is back to its verified state.
+          <svg class="ico ico-ok" aria-hidden="true"><use href="#i-check"/></svg> <strong>Original hash restored.</strong> The model is back to its verified state.
         </div>`;
       if (ocOut) ocOut.innerHTML = '';
       toast('ok', 'Original hash restored — model integrity verified.');
@@ -9089,10 +9180,10 @@ async function tamperRestore(modelId) {
       // Auto-clear after 4 seconds
       setTimeout(() => { out.innerHTML = ''; }, 4000);
     } else {
-      out.innerHTML = `<div class="result-box err" style="font-size:.82rem;">❌ ${d.error}</div>`;
+      out.innerHTML = `<div class="result-box err" style="font-size:.82rem;"><svg class="ico ico-bad" aria-hidden="true"><use href="#i-x"/></svg> ${d.error}</div>`;
     }
   } catch(e) {
-    out.innerHTML = `<div class="result-box err" style="font-size:.82rem;">❌ ${e.message}</div>`;
+    out.innerHTML = `<div class="result-box err" style="font-size:.82rem;"><svg class="ico ico-bad" aria-hidden="true"><use href="#i-x"/></svg> ${e.message}</div>`;
   }
 }
 
@@ -9106,7 +9197,7 @@ async function loadAlgoMerkle() {
 
   infoEl.textContent = '⏳ Building Merkle tree from registered model hashes...';
   rootEl.style.display = 'none';
-  svgEl.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted);"><span class="spinner"></span> Loading...</div>';
+  svgEl.innerHTML = '<div class="bv-skel-rows" style="padding:1.5rem;" aria-label="Loading"><span class="bv-skel"></span><span class="bv-skel"></span><span class="bv-skel"></span></div>';
 
   try {
     const res = await fetch(`${API}/algo/merkle`);
@@ -9151,13 +9242,13 @@ function loadBtcWalletBadge() {
   fetch(`${API}/bitcoin/wallet`, { credentials: 'include' })
     .then(r => r.json()).then(d => {
       if (d.success) {
-        badge.innerHTML = `🟢 BTC Wallet: <strong>${Number(d.btc).toFixed(6)} tBTC</strong> &nbsp;<a href="${escapeHtml(d.explorer || '#')}" target="_blank" rel="noopener noreferrer" style="color:#f7931a;font-size:.7rem;">View ↗</a>`;
+        badge.innerHTML = `<span class="bv-dot bv-dot-ok" aria-hidden="true"></span> BTC Wallet: <strong>${Number(d.btc).toFixed(6)} tBTC</strong> &nbsp;<a href="${escapeHtml(d.explorer || '#')}" target="_blank" rel="noopener noreferrer" style="color:#f7931a;font-size:.7rem;">View ↗</a>`;
         if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
       } else {
-        badge.innerHTML = `🔴 ${escapeHtml(_btcFriendlyError(d.error))}`;
+        badge.innerHTML = `<span class="bv-dot bv-dot-bad" aria-hidden="true"></span> ${escapeHtml(_btcFriendlyError(d.error))}`;
       }
     }).catch(() => {
-      badge.innerHTML = '🔴 Bitcoin wallet offline — is the backend running?';
+      badge.innerHTML = '<span class="bv-dot bv-dot-bad" aria-hidden="true"></span> Bitcoin wallet offline — is the backend running?';
     });
 }
 
@@ -9171,7 +9262,7 @@ async function anchorToBitcoin() {
 
   // Disable button + show loading state
   btn.disabled = true;
-  btn.textContent = '⛏ Broadcasting to Bitcoin Testnet…';
+  btn.textContent = 'Broadcasting to Bitcoin Testnet…';
   btn.style.opacity = '0.7';
   resultEl.innerHTML = `
     <div style="display:flex;align-items:center;gap:.6rem;font-size:.84rem;color:#f7931a;margin-top:.5rem;">
@@ -9188,7 +9279,7 @@ async function anchorToBitcoin() {
     const d = await res.json();
 
     if (!d.success) {
-      resultEl.innerHTML = `<div style="color:var(--danger);font-size:.84rem;margin-top:.5rem;">❌ ${escapeHtml(_btcFriendlyError(d.error))}</div>`;
+      resultEl.innerHTML = `<div style="color:var(--danger);font-size:.84rem;margin-top:.5rem;"><svg class="ico ico-bad" aria-hidden="true"><use href="#i-x"/></svg> ${escapeHtml(_btcFriendlyError(d.error))}</div>`;
       return;
     }
 
@@ -9206,7 +9297,7 @@ async function anchorToBitcoin() {
     // Success card
     resultEl.innerHTML = `
       <div style="background:rgba(247,147,26,.08);border:1px solid rgba(247,147,26,.4);border-radius:10px;padding:1rem;margin-top:.5rem;">
-        <div style="font-size:1rem;font-weight:700;color:#f7931a;margin-bottom:.7rem;">✅ Anchored to Bitcoin Testnet3!</div>
+        <div style="font-size:1rem;font-weight:700;color:#f7931a;margin-bottom:.7rem;"><svg class="ico ico-ok" aria-hidden="true"><use href="#i-check"/></svg> Anchored to Bitcoin Testnet3!</div>
         <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.4rem;">
           <strong style="color:var(--text);">Merkle Root anchored</strong> — ${d.model_count} model${d.model_count !== 1 ? 's' : ''} from Algorand
         </div>
@@ -9235,7 +9326,7 @@ async function anchorToBitcoin() {
     if (e.message === 'Session expired. Please log in again.') {
       resultEl.innerHTML = `<div style="color:var(--muted);font-size:.84rem;margin-top:.5rem;">Please log in to anchor.</div>`;
     } else {
-      resultEl.innerHTML = `<div style="color:var(--danger);font-size:.84rem;margin-top:.5rem;">❌ Network error: ${e.message}</div>`;
+      resultEl.innerHTML = `<div style="color:var(--danger);font-size:.84rem;margin-top:.5rem;"><svg class="ico ico-bad" aria-hidden="true"><use href="#i-x"/></svg> Network error: ${e.message}</div>`;
     }
   } finally {
     btn.disabled = false;
@@ -9257,12 +9348,12 @@ function _drawAlgoMerkle(tree, leaves, container) {
 
   // ── Premium color palette ──
   const palette = {
-    leaf:     { start: '#00e5a0', end: '#a29bfe' },
-    internal: { start: '#00b894', end: '#55efc4' },
+    leaf:     { start: '#5B8CFF', end: '#A78BFA' },
+    internal: { start: '#2F5BEA', end: '#8FB0FF' },
     root:     { start: '#fd79a8', end: '#e84393' },
     link:     isDark ? 'rgba(var(--primary-rgb),0.35)' : 'rgba(var(--primary-rgb),0.25)',
     linkHi:   isDark ? 'rgba(var(--primary-rgb),0.7)' : 'rgba(var(--primary-rgb),0.5)',
-    glow:     '#00e5a0',
+    glow:     '#5B8CFF',
     rootGlow: '#fd79a8',
     label:    isDark ? '#feca57' : '#f39c12',
     text:     isDark ? '#ffffff' : '#0f1729',
@@ -9306,7 +9397,7 @@ function _drawAlgoMerkle(tree, leaves, container) {
         to   { opacity: 1; transform: none; }
       }
       .mk-node.mk-dim { opacity: .22 !important; }
-      path.mk-hi { stroke-width: 3.6px !important; filter: drop-shadow(0 0 5px #00e5a0); }
+      path.mk-hi { stroke-width: 3.6px !important; filter: drop-shadow(0 0 5px #5B8CFF); }
     `;
     document.head.appendChild(style);
   }
@@ -9524,7 +9615,7 @@ function _drawAlgoMerkle(tree, leaves, container) {
     .attr('fill', palette.label)
     .attr('filter', 'url(#mkGlow)')
     .style('opacity', 0)
-    .text('👑 MERKLE ROOT')
+    .text('MERKLE ROOT')
     .transition().delay(80 + maxDepth * 160 + 400).duration(500)
     .style('opacity', 1);
 
@@ -9537,8 +9628,8 @@ function _drawAlgoMerkle(tree, leaves, container) {
   legend.className = 'mk-legend';
   legend.innerHTML =
     '<span><i style="background:#fd79a8"></i>Root</span>'
-    + '<span><i style="background:#00b894"></i>Internal</span>'
-    + '<span><i style="background:#00e5a0"></i>Leaf (model)</span>';
+    + '<span><i style="background:#2F5BEA"></i>Internal</span>'
+    + '<span><i style="background:#5B8CFF"></i>Leaf (model)</span>';
   container.appendChild(legend);
 
   const tools = document.createElement('div');
@@ -9617,14 +9708,14 @@ async function verifyOnChain(modelId, btn) {
     const d   = await res.json();
 
     if (!d.success) {
-      out.innerHTML = `<div class="result-box err" style="margin-top:.5rem;font-size:.82rem;">❌ ${d.error}</div>`;
+      out.innerHTML = `<div class="result-box err" style="margin-top:.5rem;font-size:.82rem;"><svg class="ico ico-bad" aria-hidden="true"><use href="#i-x"/></svg> ${d.error}</div>`;
       return;
     }
 
     if (d.verified) {
       out.innerHTML = `
         <div style="margin-top:.5rem;padding:.8rem 1rem;border-radius:10px;background:rgba(0,184,148,0.1);border:1px solid rgba(0,184,148,0.3);">
-          <div style="font-size:.9rem;font-weight:700;color:var(--success);margin-bottom:.4rem;">✅ ON-CHAIN VERIFIED</div>
+          <div style="font-size:.9rem;font-weight:700;color:var(--success);margin-bottom:.4rem;"><svg class="ico ico-ok" aria-hidden="true"><use href="#i-check"/></svg> ON-CHAIN VERIFIED</div>
           <div style="font-size:.78rem;color:var(--text-muted);">The hash stored in Algorand Smart Contract <strong>App #${d.app_id}</strong> matches the local registry.</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.5rem;">
             <div style="background:var(--fv-wash-2);padding:.5rem;border-radius:6px;">
@@ -9641,12 +9732,12 @@ async function verifyOnChain(modelId, btn) {
     } else if (d.reason === 'not_found') {
       out.innerHTML = `
         <div class="result-box" style="margin-top:.5rem;font-size:.82rem;background:rgba(253,203,110,0.1);border-color:rgba(253,203,110,0.3);">
-          ⚠️ <strong>Not found on-chain</strong> — ${d.message}
+          <svg class="ico ico-warn" aria-hidden="true"><use href="#i-alert"/></svg> <strong>Not found on-chain</strong> — ${d.message}
         </div>`;
     } else {
       out.innerHTML = `
         <div style="margin-top:.5rem;padding:.8rem 1rem;border-radius:10px;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);">
-          <div style="font-size:.9rem;font-weight:700;color:var(--danger);margin-bottom:.4rem;">❌ MISMATCH DETECTED</div>
+          <div style="font-size:.9rem;font-weight:700;color:var(--danger);margin-bottom:.4rem;"><svg class="ico ico-bad" aria-hidden="true"><use href="#i-x"/></svg> MISMATCH DETECTED</div>
           <div style="font-size:.78rem;color:var(--text-muted);">The on-chain hash does NOT match! Possible tampering of local database.</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.5rem;">
             <div style="background:var(--fv-wash-2);padding:.5rem;border-radius:6px;">
@@ -9662,7 +9753,7 @@ async function verifyOnChain(modelId, btn) {
     }
 
   } catch(e) {
-    out.innerHTML = `<div class="result-box err" style="margin-top:.5rem;font-size:.82rem;">❌ ${e.message}</div>`;
+    out.innerHTML = `<div class="result-box err" style="margin-top:.5rem;font-size:.82rem;"><svg class="ico ico-bad" aria-hidden="true"><use href="#i-x"/></svg> ${e.message}</div>`;
   } finally {
     btn.disabled = false;
     btn.innerHTML = origText;
@@ -9689,13 +9780,13 @@ async function loadLedger() {
     }
 
     if (!d.ledger || d.ledger.length === 0) {
-      out.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted);">No transactions found for this wallet.</div>';
+      out.innerHTML = '<div class="empty-state"><span class="empty-icon"><svg class="ico" aria-hidden="true"><use href="#i-ledger"/></svg></span><p>No transactions found for this wallet yet.</p></div>';
       return;
     }
 
     const actionBadge = (action) => {
       const colors = {
-        'registration': 'background:#00e5a0;color:#fff',
+        'registration': 'background:var(--primary);color:var(--primary-ink)',
         'smart-contract': 'background:#2de2c5;color:#0d111e',
         'contract-call': 'background:#fdcb6e;color:#0d111e',
         'transfer': 'background:#636e72;color:#fff',
@@ -9805,6 +9896,8 @@ async function refreshNetworkStats() {
     // Also update the main stats sBlocks card with real round
     const sb = document.getElementById('sBlocks');
     if (sb && d.last_round) sb.textContent = '#' + d.last_round.toLocaleString();
+    const hb = document.getElementById('helpStatBlocks');
+    if (hb && d.last_round) hb.textContent = '#' + d.last_round.toLocaleString();
 
   } catch(e) {
     const dot = document.getElementById('netStatusDot');
@@ -10453,10 +10546,10 @@ async function psExportKey() {
     backup = { schema: 'photoshield/key-backup@1', alg: 'Ed25519', publicKeyHex: k.pkHex,
                privateKeyPkcs8: psB64(await psPkcs8Of(k)), createdAt: new Date().toISOString(), encrypted: false };
   } else {
-    const p1 = prompt('Choose a passphrase for the backup (at least 10 characters):');
+    const p1 = await bvPrompt({ title: 'Encrypt the backup', message: 'Choose a passphrase of at least 10 characters. You will need it to import the key.', placeholder: 'Passphrase', confirmText: 'Continue' });
     if (!p1) return;
     if (p1.length < 10) { toast('error', 'Use at least 10 characters.'); return; }
-    if (prompt('Type the passphrase again:') !== p1) { toast('error', 'Passphrases differ.'); return; }
+    if ((await bvPrompt({ title: 'Confirm the passphrase', message: 'Type the passphrase again.', placeholder: 'Passphrase again', confirmText: 'Encrypt backup' })) !== p1) { toast('error', 'Passphrases differ.'); return; }
     toast('info', 'Encrypting the backup…');
     backup = await psEncryptBackup(k, k.pkHex, p1);
   }
@@ -10471,11 +10564,11 @@ async function psImportKey(input) {
   if (!f) return;
   try {
     const backup = JSON.parse(await f.text());
-    const pass = backup.privateKeyPkcs8 ? '' : prompt('Backup passphrase:');
+    const pass = backup.privateKeyPkcs8 ? '' : await bvPrompt({ title: 'Unlock the backup', message: 'Enter the passphrase you chose when you exported this key.', placeholder: 'Passphrase', confirmText: 'Import key' });
     if (pass === null) return;
     const key = await psDecryptBackup(backup, pass);
     const cur = await psLoadKey();
-    if (cur && cur.pkHex !== key.pkHex && !confirm('Replace the key currently in this browser? Make sure it is backed up.')) return;
+    if (cur && cur.pkHex !== key.pkHex && !(await bvConfirm({ title: 'Replace the current key?', message: 'This browser already holds a different signing key. Make sure it is backed up before you replace it.', confirmText: 'Replace key', danger: true }))) return;
     key.createdAt = backup.createdAt || new Date().toISOString();
     key.backedUp = true;
     await psIdbPut(key);
@@ -10596,7 +10689,7 @@ async function psRegister() {
   if (!_psPrepared) { toast('error', 'Choose the photo (and manifest) first.'); return; }
   const key = await psLoadKey();
   if (!key) { toast('error', 'Create or import a signing key first.'); document.getElementById('psKeyCard').scrollIntoView({ behavior: 'smooth' }); return; }
-  if (!key.backedUp && !confirm('Your signing key is not backed up. If this browser loses it you cannot prove control of this registration later. Continue anyway?')) return;
+  if (!key.backedUp && !(await bvConfirm({ title: 'Your key is not backed up', message: 'If this browser loses it, you cannot prove control of this registration later. Export a backup first, or continue anyway.', confirmText: 'Continue anyway' }))) return;
   const btn = document.getElementById('psRegBtn');
   btn.disabled = true;
   try {
@@ -10724,7 +10817,7 @@ async function psLoadMine() {
   if (!_authUser) { box.innerHTML = '<div class="ps-box">Log in to list your photos.</div>'; return; }
   try {
     const d = await (await apiFetch(`${API}/photo/owner/${encodeURIComponent(_authUser)}`)).json();
-    if (!d.success || !d.photos.length) { box.innerHTML = '<div class="ps-box">No photos registered from this account yet.</div>'; return; }
+    if (!d.success || !d.photos.length) { box.innerHTML = '<div class="empty-state"><span class="empty-icon"><svg class="ico" aria-hidden="true"><use href="#i-shield"/></svg></span><p>No photos registered from this account yet.</p><button class="btn" onclick="psSection(\'register\')">Register a photo</button></div>'; return; }
     box.innerHTML = `<table class="ps-table"><thead><tr><th>Title</th><th>Photo</th><th>Privacy</th><th>Anchor</th><th></th></tr></thead><tbody>${d.photos.map(p => `
       <tr><td>${escapeHtml(p.title || '(restore with manifest)')}</td>
       <td class="ps-mono">${escapeHtml(p.photoId)}${p.cloaked ? ' <span class="ps-pill ps-info">cloaked</span>' : ''}</td>
@@ -11021,6 +11114,138 @@ async function bvLoadLandingStats() {
   }
   bvSyncLandingTheme();
   if (bvIsLandingHash()) bvLoadLandingStats();
+})();
+</script>
+
+<!-- UI pass 1 (CLAUDE.md A16): in-app dialogs, keyboard access, waking-server notice -->
+<script>
+function bvDialog(opts) {
+  opts = opts || {};
+  return new Promise(resolve => {
+    const prev = document.activeElement;
+    const ov = document.createElement('div');
+    ov.className = 'bv-dialog-overlay';
+    ov.innerHTML = `<div class="bv-dialog" role="dialog" aria-modal="true" aria-labelledby="bvDlgTitle">
+      <h3 id="bvDlgTitle"></h3><p id="bvDlgMsg"></p>
+      ${opts.input ? '<input type="password" id="bvDlgInput" autocomplete="new-password">' : ''}
+      <div class="bv-dialog-actions">
+        <button type="button" class="btn btn-sec" id="bvDlgCancel"></button>
+        <button type="button" class="btn${opts.danger ? ' btn-danger' : ''}" id="bvDlgOk"></button>
+      </div></div>`;
+    ov.querySelector('#bvDlgTitle').textContent = opts.title || 'Are you sure?';
+    ov.querySelector('#bvDlgMsg').textContent = opts.message || '';
+    ov.querySelector('#bvDlgCancel').textContent = opts.cancelText || 'Cancel';
+    ov.querySelector('#bvDlgOk').textContent = opts.confirmText || 'OK';
+    const inp = ov.querySelector('#bvDlgInput');
+    if (inp && opts.placeholder) inp.placeholder = opts.placeholder;
+    const done = (v) => { document.removeEventListener('keydown', onKey, true); ov.remove(); if (prev && prev.focus) prev.focus(); resolve(v); };
+    const ok = () => done(inp ? inp.value : true);
+    const cancel = () => done(inp ? null : false);
+    const onKey = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cancel(); }
+      else if (e.key === 'Enter' && (!inp || document.activeElement === inp)) { e.preventDefault(); ok(); }
+      else if (e.key === 'Tab') {                       // keep focus inside the dialog
+        const f = Array.from(ov.querySelectorAll('input,button'));
+        const i = f.indexOf(document.activeElement);
+        if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); }
+        else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+      }
+    };
+    ov.querySelector('#bvDlgOk').onclick = ok;
+    ov.querySelector('#bvDlgCancel').onclick = cancel;
+    ov.addEventListener('mousedown', (e) => { if (e.target === ov) cancel(); });
+    document.addEventListener('keydown', onKey, true);
+    document.body.appendChild(ov);
+    (inp || ov.querySelector(opts.danger ? '#bvDlgCancel' : '#bvDlgOk')).focus();
+  });
+}
+function bvConfirm(opts) { return bvDialog(opts); }
+function bvPrompt(opts) { return bvDialog(Object.assign({ input: true }, opts)); }
+
+// Clickable non-button elements (file drops, cards) become reachable and usable by keyboard.
+(function () {
+  const SEL = 'div[onclick],span[onclick],label.file-drop,.file-drop,.qs-card,.chrome-collapse-head';
+  const prep = (el) => {
+    if (el.dataset.bvKey || el.closest('button,a')) return;
+    el.dataset.bvKey = '1';
+    if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+    if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
+  };
+  const scan = (root) => { if (root.matches && root.matches(SEL)) prep(root); root.querySelectorAll && root.querySelectorAll(SEL).forEach(prep); };
+  scan(document.body);
+  new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1) scan(n); })))
+    .observe(document.body, { childList: true, subtree: true });
+  document.addEventListener('keydown', (e) => {
+    const el = e.target;
+    if (!el || !el.dataset || !el.dataset.bvKey) return;
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }
+  });
+})();
+
+// The free Render backend sleeps; say so instead of "connecting…" forever.
+(function () {
+  const el = document.getElementById('walletAddrShort');
+  if (!el) return;
+  setTimeout(() => {
+    if (el.textContent.trim() !== 'connecting…') return;
+    el.innerHTML = 'server waking up (free tier, up to a minute) · <button type="button" class="btn btn-sec" style="font-size:.72rem;padding:.15rem .5rem;min-height:0;">Retry</button>';
+    el.querySelector('button').onclick = () => { el.textContent = 'connecting…'; if (typeof loadWalletAddressBar === 'function') loadWalletAddressBar(); if (typeof refreshStats === 'function') refreshStats(); };
+  }, 8000);
+})();
+</script>
+
+<!-- UI pass 2 (CLAUDE.md A16): page headers, Photo Shield sections, skeleton fallbacks -->
+<script>
+const BV_PAGES = {
+  register:    ['Models', 'Register a model', 'Fingerprint a model file in your browser and anchor it on Algorand. The file itself never leaves your computer.'],
+  verify:      ['Models', 'Verify a model', 'Re-hash a model file and compare it, layer by layer, with what is anchored on chain.'],
+  compare:     ['Models', 'Compare two models', 'See byte for byte and layer by layer where two model files differ.'],
+  versions:    ['Models', 'Version history', 'Every version of a model, each one anchored and linked to the one before.'],
+  audit:       ['Models', 'Audit trail', 'Every verification ever recorded for a model, with its result and transaction.'],
+  alerts:      ['Models', 'Live alerts', 'Tamper detections and verifications across the network, as they happen.'],
+  models:      ['Models', 'My models', 'Models you registered: verify them, add versions, download reports or change their visibility.'],
+  analytics:   ['Network', 'Analytics', 'Registrations, verification results and chain health across the registry.'],
+  registry:    ['Network', 'Public registry', 'Every public model registered on BlockVerify.'],
+  explorer:    ['Network', 'Chain explorer', 'Algorand Testnet anchors and this server’s local proof-of-work chain.'],
+  proof:       ['Network', 'Chain proof', 'Look up any transaction and check it against the public ledger yourself.'],
+  ledger:      ['Network', 'Ledger', 'Every BlockVerify, FedVerify and Photo Shield anchor written by this server.'],
+  federated:   ['Extensions', 'FedVerify', 'Federated-learning runs whose every round is committed on chain, with poisoned updates caught.'],
+  photoshield: ['Extensions', 'Photo Shield', 'Prove a photo is yours, recognise copies of it, and show where a fake was edited.'],
+  help:        ['Help', 'Help & FAQ', 'Quick start, the guided tour and answers to common questions.'],
+};
+let _bvPageShown = null;
+function bvRenderPageHead() {
+  const el = document.getElementById('bvPageHead');
+  const a = document.querySelector('.sidebar-content .tab-content.active');
+  const id = a ? a.id.replace(/^tab-/, '') : null;
+  if (!el || id === _bvPageShown) return;
+  _bvPageShown = id;
+  const p = BV_PAGES[id];
+  if (!p) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="crumb"></div><h1></h1><p></p>';
+  el.querySelector('.crumb').innerHTML = escapeHtml(p[0]) + ' / <b>' + escapeHtml(p[1]) + '</b>';
+  el.querySelector('h1').textContent = p[1];
+  el.querySelector('p').textContent = p[2];
+}
+function psSection(name) {
+  document.querySelectorAll('#tab-photoshield [data-ps-section]').forEach(c => { c.hidden = c.dataset.psSection !== name; });
+  document.querySelectorAll('#psSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.sec === name)));
+}
+function bvRevealTarget(sel) {
+  const el = sel && document.querySelector(sel);
+  const sec = el && el.closest('[data-ps-section]');
+  if (sec && sec.hidden) psSection(sec.dataset.psSection);
+}
+(function () {
+  const sc = document.querySelector('.sidebar-content');
+  if (sc) new MutationObserver(bvRenderPageHead).observe(sc, { attributes: true, subtree: true, attributeFilter: ['class'] });
+  bvRenderPageHead();
+  psSection('register');
+  // A stat that never arrives (server asleep, ledger unreachable) stops shimmering after a while.
+  setTimeout(() => ['sModels', 'sVerify', 'sBlocks'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e && e.querySelector('.bv-skel')) e.textContent = '—';
+  }), 15000);
 })();
 </script>
 

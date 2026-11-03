@@ -15,6 +15,13 @@ const JPEG = process.env.PS_JPEG || '/tmp/chelsea_q60.jpg';
   page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
   const answers = [];
   page.on('dialog', d => { const a = answers.shift(); a === undefined ? d.accept() : d.accept(a); });
+  // In-app dialogs (bvConfirm / bvPrompt) replaced the browser's confirm()/prompt().
+  const dialogOk = async (value) => {
+    const ov = await page.waitForSelector('.bv-dialog-overlay', { timeout: 15000 });
+    if (value !== undefined) await (await ov.$('#bvDlgInput')).fill(value);
+    await (await ov.$('#bvDlgOk')).click();
+    await page.waitForFunction(el => !el.isConnected, ov);   // this dialog closed (a chained one may already be open)
+  };
   await page.goto('http://localhost:8080/#photoshield');
   await page.evaluate(() => switchTab('photoshield'));
   await page.waitForSelector('#psKeyInfo');
@@ -26,7 +33,8 @@ const JPEG = process.env.PS_JPEG || '/tmp/chelsea_q60.jpg';
   await page.waitForFunction(() => document.getElementById('psRegChecks').textContent.includes('pHash'));
   const phashShown = await page.$eval('#psRegChecks', e => e.textContent);
   const dl = page.waitForEvent('download');
-  await page.click('#psRegBtn');                       // confirm() for the un-backed-up key -> accept
+  await page.click('#psRegBtn');
+  await dialogOk();                                    // the key is not backed up yet: continue anyway
   await page.waitForFunction(() => /ANCHORED|failed|Error|error/.test(document.getElementById('psRegResult').textContent), null, { timeout: 120000 });
   const regText = await page.$eval('#psRegResult', e => e.textContent);
   const manifestDl = await dl;
@@ -43,16 +51,18 @@ const JPEG = process.env.PS_JPEG || '/tmp/chelsea_q60.jpg';
   await page.waitForTimeout(500);
   const ver2 = await page.$eval('#psVerResult', e => e.textContent);
   // export an encrypted backup
-  answers.push('a long passphrase 123', 'a long passphrase 123');
   const dl2 = page.waitForEvent('download');
   await page.click('text=Export backup');
+  await dialogOk('a long passphrase 123');
+  await dialogOk('a long passphrase 123');
   const keyDl = await dl2;
   await page.waitForFunction(() => document.getElementById('psKeyInfo').textContent.includes('exported'));
   const keyPath = require('os').tmpdir() + '/ps-key.json'; await keyDl.saveAs(keyPath);
   // my photos + prove
+  await page.evaluate(() => psSection('mine'));
   await page.waitForFunction(() => document.getElementById('psMine').textContent.includes('Prove'));
   await page.click('#psMine button');
-  await page.waitForSelector('.toast', { timeout: 10000 });
+  await page.waitForFunction(() => [...document.querySelectorAll('.toast')].some(t => /Proved|does not match/.test(t.textContent)), null, { timeout: 15000 });
   const toasts = await page.$$eval('.toast', els => els.map(e => e.textContent));
   await page.screenshot({ path: process.env.PS_SHOT || '/tmp/photoshield_tab.png', fullPage: false });
   // other tabs still fine
