@@ -7,7 +7,6 @@ the same anchoring core, after AI models (BlockVerify) and federated updates (Fe
 - **Threat model:** [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md)
 - **Design spec:** [`../PHOTOSHIELD_DESIGN.md`](../PHOTOSHIELD_DESIGN.md)
 - **API:** [`../docs/API_REFERENCE.md`](../docs/API_REFERENCE.md#photo-shield-apiphoto)
-- **Reuse map and baselines:** [`INVENTORY.md`](INVENTORY.md) · **Deferred work:** [`TODO.md`](TODO.md)
 
 ## Layout
 
