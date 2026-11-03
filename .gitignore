@@ -24,3 +24,8 @@ evaluation/checkpoints/*.safetensors
 fedverify/results/
 photoshield/results/
 fedverify/data/
+
+# Local-only files: assistant instructions, commit planning, raw clinical data (never published)
+CLAUDE.md
+COMMIT_PLAN.md
+/*.xlsx
