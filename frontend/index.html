@@ -517,7 +517,7 @@
     @keyframes toastOut { to { transform: translateX(120%); opacity: 0; } }
     .toast.ok   { border-left: 4px solid var(--success); } .toast.ok::before   { content: '✓'; color: var(--success); font-weight: 800; }
     .toast.err  { border-left: 4px solid var(--danger);  } .toast.err::before  { content: '✕'; color: var(--danger); font-weight: 800; }
-    .toast.info { border-left: 4px solid var(--primary); } .toast.info::before { content: 'ℹ️'; }
+    .toast.info { border-left: 4px solid var(--primary); } .toast.info::before { content: 'i'; }
     .status { display: none !important; }
 
     /* ── Verify result panel ── */
@@ -2347,9 +2347,93 @@
       margin-bottom: .6rem; background: rgba(var(--primary-rgb), .12); color: rgb(var(--primary-light-rgb)); }
     body.light-theme .bv-empty-ico { background: #EDF1FF; color: #2F5BEA; }
     .bv-empty-ico .ico { width: 22px; height: 22px; }
+    /* ── Pass 3 (CLAUDE.md A16): contrast tokens, focus, skip link, search palette, copy buttons, toasts, login ── */
+    :root body { --btc: #F7931A; --ps-derived: #EAB308; --ps-similar: #F97316; }
+    body.light-theme { --btc: #A34F06; --ps-derived: #A16207; --ps-similar: #C2410C; --success-rgb: 8, 112, 76; }
+    :root body .tab { opacity: 1; }
+    :root body .tab:not(.active) { color: var(--text); }
+    :root body a:focus-visible, :root body button:focus-visible, :root body [tabindex]:focus-visible,
+    :root body summary:focus-visible, :root body select:focus-visible {
+      outline: 2px solid rgb(var(--primary-rgb)); outline-offset: 2px; }
+    .bv-skip { position: fixed; left: 12px; top: -60px; z-index: 10100; padding: .6rem 1rem; border-radius: 10px;
+      background: var(--primary); color: var(--primary-ink); font-weight: 600; text-decoration: none; transition: top .15s; }
+    .bv-skip:focus { top: 12px; }
+    #bvMain:focus { outline: none; }
+    .bv-search-btn { min-width: 210px; justify-content: flex-start; gap: .5rem; color: var(--text-muted); }
+    .bv-search-btn .hbtn-tx { display: inline !important; flex: 1; text-align: left; }
+    .bv-kbd, .bv-pal kbd { font-family: var(--mono); font-size: .7rem; border: 1px solid var(--border-strong); border-radius: 6px;
+      padding: .05rem .4rem; color: var(--text-muted); background: var(--bg-1); }
+    @media (max-width: 900px) { .bv-search-btn { min-width: 0; width: 40px; padding: 0; justify-content: center; }
+      .bv-search-btn .hbtn-tx, .bv-search-btn .bv-kbd { display: none !important; } }
+    .bv-pal-overlay { position: fixed; inset: 0; z-index: 10060; background: rgba(5, 8, 14, .55); display: flex;
+      align-items: flex-start; justify-content: center; padding: 12vh 16px 16px; animation: bvFade .12s ease-out; }
+    .bv-pal-overlay[hidden] { display: none; }
+    .bv-pal { width: min(640px, 100%); background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      box-shadow: var(--shadow-3); overflow: hidden; display: flex; flex-direction: column; max-height: 70vh; }
+    .bv-pal-in { display: flex; align-items: center; gap: .6rem; padding: .3rem .9rem; border-bottom: 1px solid var(--border); }
+    .bv-pal-in .ico { color: var(--text-muted); }
+    :root body .bv-pal-in input { flex: 1; border: 0 !important; background: transparent !important; box-shadow: none !important;
+      font-size: 1rem; padding: .85rem 0; outline: none; color: var(--text); }
+    .bv-pal ul { list-style: none; margin: 0; padding: .4rem; overflow-y: auto; }
+    .bv-pal .grp { font-size: .7rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--text-muted);
+      padding: .6rem .7rem .3rem; }
+    .bv-pal .opt { display: flex; align-items: center; gap: .7rem; padding: .6rem .7rem; border-radius: 9px; cursor: pointer; color: var(--text); }
+    .bv-pal .opt .ico { color: var(--text-muted); flex-shrink: 0; }
+    .bv-pal .opt .hint { margin-left: auto; font-size: .78rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; }
+    .bv-pal .opt[aria-selected="true"] { background: rgba(var(--primary-rgb), .14); }
+    body.light-theme .bv-pal .opt[aria-selected="true"] { background: #EDF1FF; }
+    .bv-pal .opt[aria-selected="true"] .ico { color: rgb(var(--primary-light-rgb)); }
+    .bv-pal .none { padding: 1.2rem; text-align: center; color: var(--text-muted); font-size: .9rem; }
+    .bv-pal-foot { border-top: 1px solid var(--border); padding: .5rem .9rem; font-size: .74rem; color: var(--text-muted); display: flex; gap: 1rem; flex-wrap: wrap; }
+    .bv-copy { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; margin-left: .3rem;
+      vertical-align: middle; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--text-muted);
+      cursor: pointer; flex-shrink: 0; padding: 0; }
+    .bv-copy:hover { color: var(--text); border-color: var(--border-strong); }
+    .bv-copy .ico { width: 14px; height: 14px; }
+    .bv-copy.done { color: var(--success); border-color: rgba(var(--success-rgb), .5); }
+    :root body .toast { display: flex; align-items: flex-start; gap: .65rem; background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); border-left: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-3);
+      padding: .75rem .95rem; max-width: 380px; font-size: .88rem; line-height: 1.45; backdrop-filter: none; }
+    :root body .toast::before { flex: 0 0 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center;
+      justify-content: center; font-size: .72rem; font-weight: 800; margin: 0; content: 'i'; color: rgb(var(--primary-light-rgb));
+      background: rgba(var(--primary-rgb), .15); }
+    :root body .toast.ok::before, :root body .toast.success::before { content: '✓'; color: var(--success); background: rgba(var(--success-rgb), .15); }
+    :root body .toast.err::before, :root body .toast.error::before { content: '✕'; color: var(--danger); background: rgba(var(--danger-rgb), .14); }
+    :root body .toast.warn::before { content: '!'; color: var(--warn); background: rgba(var(--warn-rgb), .16); }
+    :root body .toast span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+    :root body .toast[class] { border-left: 1px solid var(--border); }
+    :root body .toast-container { top: 76px; right: 20px; }
+    @media (max-width: 768px) { :root body .toast-container { top: 68px; left: 12px; right: 12px; } }
+    .auth-logo { color: rgb(var(--primary-light-rgb)); }
+    body.light-theme .auth-logo { color: #2F5BEA; }
+    .auth-field { position: relative; }
+    :root body .auth-field input[type="password"], :root body .auth-field input[data-pw] { padding-right: 2.9rem; }
+    .pw-toggle { position: absolute; right: .35rem; bottom: .3rem; width: 36px; height: 36px; border: 0; border-radius: 8px;
+      background: transparent; color: var(--text-muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+    .pw-toggle:hover, .pw-toggle[aria-pressed="true"] { color: var(--text); background: var(--surface2); }
+    .auth-guest { color: var(--text-muted); text-decoration: none; font-size: .85rem; }
+    .auth-guest:hover { color: var(--text); text-decoration: underline; }
+    :root body { --danger-text: #FCA5A5; --success-text: #6EE7B7; }
+    body.light-theme { --danger-text: #B42318; --success-text: #08704C; }
+    :root body .verify-result.invalid .verify-result-header { color: var(--danger-text); background: rgba(var(--danger-rgb), .12); border-bottom-color: rgba(var(--danger-rgb), .25); }
+    :root body .verify-result.valid .verify-result-header { color: var(--success-text); }
+    :root body .tour-kbd { opacity: 1; }
+    :root body .tour-kbd kbd { color: var(--text-muted); }
+    #tab-photoshield .ps-sel { width: 100%; max-width: 100%; text-overflow: ellipsis; }
+    body.light-theme .hash-neutral { background: var(--bg-1); color: #92400E; }
+    :root body { --genesis-ink: #F6D860; --accent-ink: rgb(var(--primary-light-rgb)); }
+    body.light-theme { --genesis-ink: #854D0E; --accent-ink: #1D3FB8; }
+    :root body:not(.light-theme) .btn-danger { color: #2A0707; }
+    body.light-theme .badge-warn { color: #92400E; }
+    :root body .modal-tx-type.register { color: var(--accent-ink); }
+    :root body .modal-tx-type.genesis { color: var(--genesis-ink); }
+    body.light-theme .modal-tx-type.add_version { color: #92400E; }
+    :root body:not(.light-theme) .css3d-block:not(.genesis) .css3d-face { color: rgb(var(--primary-light-rgb)) !important; }
+    .css3d-block:focus-visible { outline: 2px solid rgb(var(--primary-rgb)); outline-offset: 6px; border-radius: 8px; }
   </style>
 </head>
 <body>
+<a class="bv-skip" href="#bvMain" onclick="event.preventDefault();var m=document.getElementById('bvMain');if(m){m.focus();m.scrollIntoView();}">Skip to content</a>
 <script>/* landing route before first paint (CLAUDE.md A16) */(function(){var h=location.hash;if(!h||h==='#'||h==='#home')document.body.classList.add('landing-mode');})();</script>
 <canvas id="bg-canvas"></canvas>
 
@@ -2400,6 +2484,7 @@
   <symbol id="i-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8M17 6l3 3M14.5 8.5l2 2"/></symbol>
   <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
   <symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="i-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M21 3l-9 9M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6"/></symbol>
 </svg>
 
@@ -2566,7 +2651,8 @@
     <span class="logo-word">Block<span>Verify</span></span>
   </div>
   <div class="user-box">
-    <button class="hbtn hbtn-icon" onclick="toggleTheme()" id="themeToggle" title="Toggle theme"><svg class="ico"><use href="#i-sun"/></svg></button>
+    <button type="button" class="hbtn bv-search-btn" id="bvSearchBtn" onclick="bvPaletteOpen()" aria-label="Search and jump to anything (Ctrl+K)"><svg class="ico" aria-hidden="true"><use href="#i-search"/></svg><span class="hbtn-tx">Search</span><kbd class="bv-kbd" id="bvSearchKbd">Ctrl K</kbd></button>
+    <button class="hbtn hbtn-icon" onclick="toggleTheme()" id="themeToggle" title="Toggle theme" aria-label="Toggle light or dark theme"><svg class="ico"><use href="#i-sun"/></svg></button>
     <!-- Shown when logged OUT -->
     <div id="headerLoggedOut" style="display:flex;align-items:center;gap:.5rem;">
       <button class="btn-login-header" onclick="openAuthModal('login')"><svg class="ico"><use href="#i-lock"/></svg> Login / Register</button>
@@ -2577,9 +2663,9 @@
         <div class="avatar" id="userAvatar">?</div>
         <span id="userLabel">—</span>
       </div>
-      <button class="hbtn" onclick="startGuidedTour()" title="Interactive Tour"><svg class="ico"><use href="#i-compass"/></svg><span class="hbtn-tx">Tour</span></button>
-      <button class="hbtn" onclick="showWelcome()" title="Quick start guide"><svg class="ico"><use href="#i-help"/></svg><span class="hbtn-tx">Help</span></button>
-      <button class="hbtn hbtn-icon btn-logout" onclick="logout()" title="Logout"><svg class="ico"><use href="#i-logout"/></svg></button>
+      <button class="hbtn" onclick="startGuidedTour()" title="Interactive Tour" aria-label="Start the guided tour"><svg class="ico"><use href="#i-compass"/></svg><span class="hbtn-tx">Tour</span></button>
+      <button class="hbtn" onclick="showWelcome()" title="Quick start guide" aria-label="Quick start guide"><svg class="ico"><use href="#i-help"/></svg><span class="hbtn-tx">Help</span></button>
+      <button class="hbtn hbtn-icon btn-logout" onclick="logout()" title="Log out" aria-label="Log out"><svg class="ico"><use href="#i-logout"/></svg></button>
     </div>
   </div>
 </header>
@@ -2615,7 +2701,7 @@
       <div class="sidebar-label">Help</div>
       <button class="tab" onclick="switchTab('help',this)"><span class="tab-icon"><svg class="ico"><use href="#i-help"/></svg></span><span class="tab-label">Help & FAQ</span></button>
     </nav>
-    <div class="sidebar-content">
+    <div class="sidebar-content" id="bvMain" role="main" tabindex="-1">
   <header class="page-head" id="bvPageHead" aria-live="polite"></header>
   <div class="app-overview">
   <!-- Stats -->
@@ -2668,7 +2754,7 @@
     </div>
     <div id="feedPanel" style="max-height:0;overflow:hidden;transition:max-height .4s cubic-bezier(0.4,0,0.2,1);">
       <div id="feedList" style="padding:.5rem .8rem .8rem;max-height:260px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;">
-        <div class="bv-skel-rows" aria-label="Loading activity"><span class="bv-skel"></span><span class="bv-skel"></span><span class="bv-skel"></span></div>
+        <div class="bv-skel-rows" role="status" aria-label="Loading activity"><span class="bv-skel"></span><span class="bv-skel"></span><span class="bv-skel"></span></div>
       </div>
     </div>
   </div>
@@ -3045,7 +3131,7 @@
 
       <div style="margin-top:1.4rem;border-top:1px solid var(--border);padding-top:1.2rem;">
         <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:.8rem;display:flex;align-items:center;gap:.4rem;"><svg class="ico" style="width:1em;height:1em;color:var(--primary);"><use href="#i-proof"/></svg> Smart Contract Registry</div>
-        <div id="contractInfo" style="font-size:.88rem;color:var(--text-muted);"><div class="bv-skel-rows" aria-label="Loading contract info"><span class="bv-skel"></span><span class="bv-skel"></span></div></div>
+        <div id="contractInfo" style="font-size:.88rem;color:var(--text-muted);"><div class="bv-skel-rows" role="status" aria-label="Loading contract info"><span class="bv-skel"></span><span class="bv-skel"></span></div></div>
       </div>
     </div>
 
@@ -3053,7 +3139,7 @@
     <div class="card" style="margin-top:1rem;">
       <h2><span class="card-title-ico"><svg class="ico"><use href="#i-wallet"/></svg></span> Server Wallet — Algorand Testnet</h2>
       <p class="subtitle">Live account stats for the BlockVerify server wallet that signs every transaction.</p>
-      <div id="walletInfo" style="min-height:60px;"><div class="bv-skel-rows" aria-label="Loading wallet"><span class="bv-skel"></span><span class="bv-skel"></span></div></div>
+      <div id="walletInfo" style="min-height:60px;"><div class="bv-skel-rows" role="status" aria-label="Loading wallet"><span class="bv-skel"></span><span class="bv-skel"></span></div></div>
     </div>
 
     <!-- Live Algorand Network Stats -->
@@ -3131,14 +3217,14 @@
     btcCard.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.8rem;">
         <div>
-          <h2 style="margin:0;color:#f7931a;display:flex;align-items:center;gap:.55rem;"><span class="card-title-ico" style="background:rgba(247,147,26,.12);border-color:rgba(247,147,26,.3);color:#f7931a;"><svg class="ico"><use href="#i-btc"/></svg></span> Bitcoin L1 Settlement</h2>
+          <h2 style="margin:0;color:var(--btc);display:flex;align-items:center;gap:.55rem;"><span class="card-title-ico" style="background:rgba(247,147,26,.12);border-color:rgba(247,147,26,.3);color:var(--btc);"><svg class="ico"><use href="#i-btc"/></svg></span> Bitcoin L1 Settlement</h2>
           <p class="subtitle" style="margin-top:.3rem;">
             Anchor the Algorand Merkle Root to <strong>Bitcoin Testnet</strong> via an
-            <code style="font-size:.75rem;color:#f7931a;">OP_RETURN</code> transaction — the same mechanism
+            <code style="font-size:.75rem;color:var(--btc);">OP_RETURN</code> transaction — the same mechanism
             used by Lightning Network and Rollups for L1 finality.
           </p>
         </div>
-        <div id="btcWalletBadge" style="font-size:.75rem;background:rgba(247,147,26,.1);border:1px solid rgba(247,147,26,.35);border-radius:8px;padding:.4rem .8rem;color:#f7931a;">
+        <div id="btcWalletBadge" style="font-size:.75rem;background:rgba(247,147,26,.1);border:1px solid rgba(247,147,26,.35);border-radius:8px;padding:.4rem .8rem;color:var(--btc);">
           <span class="bv-dot bv-dot-warn" aria-hidden="true"></span> Loading wallet…
         </div>
       </div>
@@ -3152,8 +3238,8 @@
         </div>
         <div style="font-size:1.4rem;color:var(--text-muted);">→</div>
         <div style="background:rgba(247,147,26,.08);border:1px solid rgba(247,147,26,.35);border-radius:8px;padding:.6rem;">
-          <div style="color:#f7931a;"><svg class="ico" style="width:1.3em;height:1.3em;"><use href="#i-btc"/></svg></div>
-          <div style="font-weight:700;color:#f7931a;">Bitcoin Testnet3</div>
+          <div style="color:var(--btc);"><svg class="ico" style="width:1.3em;height:1.3em;"><use href="#i-btc"/></svg></div>
+          <div style="font-weight:700;color:var(--btc);">Bitcoin Testnet3</div>
           <div style="color:var(--text-muted);">L1 settlement layer<br>Merkle Root batch anchor</div>
         </div>
       </div>
@@ -3191,7 +3277,7 @@
           <p class="subtitle" style="margin-top:.3rem;">Every blockchain transaction made by the BlockVerify server wallet — fetched live from the Algorand Indexer.</p>
         </div>
         <div style="display:flex;gap:.5rem;align-items:center;">
-          <select id="ledgerLimit" onchange="loadLedger()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:.4rem .6rem;font-size:.78rem;">
+          <select id="ledgerLimit" aria-label="Number of transactions to show" onchange="loadLedger()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:.4rem .6rem;font-size:.78rem;">
             <option value="10">Last 10</option>
             <option value="25" selected>Last 25</option>
             <option value="50">Last 50</option>
@@ -3214,7 +3300,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem;">
         <h2 style="margin:0;"><span class="card-title-ico"><svg class="ico"><use href="#i-globe"/></svg></span> Federated Learning</h2>
         <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
-          <select id="flRunSelect" onchange="loadFlRun()" style="background:var(--surface-solid);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.8rem;min-width:300px;"></select>
+          <select id="flRunSelect" aria-label="Federated run" onchange="loadFlRun()" style="background:var(--surface-solid);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;font-size:.8rem;min-width:300px;"></select>
           <button class="btn btn-sec" style="font-size:.76rem;padding:.4rem .8rem;display:inline-flex;align-items:center;gap:.35rem;" onclick="loadFederated()"><svg class="ico"><use href="#i-refresh"/></svg> Refresh</button>
           <button class="btn btn-sec" style="font-size:.76rem;padding:.4rem .8rem;" onclick="flToggleCompare()" id="flCmpBtn">Compare runs</button>
           <button class="btn btn-sec" style="font-size:.76rem;padding:.4rem .8rem;" onclick="flToggleHelp()" id="flHelpBtn">What is this?</button>
@@ -3368,8 +3454,8 @@
     <style>
       .ps-row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
       .ps-pill{display:inline-block;padding:.18rem .55rem;border-radius:999px;font-size:.72rem;font-weight:700;border:1px solid var(--border);color:var(--text-muted)}
-      .ps-ok{color:#22c55e;border-color:rgba(34,197,94,.45)} .ps-bad{color:#ef4444;border-color:rgba(239,68,68,.45)}
-      .ps-warn{color:#eab308;border-color:rgba(234,179,8,.45)} .ps-info{color:var(--viz-a);border-color:rgba(var(--viz-a-rgb),.45)}
+      .ps-ok{color:var(--success);border-color:rgba(var(--success-rgb),.45)} .ps-bad{color:var(--danger);border-color:rgba(var(--danger-rgb),.45)}
+      .ps-warn{color:var(--warn);border-color:rgba(var(--warn-rgb),.45)} .ps-info{color:var(--viz-a);border-color:rgba(var(--viz-a-rgb),.45)}
       .ps-box{border:1px solid var(--border);border-radius:10px;padding:.8rem 1rem;font-size:.82rem;line-height:1.6;background:rgba(255,255,255,.02)}
       .ps-mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.74rem;word-break:break-all}
       .ps-banner{border:1px solid rgba(234,179,8,.5);background:rgba(234,179,8,.08);color:var(--text);border-radius:10px;padding:.7rem .9rem;font-size:.8rem;margin-top:.7rem}
@@ -3440,8 +3526,8 @@
       </div>
       <input type="file" id="psRegFiles" multiple accept="image/*,.json,application/json" style="display:none" onchange="psRegFilesChosen(this)">
       <div id="psRegChecks" style="margin-top:.6rem;"></div>
-      <div class="fg" style="margin-top:.6rem;"><label>Title</label><input type="text" id="psTitle" maxlength="120" placeholder="e.g. Profile photo, November 2026"></div>
-      <div class="fg"><label>Privacy</label>
+      <div class="fg" style="margin-top:.6rem;"><label>Title</label><input type="text" id="psTitle" aria-label="Title" maxlength="120" placeholder="e.g. Profile photo, November 2026"></div>
+      <div class="fg"><label for="psPrivacy">Privacy</label>
         <select id="psPrivacy" class="ps-sel">
           <option value="full">Full: pHash on chain (copies still recognised after a server restart)</option>
           <option value="hash-only">Hash-only: no pHash on chain (after a restart only exact copies match, unless you re-attach your manifest)</option>
@@ -3791,48 +3877,51 @@
 <!-- Auth Modal -->
 <div class="auth-overlay" id="authModal">
   <div class="auth-box">
-    <div class="auth-logo"><span class="logo-badge"><svg class="ico"><use href="#i-lock"/></svg></span></div>
-    <div class="auth-title" id="authModalTitle">Welcome Back</div>
-    <div class="auth-sub" id="authModalSub">Sign in to register and verify AI models on the blockchain.</div>
+    <div class="auth-logo"><svg class="bv-mark" style="width:40px;height:40px;" viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="7" stroke="currentColor" stroke-width="2"/><path d="M8 14.5l4 4 8-9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="auth-title" id="authModalTitle">Sign in to BlockVerify</div>
+    <div class="auth-sub" id="authModalSub">Register models and photos, and keep track of everything you anchored.</div>
     <div class="auth-tabs">
-      <button class="auth-tab active" id="authTabLogin" onclick="switchAuthTab('login')">Login</button>
-      <button class="auth-tab" id="authTabRegister" onclick="switchAuthTab('register')">Register</button>
+      <button class="auth-tab active" id="authTabLogin" onclick="switchAuthTab('login')">Sign in</button>
+      <button class="auth-tab" id="authTabRegister" onclick="switchAuthTab('register')">Create account</button>
     </div>
 
     <!-- Login form -->
     <form class="auth-form active" id="authFormLogin" onsubmit="event.preventDefault();doLogin()">
       <div class="auth-field">
-        <label>Username</label>
+        <label for="loginUsername">Username</label>
         <input type="text" id="loginUsername" placeholder="your username" autocomplete="username" />
       </div>
       <div class="auth-field">
-        <label>Password</label>
+        <label for="loginPassword">Password</label>
         <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" />
+        <button type="button" class="pw-toggle" aria-label="Show password" aria-pressed="false" onclick="bvTogglePw(this, 'loginPassword')"><svg class="ico" aria-hidden="true"><use href="#i-eye"/></svg></button>
       </div>
       <div class="auth-err" id="loginErr"></div>
-      <button class="auth-submit" id="loginBtn" type="submit">Login →</button>
-      <div class="auth-divider">Don't have an account? <a href="#" style="color:var(--primary);" onclick="event.preventDefault();switchAuthTab('register')">Register here</a></div>
-      <div class="auth-divider" style="margin-top: .6rem;"><a href="#" style="color:var(--text-muted); text-decoration: underline;" onclick="event.preventDefault();closeAuthModal()">Explore as Guest (Limited Features)</a></div>
+      <button class="auth-submit" id="loginBtn" type="submit">Sign in</button>
+      <div class="auth-divider">New here? <a href="#" style="color:rgb(var(--primary-light-rgb));" onclick="event.preventDefault();switchAuthTab('register')">Create an account</a></div>
+      <div class="auth-divider" style="margin-top: .6rem;"><a href="#" class="auth-guest" onclick="event.preventDefault();closeAuthModal()">Continue as a guest (read-only)</a></div>
     </form>
 
     <!-- Register form -->
     <form class="auth-form" id="authFormRegister" onsubmit="event.preventDefault();doRegister()">
       <div class="auth-field">
-        <label>Username <span style="color:var(--text-muted);font-weight:400;">(3–32 chars, letters/numbers/-/_)</span></label>
+        <label for="regUsername">Username <span style="color:var(--text-muted);font-weight:400;">(3–32 chars, letters/numbers/-/_)</span></label>
         <input type="text" id="regUsername" placeholder="choose a username" autocomplete="username" />
       </div>
       <div class="auth-field">
-        <label>Password <span style="color:var(--text-muted);font-weight:400;">(min 6 characters)</span></label>
+        <label for="regPassword">Password <span style="color:var(--text-muted);font-weight:400;">(min 6 characters)</span></label>
         <input type="password" id="regPassword" placeholder="••••••••" autocomplete="new-password" />
+        <button type="button" class="pw-toggle" aria-label="Show password" aria-pressed="false" onclick="bvTogglePw(this, 'regPassword')"><svg class="ico" aria-hidden="true"><use href="#i-eye"/></svg></button>
       </div>
       <div class="auth-field">
-        <label>Confirm Password</label>
+        <label for="regConfirm">Confirm password</label>
         <input type="password" id="regConfirm" placeholder="••••••••" autocomplete="new-password" />
+        <button type="button" class="pw-toggle" aria-label="Show password" aria-pressed="false" onclick="bvTogglePw(this, 'regConfirm')"><svg class="ico" aria-hidden="true"><use href="#i-eye"/></svg></button>
       </div>
       <div class="auth-err" id="registerErr"></div>
-      <button class="auth-submit" id="registerBtn" type="submit">Create Account →</button>
-      <div class="auth-divider">Already have an account? <a href="#" style="color:var(--primary);" onclick="event.preventDefault();switchAuthTab('login')">Login here</a></div>
-      <div class="auth-divider" style="margin-top: .6rem;"><a href="#" style="color:var(--text-muted); text-decoration: underline;" onclick="event.preventDefault();closeAuthModal()">Explore as Guest (Limited Features)</a></div>
+      <button class="auth-submit" id="registerBtn" type="submit">Create account</button>
+      <div class="auth-divider">Already have an account? <a href="#" style="color:rgb(var(--primary-light-rgb));" onclick="event.preventDefault();switchAuthTab('login')">Sign in</a></div>
+      <div class="auth-divider" style="margin-top: .6rem;"><a href="#" class="auth-guest" onclick="event.preventDefault();closeAuthModal()">Continue as a guest (read-only)</a></div>
     </form>
   </div>
 </div>
@@ -3846,6 +3935,17 @@ const hashes = {};
 function bvTok(name, fallback) {
   try { const v = getComputedStyle(document.body).getPropertyValue(name).trim(); return v || fallback || ''; }
   catch (e) { return fallback || ''; }
+}
+// Chart helpers live here, not in the pass-3 script, because charts can draw before that script runs (a direct /#analytics load).
+function bvChartGrid() { return document.body.classList.contains('light-theme') ? 'rgba(15,22,38,0.08)' : 'rgba(255,255,255,0.08)'; }
+function bvChartUnavailable(canvas) {
+  if (!canvas || !canvas.parentElement || canvas.parentElement.querySelector('.bv-chart-off')) return;
+  canvas.style.display = 'none';
+  const m = document.createElement('div');
+  m.className = 'bv-chart-off';
+  m.style.cssText = 'display:flex;align-items:center;justify-content:center;height:100%;min-height:120px;color:var(--text-muted);font-size:.85rem;text-align:center;padding:1rem;';
+  m.textContent = 'Charts could not load: the chart library is blocked or offline. The figures on this page are unaffected.';
+  canvas.parentElement.appendChild(m);
 }
 const layerHashesMap = {};
 const layerDataMap = {};   // raw per-layer weight arrays — stays client-side, used for forensic analysis
@@ -3929,11 +4029,11 @@ function switchAuthTab(tab) {
     document.getElementById('authForm' + cap(t)).classList.toggle('active', t === tab);
   });
   if (tab === 'login') {
-    document.getElementById('authModalTitle').textContent = 'Welcome Back';
-    document.getElementById('authModalSub').textContent   = 'Sign in to register and verify AI models.';
+    document.getElementById('authModalTitle').textContent = 'Sign in to BlockVerify';
+    document.getElementById('authModalSub').textContent   = 'Register models and photos, and keep track of everything you anchored.';
   } else {
-    document.getElementById('authModalTitle').textContent = 'Create Account';
-    document.getElementById('authModalSub').textContent   = 'Free and instant — no email required.';
+    document.getElementById('authModalTitle').textContent = 'Create your account';
+    document.getElementById('authModalSub').textContent   = 'Free and instant. No email needed.';
   }
 }
 
@@ -3969,7 +4069,7 @@ async function doLogin() {
     toast('ok', `Welcome back, ${d.username}!`);
     refreshStats(); loadWalletAddressBar();
   } catch(e) { _showAuthErr('loginErr', 'Network error. Is the backend running?'); }
-  finally { _setAuthLoading('loginBtn', false, 'Login →'); }
+  finally { _setAuthLoading('loginBtn', false, 'Sign in'); }
 }
 
 async function doRegister() {
@@ -3994,7 +4094,7 @@ async function doRegister() {
     toast('ok', `Account created. Welcome, ${d.username}!`);
     refreshStats();
   } catch(e) { _showAuthErr('registerErr', 'Network error. Is the backend running?'); }
-  finally { _setAuthLoading('registerBtn', false, 'Create Account →'); }
+  finally { _setAuthLoading('registerBtn', false, 'Create account'); }
 }
 
 function logout() {
@@ -4074,7 +4174,8 @@ function switchTab(name, btn) {
   if (name === 'explorer') loadChain();
   if (name === 'models')   loadMyModels();
   if (name === 'registry') loadRegistry();
-  if (name === 'ledger')   loadLedger();
+  if (name === 'ledger')   (typeof loadLedger === 'function' ? loadLedger()   // defined in a later script: a direct /#ledger load waits for it
+                            : window.addEventListener('DOMContentLoaded', () => loadLedger(), { once: true }));
   if (name === 'alerts' && typeof markAlertsRead === 'function') markAlertsRead();
   if (name === 'analytics' && typeof loadAnalytics === 'function') loadAnalytics();
   if (name === 'federated' && typeof loadFederated === 'function') { loadFederated(); flVizInit(); }
@@ -4566,8 +4667,8 @@ async function verifyModel() {
           ` : ''}
 
           <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.05);">
-            <button class="btn btn-sec" style="width:100%;font-size:.8rem;padding:.5rem;border-color:#bb86fc;color:#bb86fc;" onclick='runZkProof()'>
-              Generate zk-SNARK Execution Proof <span style="font-size:.65rem;opacity:.8;font-weight:700;letter-spacing:.04em;">SIMULATION</span>
+            <button class="btn btn-sec" style="width:100%;font-size:.8rem;padding:.5rem;border-color:var(--viz-b);color:var(--viz-b);" onclick='runZkProof()'>
+              Generate zk-SNARK Execution Proof <span style="font-size:.65rem;font-weight:700;letter-spacing:.04em;">SIMULATION</span>
             </button>
             <div id="zkProofTerminal" style="display:none;margin-top:1rem;background:#050505;border:1px solid #333;border-radius:8px;padding:1rem;font-family:var(--mono);font-size:.75rem;min-height:150px;max-height:300px;overflow-y:auto;">
             </div>
@@ -5291,8 +5392,8 @@ function renderFlStats(meta, lineage){
 }
 
 function _fvLight(){ return document.body.classList.contains('light-theme'); }
-function _fvGrid(){ return _fvLight() ? 'rgba(15,23,42,.08)' : 'rgba(255,255,255,.05)'; }
-function _fvTick(){ return _fvLight() ? '#5a677d' : '#9aa3bd'; }
+function _fvGrid(){ return bvChartGrid(); }
+function _fvTick(){ return bvTok('--text-muted', '#9AA4B8'); }
 
 function renderFlAccuracy(lineage){
   const pts = lineage.filter(r => r.metrics && r.metrics.test_acc != null);
@@ -5307,7 +5408,7 @@ function renderFlAccuracy(lineage){
     ds.push({label:'macro-F1', data: pts.map(r => r.metrics.macro_f1==null?null:+(100*r.metrics.macro_f1).toFixed(2)),
              borderColor:bvTok('--viz-b', '#A78BFA'), backgroundColor:`rgba(${bvTok('--viz-b-rgb', '167,139,250')},.10)`, fill:false, tension:.3});
   if (typeof Chart === 'undefined') {
-    empty.textContent = 'Chart library unavailable (CDN blocked) — the numbers below are unaffected.';
+    empty.textContent = 'Charts could not load: the chart library is blocked or offline. The figures on this page are unaffected.';
     empty.style.display = 'block'; cv.style.display = 'none';
     return;
   }
@@ -5532,7 +5633,7 @@ function renderFlCmpChart(A, B, mA, mB){
   const empty = document.getElementById('flCmpChartEmpty');
   if(_flCmpChart){ _flCmpChart.destroy(); _flCmpChart = null; }
   if(typeof Chart === 'undefined'){
-    empty.textContent = 'Chart library unavailable (CDN blocked) — the table below is unaffected.';
+    empty.textContent = 'Charts could not load: the chart library is blocked or offline. The figures on this page are unaffected.';
     empty.style.display = 'block'; cv.style.display = 'none'; return;
   }
   const pts = l => l.filter(r => r.metrics && r.metrics.test_acc != null);
@@ -5563,7 +5664,7 @@ function renderFlCmpGrids(A, B, mA, mB){
     document.getElementById(el).innerHTML =
       `<span class="fl-cmp-dot" style="background:${colour};"></span>`
       + `<span>${tag} · ${escapeHtml(_cmpName(m))}</span>`
-      + (det === false ? `<span style="font-size:.66rem;color:#eab308;font-weight:600;">not a detector</span>` : '');
+      + (det === false ? `<span style="font-size:.66rem;color:var(--warn);font-weight:600;">not a detector</span>` : '');
   };
   head('flCmpHeadA', bvTok('--viz-a', '#5B8CFF'), 'A', mA, mA.detector);
   head('flCmpHeadB', bvTok('--viz-b', '#A78BFA'), 'B', mB, mB.detector);
@@ -6438,6 +6539,10 @@ function build3DChain(blocks) {
     blockDiv.title = `Block #${b.index}\nNonce: ${b.nonce}\nTxns: ${b.transactions.length}`;
     blockDiv.style.cssText = `filter:drop-shadow(0 0 12px ${glow});`;
     blockDiv.onclick = () => openBlockModal(b.index);
+    blockDiv.tabIndex = 0;
+    blockDiv.setAttribute('role', 'button');
+    blockDiv.setAttribute('aria-label', `Block ${b.index}${isGenesis ? ' (genesis)' : ''}: open details`);
+    blockDiv.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBlockModal(b.index); } };
 
     const cube = document.createElement('div');
     cube.className = 'css3d-cube';
@@ -6662,7 +6767,7 @@ function openBlockModal(blockIndex) {
       </div>`;
   }).join('');
 
-  const badgeColor = isGenesis ? '#f6d860' : 'var(--primary)';
+  const badgeColor = isGenesis ? 'var(--genesis-ink)' : 'var(--accent-ink)';
   document.getElementById('modalTitle').innerHTML =
     `<svg class="ico" style="color:var(--primary);"><use href="#i-cube"/></svg> Block #${b.index}
      <span style="font-size:.75rem;font-weight:600;padding:.15rem .55rem;border-radius:20px;
@@ -7057,6 +7162,7 @@ let _activeDays = 14;
 async function loadActivityChart(days = 14) {
   if (typeof Chart === 'undefined') {
     console.warn('Chart.js failed to load (CDN blocked?) — activity chart skipped');
+    bvChartUnavailable(document.getElementById('activityChart'));
     return;
   }
   _activeDays = days;
@@ -7076,8 +7182,8 @@ async function loadActivityChart(days = 14) {
     if (_chartInstance) { _chartInstance.destroy(); _chartInstance = null; }
 
     const isDark = !document.body.classList.contains('light-theme');
-    const gridColor  = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.06)';
-    const labelColor = isDark ? '#8e9bb0' : '#64748b';
+    const gridColor  = bvChartGrid();
+    const labelColor = bvTok('--text-muted', '#9AA4B8');
 
     _chartInstance = new Chart(ctx, {
       type: 'bar',
@@ -7087,16 +7193,16 @@ async function loadActivityChart(days = 14) {
           {
             label: 'Registrations',
             data: d.registrations,
-            backgroundColor: 'rgba(124, 58, 237, 0.9)',
-            borderColor: '#7c3aed',
+            backgroundColor: `rgba(${bvTok('--viz-a-rgb', '91,140,255')},0.85)`,
+            borderColor: bvTok('--viz-a', '#5B8CFF'),
             borderWidth: 1.5,
             borderRadius: 5,
           },
           {
             label: 'Verifications',
             data: d.verifications,
-            backgroundColor: 'rgba(135, 206, 250, 0.35)',
-            borderColor: '#87cefa',
+            backgroundColor: `rgba(${bvTok('--viz-b-rgb', '167,139,250')},0.35)`,
+            borderColor: bvTok('--viz-b', '#A78BFA'),
             borderWidth: 1.5,
             borderRadius: 5,
             type: 'bar',
@@ -7112,9 +7218,9 @@ async function loadActivityChart(days = 14) {
         plugins: {
           legend: { labels: { color: labelColor, font: { size: 12 }, boxWidth: 14 } },
           tooltip: {
-            backgroundColor: isDark ? 'rgba(15,20,32,0.95)' : 'rgba(255,255,255,0.96)',
-            titleColor: isDark ? '#e8eaf0' : '#1e293b',
-            bodyColor:  isDark ? '#8e9bb0' : '#64748b',
+            backgroundColor: bvTok('--surface', '#111623'),
+            titleColor: bvTok('--text', '#E8ECF4'),
+            bodyColor:  bvTok('--text-muted', '#9AA4B8'),
             borderColor: 'rgba(var(--primary-rgb),0.4)',
             borderWidth: 1,
             padding: 10,
@@ -7541,9 +7647,9 @@ function _anRGB(name, fallback) {
 }
 function _anTip(isDark, rgb) {
   return {
-    backgroundColor: isDark ? 'rgba(10,14,21,0.96)' : 'rgba(255,255,255,0.97)',
-    titleColor: isDark ? '#eef2f8' : '#0f1729',
-    bodyColor: isDark ? '#9aa6b8' : '#475569',
+    backgroundColor: bvTok('--surface', '#111623'),
+    titleColor: bvTok('--text', '#E8ECF4'),
+    bodyColor: bvTok('--text-muted', '#9AA4B8'),
     borderColor: `rgba(${rgb},0.5)`, borderWidth: 1, padding: 10, cornerRadius: 8,
   };
 }
@@ -7557,16 +7663,16 @@ async function loadAnalytics() {
     console.warn('Chart.js failed to load (CDN blocked?) — analytics charts skipped');
     ['anPieEmpty','anBarEmpty'].forEach(id => {
       const e = document.getElementById(id);
-      if (e) { e.textContent = 'Chart library unavailable (CDN blocked).'; e.style.display = 'flex'; }
+      if (e) { e.textContent = 'Charts could not load: the chart library is blocked or offline. The figures on this page are unaffected.'; e.style.display = 'flex'; }
     });
     return;
   }
   if (typeof Chart === 'undefined') return;
   const isDark = !document.body.classList.contains('light-theme');
-  const grid = isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.07)';
-  const lbl = isDark ? '#9aa6b8' : '#64748b';
+  const grid = bvChartGrid();
+  const lbl = bvTok('--text-muted', '#9AA4B8');
   const P = {
-    cyan: '34,211,238', violet: '139,124,255',
+    cyan: _anRGB('--viz-a-rgb', '91,140,255'), violet: _anRGB('--viz-b-rgb', '167,139,250'),
     green: _anRGB('--success-rgb', '45,226,197'), primary: _anRGB('--primary-rgb', '91,140,255'),
     red: _anRGB('--danger-rgb', '255,107,107'), amber: _anRGB('--warn-rgb', '254,202,87'),
     blue: _anRGB('--accent-rgb', '91,140,255'),
@@ -8274,7 +8380,7 @@ setInterval(refreshStats, 5000);
   </div>
 </div>
 
-<div id="bv-tip" role="tooltip" aria-live="polite"></div>
+<div id="bv-tip" role="tooltip" aria-hidden="true"></div>
 <script>
 (function() {
   const tip   = document.getElementById('bv-tip');
@@ -9197,7 +9303,7 @@ async function loadAlgoMerkle() {
 
   infoEl.textContent = '⏳ Building Merkle tree from registered model hashes...';
   rootEl.style.display = 'none';
-  svgEl.innerHTML = '<div class="bv-skel-rows" style="padding:1.5rem;" aria-label="Loading"><span class="bv-skel"></span><span class="bv-skel"></span><span class="bv-skel"></span></div>';
+  svgEl.innerHTML = '<div class="bv-skel-rows" style="padding:1.5rem;" role="status" aria-label="Loading"><span class="bv-skel"></span><span class="bv-skel"></span><span class="bv-skel"></span></div>';
 
   try {
     const res = await fetch(`${API}/algo/merkle`);
@@ -9242,7 +9348,7 @@ function loadBtcWalletBadge() {
   fetch(`${API}/bitcoin/wallet`, { credentials: 'include' })
     .then(r => r.json()).then(d => {
       if (d.success) {
-        badge.innerHTML = `<span class="bv-dot bv-dot-ok" aria-hidden="true"></span> BTC Wallet: <strong>${Number(d.btc).toFixed(6)} tBTC</strong> &nbsp;<a href="${escapeHtml(d.explorer || '#')}" target="_blank" rel="noopener noreferrer" style="color:#f7931a;font-size:.7rem;">View ↗</a>`;
+        badge.innerHTML = `<span class="bv-dot bv-dot-ok" aria-hidden="true"></span> BTC Wallet: <strong>${Number(d.btc).toFixed(6)} tBTC</strong> &nbsp;<a href="${escapeHtml(d.explorer || '#')}" target="_blank" rel="noopener noreferrer" style="color:var(--btc);font-size:.7rem;">View ↗</a>`;
         if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
       } else {
         badge.innerHTML = `<span class="bv-dot bv-dot-bad" aria-hidden="true"></span> ${escapeHtml(_btcFriendlyError(d.error))}`;
@@ -9265,7 +9371,7 @@ async function anchorToBitcoin() {
   btn.textContent = 'Broadcasting to Bitcoin Testnet…';
   btn.style.opacity = '0.7';
   resultEl.innerHTML = `
-    <div style="display:flex;align-items:center;gap:.6rem;font-size:.84rem;color:#f7931a;margin-top:.5rem;">
+    <div style="display:flex;align-items:center;gap:.6rem;font-size:.84rem;color:var(--btc);margin-top:.5rem;">
       <span style="display:inline-block;width:14px;height:14px;border:2px solid #f7931a;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;"></span>
       Constructing OP_RETURN transaction &amp; broadcasting to Bitcoin Testnet3…
     </div>`;
@@ -9288,8 +9394,8 @@ async function anchorToBitcoin() {
       opPanel.style.display = 'block';
       opBreak.innerHTML = d.annotations.map(a => `
         <div style="display:grid;grid-template-columns:auto auto 1fr;gap:.6rem;align-items:start;padding:.25rem 0;border-bottom:1px solid rgba(255,255,255,.04);">
-          <code style="color:#f7931a;white-space:nowrap;">${a.bytes.length > 16 ? a.bytes.slice(0,16)+'…' : a.bytes}</code>
-          <span style="background:rgba(247,147,26,.15);color:#f7931a;border-radius:4px;padding:0 .4rem;font-size:.7rem;white-space:nowrap;">${a.label}</span>
+          <code style="color:var(--btc);white-space:nowrap;">${a.bytes.length > 16 ? a.bytes.slice(0,16)+'…' : a.bytes}</code>
+          <span style="background:rgba(247,147,26,.15);color:var(--btc);border-radius:4px;padding:0 .4rem;font-size:.7rem;white-space:nowrap;">${a.label}</span>
           <span style="color:var(--text-muted);">${a.description}</span>
         </div>`).join('');
     }
@@ -9297,13 +9403,13 @@ async function anchorToBitcoin() {
     // Success card
     resultEl.innerHTML = `
       <div style="background:rgba(247,147,26,.08);border:1px solid rgba(247,147,26,.4);border-radius:10px;padding:1rem;margin-top:.5rem;">
-        <div style="font-size:1rem;font-weight:700;color:#f7931a;margin-bottom:.7rem;"><svg class="ico ico-ok" aria-hidden="true"><use href="#i-check"/></svg> Anchored to Bitcoin Testnet3!</div>
+        <div style="font-size:1rem;font-weight:700;color:var(--btc);margin-bottom:.7rem;"><svg class="ico ico-ok" aria-hidden="true"><use href="#i-check"/></svg> Anchored to Bitcoin Testnet3!</div>
         <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.4rem;">
           <strong style="color:var(--text);">Merkle Root anchored</strong> — ${d.model_count} model${d.model_count !== 1 ? 's' : ''} from Algorand
         </div>
         <div style="font-size:.78rem;color:var(--text-muted);word-break:break-all;margin-bottom:.4rem;">
           <strong style="color:var(--text);">Merkle Root:</strong>
-          <code style="font-size:.72rem;color:#f7931a;">${d.merkle_root}</code>
+          <code style="font-size:.72rem;color:var(--btc);">${d.merkle_root}</code>
         </div>
         <div style="font-size:.78rem;color:var(--text-muted);word-break:break-all;margin-bottom:.4rem;">
           <strong style="color:var(--text);">Bitcoin TxID:</strong>
@@ -9919,7 +10025,7 @@ function stopNetworkPolling() {
 </script>
 
 <!-- ── Chatbot UI ── -->
-<div class="chatbot-btn" id="chatbotBtn" onclick="toggleChatbot()">
+<div class="chatbot-btn" id="chatbotBtn" onclick="toggleChatbot()" aria-label="Open the BlockVerify assistant" title="Assistant">
   <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
 </div>
 
@@ -9933,7 +10039,7 @@ function stopNetworkPolling() {
   </div>
   <div class="chatbot-input">
     <input type="text" id="chatInput" placeholder="Ask a question..." onkeypress="handleChatEnter(event)">
-    <button onclick="sendChatMessage()">
+    <button onclick="sendChatMessage()" aria-label="Send message">
       <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
     </button>
   </div>
@@ -10728,11 +10834,11 @@ async function psRegister() {
 
 // ── verify ──────────────────────────────────────────────────────────────────────────────────
 const PS_VERDICTS = {
-  EXACT_ORIGINAL: ['#22c55e', 'This is the registered original'],
-  EXACT_CLOAKED: ['#22c55e', 'This is the registered protected copy'],
-  DERIVED: ['#eab308', 'Very likely a re-encoded or lightly edited copy of a registered photo'],
-  SIMILAR: ['#f97316', 'Possibly derived: heavier edit, crop, or a different but similar photo'],
-  UNKNOWN: ['#94a3b8', 'Not in the registry'],
+  EXACT_ORIGINAL: ['var(--success)', 'This is the registered original'],
+  EXACT_CLOAKED: ['var(--success)', 'This is the registered protected copy'],
+  DERIVED: ['var(--ps-derived)', 'Very likely a re-encoded or lightly edited copy of a registered photo'],
+  SIMILAR: ['var(--ps-similar)', 'Possibly derived: heavier edit, crop, or a different but similar photo'],
+  UNKNOWN: ['var(--text-muted)', 'Not in the registry'],
 };
 async function psVerifyFile(input) {
   const f = input.files && input.files[0];
@@ -10906,7 +11012,7 @@ function psOriginLegend() {
 }
 function psOriginVerdictHtml(s) {
   const ok = s.verdict === 'DERIVED_FROM_REGISTERED';
-  return `<div><span class="ps-verdict" style="color:${ok ? '#22c55e' : '#94a3b8'};border:1px solid ${ok ? '#22c55e' : '#94a3b8'};">${ok ? 'DERIVED FROM YOUR REGISTERED PHOTO' : 'NOT SHOWN'}</span></div>
+  return `<div><span class="ps-verdict" style="color:${ok ? 'var(--success)' : 'var(--text-muted)'};border:1px solid ${ok ? 'var(--success)' : 'var(--text-muted)'};">${ok ? 'DERIVED FROM YOUR REGISTERED PHOTO' : 'NOT SHOWN'}</span></div>
     <div style="margin-top:.45rem;font-size:.84rem;">${s.match} regions match · ${s.altered} altered · ${s.uncertain} uncertain · ${s.uncovered} not in the copy · ${s.flat} flat</div>
     ${ok ? '' : '<div style="margin-top:.3rem;font-size:.76rem;color:var(--text-muted);">Too few matching regions to show a link. That is not proof that the copy is unrelated: heavy global edits change every region.</div>'}`;
 }
@@ -11046,7 +11152,7 @@ async function psOriginCheckFiles(input) {
         canvas = sus.canvas;
       }
     } else step(null, 'No suspect image given, so the report is not yet bound to a specific copy');
-    out.innerHTML = `<div class="ps-box"><div style="margin-bottom:.4rem;"><span class="ps-verdict" style="color:${ok ? '#22c55e' : '#ef4444'};border:1px solid ${ok ? '#22c55e' : '#ef4444'};">${ok ? 'REPORT VALID' : 'REPORT INVALID'}</span></div>
+    out.innerHTML = `<div class="ps-box"><div style="margin-bottom:.4rem;"><span class="ps-verdict" style="color:${ok ? 'var(--success)' : 'var(--danger)'};border:1px solid ${ok ? 'var(--success)' : 'var(--danger)'};">${ok ? 'REPORT VALID' : 'REPORT INVALID'}</span></div>
       ${ok ? psOriginVerdictHtml(report.summary) : ''}<div class="ps-steps" style="margin-top:.5rem;">${lines.join('')}</div>
       <div style="font-size:.74rem;color:var(--text-muted);margin-top:.4rem;">The regional comparison itself can be re-run by anyone with the suspect image: <code>python -m photoshield origin-verify report.json suspect.jpg --recheck</code>.</div></div>`;
     if (canvas) { canvas.style.cssText = 'max-width:100%;height:auto;border-radius:10px;border:1px solid var(--border);margin-top:.6rem;'; out.appendChild(canvas); out.insertAdjacentHTML('beforeend', psOriginLegend()); }
@@ -11167,6 +11273,9 @@ function bvPrompt(opts) { return bvDialog(Object.assign({ input: true }, opts));
   const SEL = 'div[onclick],span[onclick],label.file-drop,.file-drop,.qs-card,.chrome-collapse-head';
   const prep = (el) => {
     if (el.dataset.bvKey || el.closest('button,a')) return;
+    if (el.matches('.modal-overlay, [class*="overlay"]')) return;
+    if (el.matches('div[onclick],span[onclick]') &&
+        el.querySelector('button, a[href], select, textarea, input:not([type="file"]):not([type="hidden"])')) return;
     el.dataset.bvKey = '1';
     if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
     if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
@@ -11249,5 +11358,259 @@ function bvRevealTarget(sel) {
 })();
 </script>
 
+<!-- UI pass 3 (CLAUDE.md A16): chart theming, Ctrl+K palette, copy buttons, password toggle -->
+<script>
+// ── charts: one look in both themes, redrawn when the theme changes ──
+function bvChartTheme() {
+  if (typeof Chart === 'undefined') return;
+  const d = Chart.defaults;
+  d.font.family = "'Inter', system-ui, -apple-system, sans-serif";
+  d.color = bvTok('--text-muted', '#9AA4B8');
+  d.borderColor = bvChartGrid();
+  const t = d.plugins.tooltip;
+  Object.assign(t, { backgroundColor: bvTok('--surface', '#111623'), titleColor: bvTok('--text', '#E8ECF4'),
+    bodyColor: bvTok('--text-muted', '#9AA4B8'), borderColor: bvTok('--border', '#222A3B'), borderWidth: 1,
+    padding: 10, cornerRadius: 8, boxPadding: 4 });
+  t.titleFont = Object.assign({}, t.titleFont, { weight: '600' });
+}
+const BV_THEME_PAIRS = [['#5B8CFF', '#2F5BEA'], ['91, 140, 255', '47, 91, 234'], ['#A78BFA', '#6D28D9'],
+  ['167, 139, 250', '109, 40, 217'], ['#9AA4B8', '#5A6478'], ['#111623', '#FFFFFF'], ['#E8ECF4', '#0F1626'],
+  ['#222A3B', '#E3E7EF'], ['rgba(255,255,255,0.08)', 'rgba(15,22,38,0.08)']];
+function bvRemapColours(obj, toLight, seen) {
+  seen = seen || new Set();
+  if (!obj || typeof obj !== 'object' || seen.has(obj)) return;
+  seen.add(obj);
+  for (const k of Object.keys(obj)) {
+    const v = obj[k];
+    if (typeof v === 'string') {
+      let nv = v;
+      for (const [dk, lt] of BV_THEME_PAIRS) nv = toLight ? nv.split(dk).join(lt) : nv.split(lt).join(dk);
+      if (nv !== v) obj[k] = nv;
+    } else if (Array.isArray(v) || (v && v.constructor === Object)) bvRemapColours(v, toLight, seen);
+  }
+}
+function bvRethemeCharts() {
+  if (typeof Chart === 'undefined') return;
+  bvChartTheme();
+  const light = document.body.classList.contains('light-theme');
+  for (const c of Object.values(Chart.instances || {})) {
+    if (typeof _chartInstance !== 'undefined' && c === _chartInstance) continue;
+    if (typeof _anCharts !== 'undefined' && Object.values(_anCharts).includes(c)) continue;
+    bvRemapColours(c.config.options, light);
+    (c.config.data.datasets || []).forEach(ds => bvRemapColours(ds, light));
+    c.update('none');
+  }
+  // charts drawn with gradients are rebuilt from their data
+  if (typeof _chartInstance !== 'undefined' && _chartInstance && typeof loadActivityChart === 'function') loadActivityChart(typeof _activeDays !== 'undefined' ? _activeDays : 14);
+  if (typeof _anCharts !== 'undefined' && _anCharts && Object.values(_anCharts).some(Boolean) && typeof loadAnalytics === 'function') loadAnalytics();
+}
+(function () {
+  bvChartTheme();
+  let light = document.body.classList.contains('light-theme');
+  new MutationObserver(() => {
+    const now = document.body.classList.contains('light-theme');
+    if (now !== light) { light = now; bvRethemeCharts(); }
+  }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+})();
+
+// ── Ctrl+K: search pages, actions, models, photos, transactions ──
+const BV_IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || '');
+let _bvPal = null, _bvPalItems = [], _bvPalActive = 0, _bvPalSeq = 0, _bvPalTimer = null, _bvPalPrev = null;
+function bvIcon(n) { return '<svg class="ico" aria-hidden="true"><use href="#i-' + n + '"/></svg>'; }
+function bvPalStatic() {
+  const tabIcon = { register: 'register', verify: 'verify', compare: 'compare', versions: 'versions', audit: 'audit', alerts: 'bell',
+    models: 'models', analytics: 'chart', registry: 'registry', explorer: 'explorer', proof: 'proof', ledger: 'ledger',
+    federated: 'globe', photoshield: 'shield', help: 'help' };
+  const out = Object.entries(BV_PAGES).map(([id, p]) => ({ group: 'Pages', label: p[1], hint: p[0], icon: tabIcon[id] || 'compass',
+    keys: p[2], run: () => { location.hash = id; } }));
+  [['register', 'Register a photo'], ['check', 'Check a photo'], ['origin', 'Make or check an origin report'], ['mine', 'My photos']]
+    .forEach(([sec, label]) => out.push({ group: 'Photo Shield', label, hint: 'Photo Shield', icon: 'shield', keys: 'photo shield ' + sec,
+      run: () => { location.hash = 'photoshield'; setTimeout(() => psSection(sec), 50); } }));
+  const light = document.body.classList.contains('light-theme');
+  out.push({ group: 'Actions', label: light ? 'Switch to dark theme' : 'Switch to light theme', icon: light ? 'moon' : 'sun', keys: 'theme dark light mode', run: () => toggleTheme() });
+  out.push({ group: 'Actions', label: 'Start the guided tour', icon: 'compass', keys: 'tour help tutorial', run: () => { if (!location.hash || location.hash === '#home') location.hash = 'register'; setTimeout(startGuidedTour, 120); } });
+  out.push({ group: 'Actions', label: 'Ask the assistant', icon: 'bot', keys: 'chat assistant ai help', run: () => toggleChatbot() });
+  out.push({ group: 'Actions', label: 'Home page', icon: 'spark', keys: 'landing home', run: () => { location.hash = 'home'; } });
+  if (typeof _authUser !== 'undefined' && _authUser) out.push({ group: 'Actions', label: 'Log out', hint: _authUser, icon: 'logout', keys: 'sign out logout', run: () => logout() });
+  else out.push({ group: 'Actions', label: 'Sign in or create an account', icon: 'lock', keys: 'login sign in register account', run: () => { if (!location.hash || location.hash === '#home') location.hash = 'register'; openAuthModal('login'); } });
+  return out;
+}
+function bvPalScore(it, q) {
+  if (!q) return 1;
+  const hay = (it.label + ' ' + (it.hint || '') + ' ' + (it.keys || '') + ' ' + it.group).toLowerCase();
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  let score = 0;
+  for (const w of words) {
+    const i = hay.indexOf(w);
+    if (i < 0) return 0;
+    score += it.label.toLowerCase().startsWith(w) ? 4 : (i === 0 || /\s/.test(hay[i - 1]) ? 2 : 1);
+  }
+  return score;
+}
+function bvPalRender(dynamic) {
+  const q = document.getElementById('bvPalInput').value.trim();
+  const items = bvPalStatic().map(it => [bvPalScore(it, q), it]).filter(x => x[0] > 0).sort((a, b) => b[0] - a[0]).map(x => x[1]);
+  _bvPalItems = (dynamic || []).concat(q ? items.slice(0, 12) : items);
+  _bvPalActive = Math.min(_bvPalActive, Math.max(0, _bvPalItems.length - 1));
+  const ul = document.getElementById('bvPalList');
+  if (!_bvPalItems.length) { ul.innerHTML = '<li class="none" role="presentation">No matches. Try a page name, or paste a model ID, photo ID, transaction ID or SHA-256.</li>'; return; }
+  let html = '', grp = null;
+  _bvPalItems.forEach((it, i) => {
+    if (it.group !== grp) { grp = it.group; html += '<li class="grp" role="presentation">' + escapeHtml(grp) + '</li>'; }
+    html += '<li class="opt" role="option" id="bvPalOpt' + i + '" data-i="' + i + '" aria-selected="' + (i === _bvPalActive) + '">'
+      + bvIcon(it.icon || 'compass') + '<span>' + escapeHtml(it.label) + '</span>'
+      + (it.hint ? '<span class="hint">' + escapeHtml(it.hint) + '</span>' : '') + '</li>';
+  });
+  ul.innerHTML = html;
+  document.getElementById('bvPalInput').setAttribute('aria-activedescendant', 'bvPalOpt' + _bvPalActive);
+}
+async function bvPalLookup(q, seq) {
+  const out = [];
+  const add = (it) => out.push(Object.assign({ group: 'Results' }, it));
+  const get = async (u, opt) => { try { const r = await fetch(API + u, opt); return await r.json(); } catch (e) { return {}; } };
+  const short = (s) => s.length > 20 ? s.slice(0, 10) + '…' + s.slice(-6) : s;
+  if (/^[A-Z2-7]{52}$/.test(q)) {
+    add({ label: 'Look up transaction ' + short(q), hint: 'Chain proof', icon: 'proof', run: () => {
+      location.hash = 'proof'; setTimeout(() => { document.getElementById('proofTxId').value = q; lookupProof(); }, 60); } });
+  }
+  if (/^[0-9a-f]{16}$/i.test(q)) {
+    const id = q.toLowerCase();
+    const [m, p] = await Promise.all([get('/model/' + id), get('/photo/' + id)]);
+    if (m && m.success && m.model) {
+      const nm = m.model.modelName || id;
+      add({ label: 'Verify ' + nm, hint: 'model ' + id, icon: 'verify', run: () => { location.hash = 'verify'; setTimeout(() => { document.getElementById('verModelId').value = id; document.getElementById('verDrop').focus(); }, 60); } });
+      add({ label: 'Version history of ' + nm, hint: 'Versions', icon: 'versions', run: () => { location.hash = 'versions'; setTimeout(() => { document.getElementById('vhModelId').value = id; loadVersions(); }, 60); } });
+      add({ label: 'Audit trail of ' + nm, hint: 'Audit trail', icon: 'audit', run: () => { location.hash = 'audit'; setTimeout(() => { document.getElementById('auditId').value = id; loadAudit(); }, 60); } });
+    }
+    if (p && p.success && p.photo) {
+      add({ label: 'Certificate for photo ' + (p.photo.title || id), hint: 'PDF', icon: 'download', run: () => window.open(API + '/photo/certificate/' + id, '_blank', 'noopener') });
+    }
+  }
+  if (/^[0-9a-f]{64}$/i.test(q)) {
+    const v = await get('/photo/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sha256: q.toLowerCase() }) });
+    if (v && v.photoId) add({ label: 'Registered photo ' + v.photoId + ' (' + String(v.verdict || '').toLowerCase().replace('_', ' ') + ')', hint: 'certificate', icon: 'shield',
+      run: () => window.open(API + '/photo/certificate/' + v.photoId, '_blank', 'noopener') });
+    else if (v && v.success) add({ label: 'This SHA-256 is not a registered photo', hint: 'Photo Shield', icon: 'search', run: () => { location.hash = 'photoshield'; setTimeout(() => psSection('check'), 50); } });
+  }
+  if (q.length >= 2 && !/^[A-Z2-7]{52}$/.test(q)) {
+    const r = await get('/registry?limit=5&q=' + encodeURIComponent(q));
+    (r.models || []).forEach(m => add({ label: m.modelName || m.modelId, hint: 'model ' + m.modelId + (m.owner ? ' · ' + m.owner : ''), icon: 'models',
+      run: () => { location.hash = 'verify'; setTimeout(() => { document.getElementById('verModelId').value = m.modelId; document.getElementById('verDrop').focus(); }, 60); } }));
+  }
+  if (seq === _bvPalSeq && _bvPal && !_bvPal.hidden) bvPalRender(out);
+}
+function bvPaletteOpen() {
+  if (!_bvPal) {
+    _bvPal = document.createElement('div');
+    _bvPal.className = 'bv-pal-overlay';
+    _bvPal.hidden = true;
+    _bvPal.innerHTML = '<div class="bv-pal" role="dialog" aria-modal="true" aria-label="Search">'
+      + '<div class="bv-pal-in">' + bvIcon('search') + '<input id="bvPalInput" type="text" role="combobox" aria-expanded="true" aria-controls="bvPalList" aria-autocomplete="list" autocomplete="off" spellcheck="false" aria-label="Search pages and actions, or paste an ID" placeholder="Search pages and actions, or paste a model ID, photo ID, transaction or SHA-256"><kbd>Esc</kbd></div>'
+      + '<ul id="bvPalList" role="listbox" aria-label="Results"></ul>'
+      + '<div class="bv-pal-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> move</span><span><kbd>Enter</kbd> open</span><span><kbd>Esc</kbd> close</span></div></div>';
+    document.body.appendChild(_bvPal);
+    const inp = _bvPal.querySelector('#bvPalInput');
+    inp.addEventListener('input', () => {
+      _bvPalActive = 0; bvPalRender();
+      const q = inp.value.trim(), seq = ++_bvPalSeq;
+      clearTimeout(_bvPalTimer);
+      if (q.length >= 2) _bvPalTimer = setTimeout(() => bvPalLookup(q, seq), 220);
+    });
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown') { e.preventDefault(); _bvPalActive = Math.min(_bvPalItems.length - 1, _bvPalActive + 1); bvPalRender(_bvPalItems.filter(i => i.group === 'Results')); bvPalScroll(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); _bvPalActive = Math.max(0, _bvPalActive - 1); bvPalRender(_bvPalItems.filter(i => i.group === 'Results')); bvPalScroll(); }
+      else if (e.key === 'Enter') { e.preventDefault(); bvPalRun(_bvPalActive); }
+      else if (e.key === 'Escape') { e.preventDefault(); bvPaletteClose(); }
+    });
+    _bvPal.querySelector('#bvPalList').addEventListener('click', (e) => { const li = e.target.closest('.opt'); if (li) bvPalRun(+li.dataset.i); });
+    _bvPal.addEventListener('mousedown', (e) => { if (e.target === _bvPal) bvPaletteClose(); });
+  }
+  _bvPalPrev = document.activeElement;
+  _bvPal.hidden = false;
+  const inp = document.getElementById('bvPalInput');
+  inp.value = ''; _bvPalActive = 0; bvPalRender(); inp.focus();
+}
+function bvPalScroll() { const el = document.getElementById('bvPalOpt' + _bvPalActive); if (el) el.scrollIntoView({ block: 'nearest' }); }
+function bvPaletteClose() { if (_bvPal) _bvPal.hidden = true; if (_bvPalPrev && _bvPalPrev.focus) _bvPalPrev.focus(); }
+function bvPalRun(i) { const it = _bvPalItems[i]; if (!it) return; bvPaletteClose(); try { it.run(); } catch (e) { toast('err', e.message || String(e)); } }
+(function () {
+  const k = document.getElementById('bvSearchKbd');
+  if (k) k.textContent = BV_IS_MAC ? '⌘K' : 'Ctrl K';
+  const b = document.getElementById('bvSearchBtn');
+  if (b) b.setAttribute('aria-label', 'Search and jump to anything (' + (BV_IS_MAC ? '⌘K' : 'Ctrl+K') + ')');
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+      e.preventDefault();
+      if (_bvPal && !_bvPal.hidden) bvPaletteClose(); else bvPaletteOpen();
+      return;
+    }
+    const t = e.target, editing = t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+    if (e.key === '/' && !editing && !document.querySelector('.bv-dialog-overlay, .auth-overlay.open, .welcome-overlay.open')) {
+      e.preventDefault(); bvPaletteOpen();
+    }
+  });
+})();
+
+// ── copy buttons next to every hash and transaction id ──
+(function () {
+  const RE = /^(0x)?([0-9a-f]{16}|[0-9a-f]{32,128}|[A-Z2-7]{52})$/i;
+  const SEL = '.ps-mono, code, .bc-hash-val, .mono, .hash, .tx-id, td, .lp-mono';
+  const copy = async (text, btn) => {
+    try { await navigator.clipboard.writeText(text); }
+    catch (e) {
+      const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e2) {} ta.remove();
+    }
+    btn.classList.add('done'); btn.innerHTML = bvIcon('check'); btn.setAttribute('aria-label', 'Copied');
+    setTimeout(() => { btn.classList.remove('done'); btn.innerHTML = bvIcon('copy'); btn.setAttribute('aria-label', 'Copy ' + btn.dataset.what); }, 1500);
+  };
+  const scan = () => {
+    document.querySelectorAll(SEL).forEach(el => {
+      if (el.dataset.bvCopy) return;
+      if (el.closest('#landing, .bv-pal-overlay, .bv-dialog-overlay, button, a, .hash-box, .tour-tooltip, svg')) return;
+      if (el.children.length) return;
+      let text = (el.textContent || '').trim();
+      if (!RE.test(text) && el.title && RE.test(el.title.trim())) text = el.title.trim();
+      if (!RE.test(text)) return;
+      if (el.nextElementSibling && el.nextElementSibling.classList && (el.nextElementSibling.classList.contains('copy-btn') || el.nextElementSibling.classList.contains('bv-copy'))) return;
+      el.dataset.bvCopy = '1';
+      const what = /^[A-Z2-7]{52}$/.test(text) ? 'transaction ID' : (text.length === 16 ? 'ID' : 'hash');
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'bv-copy'; b.dataset.what = what; b.title = 'Copy';
+      b.setAttribute('aria-label', 'Copy ' + what); b.innerHTML = bvIcon('copy');
+      b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); const cur = (el.textContent || '').trim(); copy(RE.test(cur) ? cur : text, b); });
+      if (el.tagName === 'TD') el.appendChild(b); else el.insertAdjacentElement('afterend', b);
+    });
+  };
+  const scanLinks = () => {
+    document.querySelectorAll('a[href*="/transaction/"]').forEach(a => {
+      if (a.dataset.bvCopy || a.closest('#landing, .bv-pal-overlay, .bv-dialog-overlay, .tour-tooltip')) return;
+      const id = decodeURIComponent((a.getAttribute('href') || '').split('/transaction/')[1] || '').split(/[?#]/)[0];
+      if (!/^[A-Z2-7]{52}$/.test(id)) return;
+      a.dataset.bvCopy = '1';
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'bv-copy'; b.dataset.what = 'transaction ID'; b.title = 'Copy transaction ID';
+      b.setAttribute('aria-label', 'Copy transaction ID'); b.innerHTML = bvIcon('copy');
+      b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); copy(id, b); });
+      a.insertAdjacentElement('afterend', b);
+    });
+  };
+  let t = null;
+  const later = () => { if (t) return; t = setTimeout(() => { t = null; scan(); scanLinks(); }, 250); };
+  new MutationObserver(later).observe(document.body, { childList: true, subtree: true, characterData: true });
+  scan(); scanLinks();
+})();
+
+// ── show / hide password ──
+function bvTogglePw(btn, id) {
+  const inp = document.getElementById(id);
+  if (!inp) return;
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  inp.dataset.pw = '1';
+  btn.setAttribute('aria-pressed', String(show));
+  btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+}
+</script>
 </body>
 </html>

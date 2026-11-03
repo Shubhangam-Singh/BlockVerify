@@ -39,7 +39,7 @@ const JPEG = process.env.PS_JPEG || '/tmp/chelsea_q60.jpg';
   const regText = await page.$eval('#psRegResult', e => e.textContent);
   const manifestDl = await dl;
   // check on ledger (local anchor -> SERVER-TRUSTED)
-  await page.click('#psRegResult button');
+  await page.click('#psRegResult button:not(.bv-copy)');
   await page.waitForFunction(() => /SERVER-TRUSTED|TRUSTLESS|FAILED/.test(document.getElementById('psRegResult').textContent));
   const ledgerText = await page.$eval('#psRegResult .ps-steps', e => e.textContent);
   // verify exact + JPEG copy
@@ -61,7 +61,7 @@ const JPEG = process.env.PS_JPEG || '/tmp/chelsea_q60.jpg';
   // my photos + prove
   await page.evaluate(() => psSection('mine'));
   await page.waitForFunction(() => document.getElementById('psMine').textContent.includes('Prove'));
-  await page.click('#psMine button');
+  await page.click('#psMine button:has-text("Prove")');
   await page.waitForFunction(() => [...document.querySelectorAll('.toast')].some(t => /Proved|does not match/.test(t.textContent)), null, { timeout: 15000 });
   const toasts = await page.$$eval('.toast', els => els.map(e => e.textContent));
   await page.screenshot({ path: process.env.PS_SHOT || '/tmp/photoshield_tab.png', fullPage: false });
